@@ -138,16 +138,6 @@ function checkAnswer(answer, song) {
   return { correct: false, partial: false };
 }
 
-// ===== SCALING =====
-function scaleStage() {
-  const stage = $('#stage');
-  const wrap = stage.parentElement;
-  const sw = wrap.clientWidth, sh = wrap.clientHeight;
-  const scale = Math.min(sw / 1440, sh / 900);
-  stage.style.transform = `scale(${scale})`;
-}
-window.addEventListener('resize', scaleStage);
-scaleStage();
 
 // ===== NAVIGATION =====
 function navigateTo(id) {
