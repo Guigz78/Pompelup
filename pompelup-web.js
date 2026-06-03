@@ -203,10 +203,23 @@ document.body.addEventListener('click', (e) => {
   }
   const a = e.target.closest('[data-action]');
   if (a) {
-    if (a.dataset.action === 'create-room') navigateTo('lobby');
+    if (a.dataset.action === 'create-room') {
+      STATE.room._isHost = true;
+      STATE.room._joined = false;
+      navigateTo('lobby');
+    }
     if (a.dataset.action === 'join-room') {
-      // if clicked on the join card outside the input
-      if (e.target.tagName !== 'INPUT') navigateTo('lobby');
+      if (e.target.tagName !== 'INPUT') {
+        const code = document.getElementById('join-code-input')?.value?.trim().toUpperCase();
+        if (code && code.length === 6) {
+          STATE.room.code = code;
+          STATE.room._isHost = false;
+          STATE.room._joined = true;
+          navigateTo('lobby');
+        } else {
+          document.getElementById('join-code-input')?.focus();
+        }
+      }
     }
   }
 });
@@ -1074,50 +1087,89 @@ function initCollection() {
 const PLAYER_POSITIONS = []; // (déprécié — le salon utilise maintenant une grille CSS)
 
 function initLobby() {
-  const stage = $('#players-stage');
-  const players = [
-    { name: STATE.player.name, seed: STATE.player.avatar, level: STATE.player.level, host: true, you: true, ready: true },
-    { name: 'Cath',  seed: 'cath-vibe',   level: 18, host: false, ready: true },
-    { name: 'Jules', seed: 'jules-fresh', level: 7,  host: false, ready: true },
-    { name: 'Léa',   seed: 'lea-sunset',  level: 24, host: false, ready: false }
-  ];
-
-  stage.innerHTML = '';
-  for (let i = 0; i < 8; i++) {
-    if (i < players.length) {
-      const p = players[i];
-      const node = document.createElement('div');
-      node.className = 'lp-card' + (p.host ? ' host' : '') + (p.you ? ' you' : '');
-      node.innerHTML = `
-        <div class="lp-bubble"><img src="${avatarUrl(p.seed)}" alt=""></div>
-        <div class="lp-name">
-          ${p.host ? '<span>👑</span>' : ''}
-          ${p.name}${p.you ? ' (toi)' : ''}
-          <span class="lvl">${p.level}</span>
-        </div>
-        ${p.ready ? '<div class="ready-tick">✓</div>' : ''}
-      `;
-      stage.appendChild(node);
-    } else {
-      const node = document.createElement('div');
-      node.className = 'lp-card lp-empty';
-      node.innerHTML = `<div class="lp-bubble">+</div><div class="lp-name">Libre</div>`;
-      stage.appendChild(node);
-    }
+  if (!STATE.room._joined) {
+    STATE.room.code = generateRoomCode();
+    STATE.room._isHost = true;
   }
+  $$('.rcode').forEach(el => el.textContent = STATE.room.code);
+
+  const titleEl = document.querySelector('.lobby-title');
+  if (titleEl) titleEl.textContent = 'SALON DE ' + (sbGetProfile()?.username || STATE.player.name).toUpperCase();
+
+  const settingsPanel = document.querySelector('.lobby-grid .panel');
+  if (settingsPanel) settingsPanel.style.display = STATE.room._isHost ? '' : 'none';
+
+  const chatList = $('#chat-list');
+  if (chatList) chatList.innerHTML = '<div class="chat-msg system"><div class="cm-body"><div class="ct">En attente des joueurs...</div></div></div>';
+
+  renderLobbyPlayers([]);
+
+  const connectFn = STATE.room._isHost ? sbCreateRoom : sbJoinRoom;
+  connectFn(STATE.room.code, (event, data) => {
+    if (event === 'join' || event === 'leave') {
+      renderLobbyPlayers(sbRoomPlayers());
+      updateLobbyCount();
+      if (event === 'join' && data && data.id !== sbMyId()) {
+        pushChatMsg('system', `${data.name} a rejoint le salon 👋`);
+      }
+      if (event === 'leave' && data && data.name) {
+        pushChatMsg('system', `${data.name} a quitté le salon`);
+      }
+    }
+    if (event === 'chat') pushChatMsg('msg', data.content, data.name, data.avatar);
+    if (event === 'sound') {
+      playSoundFx(data.sound);
+      spawnLobbyEmote(data.emoji || '🎵');
+      pushChatMsg('system', `${data.name} a joué un son 🔊`);
+    }
+    if (event === 'game' && data.type === 'start') {
+      STATE.game.songs = data.songs;
+      STATE.game.total = data.total;
+      pushChatMsg('system', 'La partie commence !');
+      setTimeout(() => navigateTo('game'), 400);
+    }
+  });
 
   const mult = STATE.animDensity === 'calm' ? 0.5 : STATE.animDensity === 'chaos' ? 1.6 : 1;
-  gsap.from('.lp-card', { scale: 0, opacity: 0, stagger: 0.06 / mult, duration: 0.5 / mult, ease: 'back.out(1.5)' });
   gsap.from('.lobby-title', { y: -20, opacity: 0, duration: 0.5 / mult });
-  gsap.from('.lobby-grid .panel', { x: (i) => i === 0 ? -30 : 30, opacity: 0, stagger: 0.08, duration: 0.4 });
+  gsap.from('.lobby-grid .panel', { x: -30, opacity: 0, stagger: 0.08, duration: 0.4 });
   gsap.from('.copy-link-btn', { y: 20, opacity: 0, duration: 0.4, delay: 0.4 });
-  // Start button: GUARANTEE end state at scale 1 — use fromTo + overwrite
   gsap.killTweensOf('#start-game-btn');
-  gsap.set('#start-game-btn', { scale: 1, boxShadow: '', clearProps: 'box-shadow' });
-  gsap.fromTo('#start-game-btn',
-    { scale: 0 },
-    { scale: 1, duration: 0.55, delay: 0.5, ease: 'back.out(1.7)', overwrite: 'auto' }
-  );
+  gsap.set('#start-game-btn', { scale: 1, clearProps: 'box-shadow' });
+  gsap.fromTo('#start-game-btn', { scale: 0 }, { scale: 1, duration: 0.55, delay: 0.5, ease: 'back.out(1.7)', overwrite: 'auto' });
+}
+
+function renderLobbyPlayers(players) {
+  const stage = $('#players-stage');
+  if (!stage) return;
+  stage.innerHTML = '';
+  const myId = sbMyId();
+  for (let i = 0; i < 8; i++) {
+    const node = document.createElement('div');
+    if (i < players.length) {
+      const p = players[i];
+      const isMe = p.id === myId;
+      node.className = 'lp-card' + (p.isHost ? ' host' : '') + (isMe ? ' you' : '');
+      node.innerHTML = `
+        <div class="lp-bubble"><img src="${avatarUrl(p.avatar)}" alt=""></div>
+        <div class="lp-name">${p.isHost ? '<span>👑</span>' : ''}${p.name}${isMe ? ' <span style="opacity:0.6">(toi)</span>' : ''}<span class="lvl">${p.level}</span></div>
+        <div class="ready-tick">✓</div>
+      `;
+    } else {
+      node.className = 'lp-card lp-empty';
+      node.innerHTML = '<div class="lp-bubble">+</div><div class="lp-name">Libre</div>';
+    }
+    stage.appendChild(node);
+  }
+  const mult = STATE.animDensity === 'calm' ? 0.5 : STATE.animDensity === 'chaos' ? 1.6 : 1;
+  gsap.from('#players-stage .lp-card:not(.lp-empty)', { scale: 0, opacity: 0, stagger: 0.06 / mult, duration: 0.4, ease: 'back.out(1.5)' });
+}
+
+function updateLobbyCount() {
+  const sub = document.querySelector('.lobby-subtitle');
+  if (!sub) return;
+  const n = sbRoomPlayers().length;
+  sub.textContent = `${n} joueur${n > 1 ? 's' : ''} sur 8 — partagez le code pour inviter`;
 }
 
 // Settings / chip / segment handlers
@@ -1166,7 +1218,11 @@ document.addEventListener('click', (e) => {
   window.addEventListener('mouseup', () => { drag = false; });
 })();
 
-$('#start-game-btn').addEventListener('click', () => {
+$('#start-game-btn').addEventListener('click', async () => {
+  if (!sbIsHost()) return;
+  const songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
+  STATE.game.songs = songs;
+  await sbBroadcast('game', { type: 'start', songs, total: STATE.game.total });
   pushChatMsg('system', 'La partie commence !');
   setTimeout(() => navigateTo('game'), 400);
 });
@@ -1369,6 +1425,7 @@ document.addEventListener('click', (e) => {
       rect.left - cRect.left + rect.width / 2,
       rect.top - cRect.top);
     pushChatMsg('system', `${STATE.player.name} a joué un son 🔊`);
+    if (sbHasRoom()) sbBroadcast('sound', { sound: sound.dataset.sound, emoji: sound.querySelector('.pad-emoji')?.textContent, name: STATE.player.name });
   }
   const emote = e.target.closest('.sb-pad-emote');
   if (emote) {
@@ -1413,15 +1470,35 @@ function pushChatMsg(kind, content, name, seed) {
 
 const chatField = $('#chat-input-field');
 if (chatField) {
-  chatField.addEventListener('keydown', (e) => {
+  chatField.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter' && e.target.value.trim()) {
-      pushChatMsg('you', e.target.value.trim(), STATE.player.name, STATE.player.avatar);
+      const msg = e.target.value.trim();
+      pushChatMsg('you', msg, STATE.player.name, STATE.player.avatar);
       e.target.value = '';
-      setTimeout(() => {
-        const replies = ['lol', 'go go go 🔥', 'on lance ?', 'cap', 'bro 💀', '+1', 'hâte'];
-        const b = STATE.bots[Math.floor(Math.random() * STATE.bots.length)];
-        pushChatMsg('msg', replies[Math.floor(Math.random() * replies.length)], b.name, b.seed);
-      }, 800 + Math.random() * 1200);
+      if (sbHasRoom()) {
+        await sbBroadcast('chat', { content: msg, name: STATE.player.name, avatar: STATE.player.avatar });
+      } else {
+        setTimeout(() => {
+          const replies = ['lol', 'go go go 🔥', 'on lance ?', 'cap', 'bro 💀', '+1', 'hâte'];
+          const b = STATE.bots[Math.floor(Math.random() * STATE.bots.length)];
+          if (b) pushChatMsg('msg', replies[Math.floor(Math.random() * replies.length)], b.name, b.seed);
+        }, 800 + Math.random() * 1200);
+      }
+    }
+  });
+}
+
+const joinInput = document.getElementById('join-code-input');
+if (joinInput) {
+  joinInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const code = joinInput.value.trim().toUpperCase();
+      if (code.length === 6) {
+        STATE.room.code = code;
+        STATE.room._isHost = false;
+        STATE.room._joined = true;
+        navigateTo('lobby');
+      }
     }
   });
 }
@@ -1578,7 +1655,25 @@ function animateViz() {
 }
 
 function startGame() {
-  STATE.totals = { Guigz: 0, Cath: 0, Jules: 0, 'Léa': 0 };
+  const rp = sbRoomPlayers();
+  if (rp.length > 1) {
+    STATE._multiPlayers = rp;
+    STATE.bots = [];
+    STATE.totals = {};
+    rp.forEach(p => { STATE.totals[p.name] = 0; });
+  } else {
+    STATE._multiPlayers = null;
+    if (!STATE.bots.length) {
+      STATE.bots = [
+        { name: 'Cath',  seed: 'cath-vibe',   color: '#3B4FE8', level: 18, accuracy: 0.7, delay: 0.45 },
+        { name: 'Jules', seed: 'jules-fresh', color: '#22C55E', level: 7,  accuracy: 0.5, delay: 0.7 },
+        { name: 'Léa',   seed: 'lea-sunset',  color: '#F472B6', level: 24, accuracy: 0.65, delay: 0.55 }
+      ];
+    }
+    STATE.totals = {};
+    STATE.totals[STATE.player.name] = 0;
+    STATE.bots.forEach(b => { STATE.totals[b.name] = 0; });
+  }
   STATE.game.round = 0;
   STATE.game.history = [];
   $('#g-total').textContent = STATE.game.total;
@@ -1631,14 +1726,17 @@ function startRound() {
   if (STATE.game.round > STATE.game.total) return endGame();
 
   $('#g-round').textContent = STATE.game.round;
-  const song = SONGS[(STATE.game.round - 1) % SONGS.length];
+  const songPool = STATE.game.songs || SONGS;
+  const song = songPool[(STATE.game.round - 1) % songPool.length];
   STATE.game.currentSong = song;
   STATE.game.time = STATE.game.maxTime = 30;
   STATE.game.pointsAvail = 1000;
   STATE.game.found = false;
   STATE.game.jokers = {};
   STATE.game.doubleNext = false;
-  STATE.scores = { Guigz: null, Cath: null, Jules: null, 'Léa': null };
+  STATE.scores = {};
+  const allInGame = STATE._multiPlayers || [{ name: STATE.player.name }, ...STATE.bots];
+  allInGame.forEach(p => { STATE.scores[p.name] = null; });
   STATE.game.perRound = { points: 0, xp: 0, foundBy: 0 };
 
   $('#g-input').value = '';
@@ -1704,10 +1802,10 @@ function startRound() {
 }
 
 function updatePlayersRail() {
-  const players = [
-    { name: STATE.player.name, seed: STATE.player.avatar, you: true },
-    ...STATE.bots
-  ];
+  const myId = sbMyId();
+  const players = STATE._multiPlayers
+    ? STATE._multiPlayers.map(p => ({ name: p.name, seed: p.avatar, you: p.id === myId }))
+    : [{ name: STATE.player.name, seed: STATE.player.avatar, you: true }, ...STATE.bots];
   const sorted = players.slice().sort((a, b) => (STATE.totals[b.name] || 0) - (STATE.totals[a.name] || 0));
   $('#pr-list').innerHTML = sorted.map((p, i) => {
     const total = STATE.totals[p.name] || 0;
@@ -1729,10 +1827,10 @@ function updatePlayersRail() {
 function updateSceneWall() {
   const wall = document.getElementById('scene-wall');
   if (!wall) return;
-  const players = [
-    { name: STATE.player.name, seed: STATE.player.avatar, you: true },
-    ...STATE.bots
-  ];
+  const myId2 = sbMyId();
+  const players = STATE._multiPlayers
+    ? STATE._multiPlayers.map(p => ({ name: p.name, seed: p.avatar, you: p.id === myId2 }))
+    : [{ name: STATE.player.name, seed: STATE.player.avatar, you: true }, ...STATE.bots];
   wall.innerHTML = players.map(p => {
     const found = STATE.scores[p.name] != null;
     return `<div class="sw-player ${found ? 'found' : ''} ${p.you ? 'you' : ''}">
@@ -2940,3 +3038,95 @@ refreshSidebar();
 renderPackCta();
 initHome();
 setupVinylScratch();
+
+// ===== SUPABASE AUTH =====
+
+function applyProfileToState() {
+  const profile = sbGetProfile();
+  if (!profile) return;
+  STATE.player.name = profile.username;
+  STATE.player.avatar = profile.avatar_seed;
+  STATE.player.level = profile.level || 1;
+  STATE.player.xp = profile.xp || 0;
+  STATE.player.tokens = profile.tokens || 100;
+  refreshSidebar();
+  PAGE_INFO.home.sub = `Yo ${profile.username} — prêt à lancer une partie ?`;
+  const sub = $('#tb-sub');
+  if (sub) sub.textContent = PAGE_INFO.home.sub;
+}
+
+function hideAuth() {
+  const overlay = document.getElementById('auth-overlay');
+  if (!overlay) return;
+  gsap.to(overlay, { opacity: 0, scale: 0.97, duration: 0.35, ease: 'power2.in', onComplete: () => overlay.remove() });
+}
+
+async function handleAuthLogin() {
+  const email = document.getElementById('auth-email-login').value.trim();
+  const pass = document.getElementById('auth-pass-login').value;
+  const err = document.getElementById('auth-login-err');
+  const btn = document.getElementById('auth-login-btn');
+  try {
+    err.textContent = '';
+    btn.textContent = '...';
+    await sbSignIn(email, pass);
+    applyProfileToState();
+    hideAuth();
+  } catch(e) {
+    err.textContent = e.message;
+    btn.textContent = 'Se connecter';
+  }
+}
+
+async function handleAuthSignup() {
+  const username = document.getElementById('auth-username').value.trim();
+  const email = document.getElementById('auth-email-signup').value.trim();
+  const pass = document.getElementById('auth-pass-signup').value;
+  const err = document.getElementById('auth-signup-err');
+  const btn = document.getElementById('auth-signup-btn');
+  try {
+    err.textContent = '';
+    if (!username || username.length < 2) throw new Error('Pseudo trop court (2 car. min)');
+    btn.textContent = '...';
+    await sbSignUp(email, pass, username);
+    applyProfileToState();
+    hideAuth();
+  } catch(e) {
+    err.textContent = e.message;
+    btn.textContent = 'Créer un compte';
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('.auth-tab');
+  if (tab) {
+    const name = tab.dataset.authTab;
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('auth-panel-' + name)?.classList.add('active');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('auth-panel-login')?.classList.contains('active') &&
+      (e.target.id === 'auth-email-login' || e.target.id === 'auth-pass-login')) {
+    handleAuthLogin();
+  }
+  if (document.getElementById('auth-panel-signup')?.classList.contains('active') &&
+      ['auth-username', 'auth-email-signup', 'auth-pass-signup'].includes(e.target.id)) {
+    handleAuthSignup();
+  }
+});
+
+document.getElementById('auth-login-btn')?.addEventListener('click', handleAuthLogin);
+document.getElementById('auth-signup-btn')?.addEventListener('click', handleAuthSignup);
+document.getElementById('auth-guest-btn')?.addEventListener('click', hideAuth);
+
+(async () => {
+  try {
+    const ok = await sbInit();
+    if (ok) { applyProfileToState(); hideAuth(); }
+  } catch(e) { console.warn('sbInit:', e); }
+})();
