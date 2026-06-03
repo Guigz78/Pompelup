@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Pompelup — Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="pompelup-web.css">
+<link rel="stylesheet" href="pompelup-mobile.css">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head>
+<body>
+<div class="scale-wrap">
+  <div class="stage" id="stage">
+    <canvas class="notes-canvas" id="notes-canvas"></canvas>
+
+    <!-- ============== SIDEBAR ============== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-logo">Pompe<span class="b-accent">lup</span><div class="b-dot"></div></div>
+
+      <div class="sb-user" data-nav="skins" title="Personnalise ton profil et ton lobby">
+        <div class="sb-avatar"><img id="sb-avatar" alt=""></div>
+        <div style="flex:1; min-width: 0;">
+          <div class="sb-name" id="sb-name">Guigz</div>
+          <div class="sb-lvl">Nv. 12 · 847 / 2400 XP</div>
+          <div class="sb-xp"><div class="fill"></div></div>
+        </div>
+      </div>
+
+      <div class="sb-section-title">Jeu</div>
+      <nav class="sb-nav">
+        <button class="sb-item active" data-nav="home">
+          <span class="ico">🏠</span>
+          <span class="sb-label">Accueil</span>
+        </button>
+        <button class="sb-item" data-nav="quests">
+          <span class="ico">⚔️</span>
+          <span class="sb-label">Quêtes</span>
+          <span class="sb-badge">3</span>
+        </button>
+        <button class="sb-item" data-nav="pass">
+          <span class="ico">🎫</span>
+          <span class="sb-label">Pass de combat</span>
+          <span class="sb-badge">17</span>
+        </button>
+      </nav>
+
+      <div class="sb-section-title">Toi</div>
+      <nav class="sb-nav">
+        <button class="sb-item" data-nav="friends">
+          <span class="ico">👥</span>
+          <span class="sb-label">Amis</span>
+          <span class="sb-dot" title="2 en ligne"></span>
+        </button>
+        <button class="sb-item" data-nav="history">
+          <span class="ico">📜</span>
+          <span class="sb-label">Histoire</span>
+        </button>
+        <button class="sb-item" data-nav="collection">
+          <span class="ico">💿</span>
+          <span class="sb-label">Collection</span>
+          <span class="sb-badge" style="background: var(--text);">34</span>
+        </button>
+      </nav>
+
+      <div class="sb-bottom">
+        <div class="sb-pack-cta" id="sb-pack-cta">
+          <div class="gicon">🎁</div>
+          <div>
+            <div class="ptxt" id="sb-pack-label">PACK DISPONIBLE · 1</div>
+            <div class="pdesc">3 vinyles · Mystère</div>
+          </div>
+          <div class="pulse"></div>
+        </div>
+        <div class="sb-tokens-card" data-nav="shop" title="Ouvrir la boutique">
+          <div class="ticon">🎤</div>
+          <div>
+            <div class="tlbl">Jetons</div>
+            <div class="tval" id="sb-tokens">142</div>
+          </div>
+          <div class="plus">+</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============== TOPBAR ============== -->
+    <div class="topbar" id="topbar">
+      <div>
+        <div class="tb-page-title" id="tb-title">ACCUEIL</div>
+        <div class="tb-page-sub" id="tb-sub">Yo Guigz — prêt à lancer une partie ?</div>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="room-badge" id="tb-room" style="display: none;">
+        <span style="opacity:0.7; font-size: 11px; letter-spacing: 0.12em;">SALON</span>
+        <span class="rcode">K9XQ4P</span>
+      </div>
+      <div class="tb-search" id="tb-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-5-5"/></svg>
+        <input placeholder="Cherche un titre, un pote, un pack..." id="tb-search-input" autocomplete="off" />
+        <kbd>⌘K</kbd>
+        <div class="tb-dropdown" id="tb-dropdown">
+          <div class="tbd-section">
+            <div class="tbd-head">Récents</div>
+            <button class="tbd-item" data-search-action="goto" data-nav="collection">
+              <span class="tbd-ico">💿</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Bohemian Rhapsody</span>
+                <span class="tbd-sub">Queen · ouvert hier</span>
+              </span>
+              <span class="tbd-kbd">↵</span>
+            </button>
+            <button class="tbd-item" data-search-action="goto" data-nav="friends">
+              <span class="tbd-ico">👥</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Marco</span>
+                <span class="tbd-sub">Profil ami · 3 amis communs</span>
+              </span>
+              <span class="tbd-kbd">↵</span>
+            </button>
+            <button class="tbd-item" data-search-action="goto" data-nav="shop">
+              <span class="tbd-ico">🎁</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Pack Légendes</span>
+                <span class="tbd-sub">Boutique · −40 %</span>
+              </span>
+              <span class="tbd-kbd">↵</span>
+            </button>
+          </div>
+
+          <div class="tbd-section">
+            <div class="tbd-head">Suggestions</div>
+            <button class="tbd-item" data-search-action="goto" data-nav="collection">
+              <span class="tbd-ico tbd-ico-orange">🔥</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Top morceaux de la semaine</span>
+                <span class="tbd-sub">12 vinyles tendance</span>
+              </span>
+            </button>
+            <button class="tbd-item" data-search-action="goto" data-nav="quests">
+              <span class="tbd-ico tbd-ico-purple">⚔️</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Quêtes du jour</span>
+                <span class="tbd-sub">3 actives · 1 récompense</span>
+              </span>
+            </button>
+            <button class="tbd-item" data-search-action="goto" data-nav="lobby">
+              <span class="tbd-ico tbd-ico-green">🎤</span>
+              <span class="tbd-body">
+                <span class="tbd-title">Lancer une partie rapide</span>
+                <span class="tbd-sub">Classic · 5 manches</span>
+              </span>
+            </button>
+          </div>
+
+          <div class="tbd-section">
+            <div class="tbd-head">Catégories</div>
+            <div class="tbd-chips">
+              <button class="tbd-chip" data-search-action="goto" data-nav="collection">💿 Vinyles</button>
+              <button class="tbd-chip" data-search-action="goto" data-nav="friends">👥 Amis</button>
+              <button class="tbd-chip" data-search-action="goto" data-nav="shop">🛒 Boutique</button>
+              <button class="tbd-chip" data-search-action="goto" data-nav="skins">🎭 Skins</button>
+              <button class="tbd-chip" data-search-action="goto" data-nav="history">📜 Histoire</button>
+              <button class="tbd-chip" data-search-action="goto" data-nav="pass">🎫 Pass</button>
+            </div>
+          </div>
+
+          <div class="tbd-foot">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Naviguer</span>
+            <span><kbd>↵</kbd> Ouvrir</span>
+            <span><kbd>esc</kbd> Fermer</span>
+          </div>
+        </div>
+      </div>
+      <div class="tb-actions">
+        <button class="tb-icon-btn" title="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+        <button class="tb-icon-btn" title="Boutique" data-nav="shop">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============== ADS PANEL ============== -->
+    <aside class="ads-panel" id="ads-panel">
+      <div class="ads-eyebrow">SPONSORISÉ</div>
+
+      <div class="ad-card ad-promo">
+        <div class="ad-tag">PROMO</div>
+        <div class="ad-illu">🎁</div>
+        <div class="ad-body">
+          <div class="ad-title">PACK<br>LÉGENDES</div>
+          <div class="ad-desc">−40% jusqu'à dimanche</div>
+        </div>
+        <button class="ad-cta">Voir</button>
+      </div>
+
+      <div class="ad-card ad-event">
+        <div class="ad-event-bg"></div>
+        <div class="ad-event-content">
+          <div class="ad-tag" style="background: rgba(0,0,0,0.4); color:#fff;">ÉVÉNEMENT</div>
+          <div class="ad-event-title">TOURNOI<br>BOOGIE</div>
+          <div class="ad-event-meta">Samedi 20h · 1000 🎤 à gagner</div>
+          <button class="btn btn-dark btn-sm" style="margin-top: 10px; width: 100%;">M'INSCRIRE</button>
+        </div>
+      </div>
+
+      <div class="ad-card ad-friend">
+        <div class="ad-eyebrow-small">SUGGESTION</div>
+        <div class="ad-friend-row">
+          <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=marco-disco&size=128&radius=50&backgroundColor=ffd5dc,c0aede,b6e3f4,fff1e4,fad9c1" alt="">
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">Marco</div>
+            <div style="font-size: 11px; color: var(--muted); font-weight: 600;">3 amis communs</div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-accent" style="width: 100%; margin-top: 10px;">AJOUTER</button>
+      </div>
+
+      <div class="ad-card ad-mini">
+        <div class="ad-mini-icon" style="background: linear-gradient(135deg, var(--yellow), var(--orange));">🎤</div>
+        <div class="ad-mini-body">
+          <div class="ad-mini-title">PACK JETONS</div>
+          <div class="ad-mini-desc">100 🎤 pour 0,99€</div>
+        </div>
+      </div>
+
+      <div class="ad-card ad-mini">
+        <div class="ad-mini-icon" style="background: linear-gradient(135deg, var(--blue), var(--purple));">👑</div>
+        <div class="ad-mini-body">
+          <div class="ad-mini-title">GROOVY PREMIUM</div>
+          <div class="ad-mini-desc">+30 récompenses · 3,99€</div>
+        </div>
+      </div>
+
+      <div class="ad-footer">
+        <div class="ad-footer-row">
+          <span class="ad-footer-dot"></span>
+          <span>Pub Pompelup · v 2.4.1</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============== CONTENT AREA ============== -->
+    <div class="content-area" id="content-area">
+
+      <!-- ============== HOME ============== -->
+      <section id="screen-home" class="screen active">
+        <!-- Hero with create/join -->
+        <div class="home-hero-row">
+          <div class="home-left">
+            <div class="home-eyebrow"><span class="dot"></span> 2 487 joueurs en ligne</div>
+            <h1 class="home-title">POMPE<span class="accent">LUP</span></h1>
+            <p class="home-desc">Le blind test entre potes. Devine, collectionne des vinyles, deviens la légende de tes soirées.</p>
+
+            <div class="home-cta-grid">
+              <div class="home-cta-card primary" data-action="create-room">
+                <div class="ac-body">
+                  <div class="ac-icon">🎤</div>
+                  <div class="ac-title">CRÉER UN SALON</div>
+                  <div class="ac-sub">Invite tes potes, choisis le mode</div>
+                </div>
+                <div class="ac-foot">
+                  <span>Tape pour lancer</span>
+                  <span>→</span>
+                </div>
+              </div>
+              <div class="home-cta-card" data-action="join-room">
+                <div class="ac-body">
+                  <div class="ac-icon">🎟️</div>
+                  <div class="ac-title">REJOINDRE</div>
+                  <div class="ac-sub">T'as un code de salon ?</div>
+                </div>
+                <input class="ac-foot ac-join-input" placeholder="CODE" maxlength="6" id="join-code-input" style="text-align: center; background: rgba(0,0,0,0.05); cursor: text;">
+              </div>
+            </div>
+          </div>
+
+          <div class="home-right">
+            <div class="vinyl-display">
+              <div class="cute-tag tag-1"><span>🎵</span> Devine</div>
+              <div class="cute-tag tag-3"><span>💿</span> Collectionne</div>
+              <div class="cute-tag tag-2"><span>👑</span> Domine</div>
+              <div class="disc d2"></div>
+              <div class="disc d3"></div>
+              <div class="disc d4"></div>
+              <div class="disc d1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories with illustrations -->
+        <div class="section-bar first">
+          <h2>CATÉGORIES POPULAIRES</h2>
+          <span class="seemore">Tout voir →</span>
+        </div>
+        <div class="cat-row">
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FCE7F3, #FBCFE8);" data-action="create-room">
+            <div class="cat-tag hot">HOT</div>
+            <div class="cat-illu"><img src="assets/illu-pop.png" alt="Pop"></div>
+            <div>
+              <div class="cat-name">POP</div>
+              <div class="cat-sub">128 titres · 2010+</div>
+            </div>
+          </div>
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #DBEAFE, #BFDBFE);" data-action="create-room">
+            <div class="cat-tag">98%</div>
+            <div class="cat-illu"><img src="assets/illu-dance.svg" alt="Dance"></div>
+            <div>
+              <div class="cat-name">DANCE</div>
+              <div class="cat-sub">94 titres · électro</div>
+            </div>
+          </div>
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FEF3C7, #FDE68A);" data-action="create-room">
+            <div class="cat-tag">JAZZY</div>
+            <div class="cat-illu"><img src="assets/illu-jazz.svg" alt="Jazz"></div>
+            <div>
+              <div class="cat-name">JAZZ</div>
+              <div class="cat-sub">76 titres · classiques</div>
+            </div>
+          </div>
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #DCFCE7, #BBF7D0);" data-action="create-room">
+            <div class="cat-tag new">NEW</div>
+            <div class="cat-illu"><img src="assets/illu-monde.svg" alt="Monde"></div>
+            <div>
+              <div class="cat-name">MONDE</div>
+              <div class="cat-sub">152 titres · world</div>
+            </div>
+          </div>
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #1F2937, #374151); color:#fff;" data-action="create-room">
+            <div class="cat-tag" style="background: rgba(255,255,255,0.2); color:#fff;">GOLD</div>
+            <div class="cat-illu"><img src="assets/illu-rap.svg" alt="Rap"></div>
+            <div>
+              <div class="cat-name">RAP</div>
+              <div class="cat-sub" style="color: rgba(255,255,255,0.7);">112 titres · FR/US</div>
+            </div>
+          </div>
+          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FED7AA, #FDBA74);" data-action="create-room">
+            <div class="cat-tag">FIRE</div>
+            <div class="cat-illu"><img src="assets/illu-rock.svg" alt="Rock"></div>
+            <div>
+              <div class="cat-name">ROCK</div>
+              <div class="cat-sub">98 titres · 70s-2020</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity strip -->
+        <div class="section-bar">
+          <h2>POUR TOI</h2>
+          <span class="seemore">→</span>
+        </div>
+        <div class="activity-strip">
+          <div class="act-card quest-mini" data-nav="quests">
+            <div class="ac-eyebrow">QUÊTE DU JOUR</div>
+            <h3>Trouve 5 titres en moins de 5 secondes</h3>
+            <div class="quest-row">
+              <div class="qicon">⚡</div>
+              <div class="qbody">
+                <div class="qtxt">3 / 5 — bientôt fini</div>
+                <div class="qbar"><div class="fill" style="width:60%"></div></div>
+              </div>
+              <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--yellow);">+50 🎤</div>
+            </div>
+          </div>
+          <div class="act-card" data-nav="friends">
+            <div class="ac-eyebrow">3 AMIS EN LIGNE</div>
+            <h3>Invite-les à jouer</h3>
+            <div class="friends-stack">
+              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=cath-vibe&radius=50" alt="">
+              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=jules-fresh&radius=50" alt="">
+              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=lea-sunset&radius=50" alt="">
+              <div class="more-friends">+4</div>
+            </div>
+          </div>
+          <div class="act-card pack-mini" data-nav="collection">
+            <div class="ac-eyebrow">COLLECTION</div>
+            <h3>34 / 180 vinyles</h3>
+            <div style="height: 10px; background: rgba(0,0,0,0.15); border-radius: 999px; overflow: hidden; margin-top: 10px;">
+              <div style="width: 19%; height: 100%; background: #fff; border-radius: 999px;"></div>
+            </div>
+            <div style="font-size: 11px; font-weight: 800; margin-top: 6px; opacity: 0.7;">3 LÉGENDAIRES · 8 RARES</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== QUESTS ============== -->
+      <section id="screen-quests" class="screen">
+        <div class="quest-tabs">
+          <button class="active">Du jour</button>
+          <button>De la semaine</button>
+          <button>Saison</button>
+        </div>
+
+        <div class="quest-grid">
+          <div class="quest-card featured">
+            <div class="qbig-icon">🔥</div>
+            <div class="qmeta">
+              <div class="qtitle">FRENZY DU VENDREDI</div>
+              <div class="qdesc">Gagne 3 parties Classic d'affilée aujourd'hui. Bonus week-end activé.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 66%"></div></div>
+                <div class="qprog-text">2/3</div>
+              </div>
+              <div class="qreward">
+                <span class="qreward-chip">🎁 Pack rare</span>
+                <span class="qreward-chip">+200 XP</span>
+                <span class="qreward-chip">+50 🎤</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quest-card">
+            <div class="qbig-icon">⚡</div>
+            <div class="qmeta">
+              <div class="qtitle">FUSÉE</div>
+              <div class="qdesc">Trouve 5 titres en moins de 5 secondes.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 60%"></div></div>
+                <div class="qprog-text">3/5</div>
+              </div>
+              <div class="qreward"><span class="qreward-chip">+50 🎤</span><span class="qreward-chip">+100 XP</span></div>
+            </div>
+          </div>
+
+          <div class="quest-card completed">
+            <div class="qbig-icon">🎯</div>
+            <div class="qmeta">
+              <div class="qtitle">SANS FAUTE</div>
+              <div class="qdesc">Termine une partie avec 100% de bonnes réponses.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 100%"></div></div>
+                <div class="qprog-text">1/1</div>
+              </div>
+              <div class="qreward"><span class="qreward-chip">+30 🎤</span></div>
+            </div>
+          </div>
+
+          <div class="quest-card">
+            <div class="qbig-icon">🎤</div>
+            <div class="qmeta">
+              <div class="qtitle">VOIX D'OR</div>
+              <div class="qdesc">Trouve 15 artistes différents dans une seule partie.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 53%"></div></div>
+                <div class="qprog-text">8/15</div>
+              </div>
+              <div class="qreward"><span class="qreward-chip">+80 🎤</span><span class="qreward-chip">Émote rare</span></div>
+            </div>
+          </div>
+
+          <div class="quest-card">
+            <div class="qbig-icon">👯</div>
+            <div class="qmeta">
+              <div class="qtitle">EN ÉQUIPE</div>
+              <div class="qdesc">Joue 2 parties avec au moins 4 amis dans le salon.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 50%"></div></div>
+                <div class="qprog-text">1/2</div>
+              </div>
+              <div class="qreward"><span class="qreward-chip">+40 🎤</span><span class="qreward-chip">+150 XP</span></div>
+            </div>
+          </div>
+
+          <div class="quest-card">
+            <div class="qbig-icon">🌍</div>
+            <div class="qmeta">
+              <div class="qtitle">EXPLORATEUR</div>
+              <div class="qdesc">Joue dans 3 catégories différentes aujourd'hui.</div>
+              <div class="qprogress">
+                <div class="qpbar"><div class="fill" style="width: 33%"></div></div>
+                <div class="qprog-text">1/3</div>
+              </div>
+              <div class="qreward"><span class="qreward-chip">+25 🎤</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== PASS ============== -->
+      <section id="screen-pass" class="screen">
+        <div class="pass-hero">
+          <div>
+            <div class="ph-eyebrow">SAISON 03 · GROOVY PASS</div>
+            <div class="ph-title">BOOGIE<br>WOOGIE</div>
+            <div class="ph-sub">Se termine dans 21 jours · 03 mois</div>
+            <div class="ph-bar"><div class="fill"></div></div>
+            <div style="display:flex; justify-content: space-between; max-width: 480px; margin-top: 6px; font-size: 11px; font-weight: 800; opacity: 0.7;">
+              <span>1 240 / 2 000 XP</span>
+              <span>PROCHAIN PALIER →</span>
+            </div>
+          </div>
+          <div class="ph-tier">
+            <div class="lbl">Palier</div>
+            <div class="val">17</div>
+          </div>
+        </div>
+
+        <div class="pass-row-label">Gratuit · Premium 👑</div>
+        <div class="pass-track" id="pass-track"></div>
+
+        <div style="background: linear-gradient(135deg, var(--yellow), var(--orange)); color: var(--text); border-radius: 18px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; margin-top: 16px;">
+          <div style="font-size: 36px;">👑</div>
+          <div style="flex: 1;">
+            <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1; letter-spacing: 0.02em;">DÉBLOQUE LE PASS PREMIUM</div>
+            <div style="font-size: 12px; font-weight: 700; opacity: 0.8; margin-top: 2px;">+ 30 récompenses exclusives — skins, packs rares, émotes</div>
+          </div>
+          <button class="btn btn-dark">3,99€</button>
+        </div>
+      </section>
+
+      <!-- ============== FRIENDS ============== -->
+      <section id="screen-friends" class="screen">
+        <div class="friends-grid">
+          <div>
+            <div class="requests-count" style="margin-bottom: 14px;">
+              <span style="font-size: 18px;">📨</span>
+              <div>
+                <div>2 demandes d'ami en attente</div>
+                <div style="font-size: 11px; font-weight: 600; opacity: 0.85;">Tape pour les voir</div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+
+            <div class="friends-list" id="friends-list"></div>
+          </div>
+
+          <div class="add-friend-card">
+            <h3>AJOUTER UN AMI</h3>
+            <div class="you-code">
+              <div>
+                <div class="yc-lbl">Ton code ami</div>
+                <div class="yc-val">Guigz#4821</div>
+              </div>
+              <button class="copy-btn">COPIER</button>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;">
+                AJOUTER PAR CODE
+              </div>
+              <div class="add-input">
+                <input placeholder="Pseudo#XXXX">
+                <button>AJOUTER</button>
+              </div>
+            </div>
+            <div style="border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 14px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">
+                Ou partage ce lien
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-soft); padding: 10px 14px; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.06em; font-size: 16px;">
+                pompelup.app/add/<b style="color: var(--orange);">Guigz#4821</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== HISTORY ============== -->
+      <section id="screen-history" class="screen">
+        <div class="history-stats">
+          <div class="hstat-card orange">
+            <div class="hslabel">Parties jouées</div>
+            <div class="hsval">142</div>
+            <div class="hsemoji">🎮</div>
+          </div>
+          <div class="hstat-card green">
+            <div class="hslabel">Victoires</div>
+            <div class="hsval">68</div>
+            <div class="hsemoji">🏆</div>
+          </div>
+          <div class="hstat-card blue">
+            <div class="hslabel">Taux de réussite</div>
+            <div class="hsval">72%</div>
+            <div class="hsemoji">🎯</div>
+          </div>
+          <div class="hstat-card">
+            <div class="hslabel">Streak actuel</div>
+            <div class="hsval" style="color: var(--orange);">7 🔥</div>
+            <div class="hsemoji">⚡</div>
+          </div>
+        </div>
+
+        <div class="section-bar"><h2>DERNIÈRES PARTIES</h2></div>
+        <div class="history-list" id="history-list"></div>
+      </section>
+
+      <!-- ============== COLLECTION ============== -->
+      <section id="screen-collection" class="screen">
+        <div class="col-hero">
+          <div class="ch-featured" id="ch-featured">
+            <div class="ch-tag">DERNIÈRE LÉGENDAIRE</div>
+            <div class="ch-stage">
+              <div class="ch-disk" id="ch-disk"></div>
+              <div class="ch-shine"></div>
+            </div>
+            <div class="ch-meta">
+              <div class="ch-eyebrow" id="ch-meta-year">1975 · ROCK</div>
+              <h2 class="ch-title" id="ch-meta-title">BOHEMIAN<br>RHAPSODY</h2>
+              <div class="ch-artist" id="ch-meta-artist">Queen</div>
+              <div class="ch-stats">
+                <div class="ch-stat"><div class="l">Joué</div><div class="v" id="ch-meta-plays">52×</div></div>
+                <div class="ch-stat"><div class="l">Rareté</div><div class="v">👑 LÉG</div></div>
+                <div class="ch-stat"><div class="l">Note</div><div class="v">★★★★★</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="ch-kpis">
+            <div class="kpi-ring">
+              <svg viewBox="0 0 100 100" class="ring-svg">
+                <circle cx="50" cy="50" r="42" class="ring-bg" />
+                <circle cx="50" cy="50" r="42" class="ring-fg" id="ring-fg" />
+              </svg>
+              <div class="ring-center">
+                <div class="ring-num" id="ring-num">19%</div>
+                <div class="ring-lbl">Collection</div>
+              </div>
+            </div>
+            <div class="kpi-stack">
+              <div class="kpi-row kpi-common"><span class="kpi-dot"></span><span class="kpi-lbl">Communs</span><b id="kpi-common">22</b></div>
+              <div class="kpi-row kpi-rare"><span class="kpi-dot"></span><span class="kpi-lbl">Rares</span><b id="kpi-rare">8</b></div>
+              <div class="kpi-row kpi-legendary"><span class="kpi-dot"></span><span class="kpi-lbl">Légendaires</span><b id="kpi-legendary">3</b></div>
+              <div class="kpi-row kpi-locked"><span class="kpi-dot"></span><span class="kpi-lbl">À débloquer</span><b id="kpi-locked">146</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="collection-header">
+          <div class="collection-chips" id="col-chips">
+            <button class="col-chip active" data-filter="all">Tous <span class="count" id="cnt-all">24</span></button>
+            <button class="col-chip" data-filter="common">Communs <span class="count" id="cnt-common">8</span></button>
+            <button class="col-chip" data-filter="rare">Rares <span class="count" id="cnt-rare">7</span></button>
+            <button class="col-chip" data-filter="legendary">Légendaires <span class="count" id="cnt-legendary">5</span></button>
+            <button class="col-chip" data-filter="owned">Possédés <span class="count" id="cnt-owned">16</span></button>
+            <button class="col-chip" data-filter="locked">Verrouillés <span class="count" id="cnt-locked">8</span></button>
+          </div>
+          <div class="col-tools">
+            <div class="col-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-5-5"/></svg>
+              <input type="text" id="col-search" placeholder="Cherche un titre, un artiste…">
+            </div>
+            <div class="col-sort">
+              <label>Trier</label>
+              <select id="col-sort">
+                <option value="recent">Récents</option>
+                <option value="rarity">Rareté</option>
+                <option value="alpha">A → Z</option>
+                <option value="year">Année</option>
+                <option value="plays">Plus joués</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="collection-grid" id="collection-grid"></div>
+        <div class="col-empty" id="col-empty" style="display:none;">
+          <div class="ce-emoji">💿</div>
+          <div class="ce-title">Aucun vinyle trouvé</div>
+          <div class="ce-sub">Essaie un autre filtre ou un autre mot-clé.</div>
+        </div>
+      </section>
+
+      <!-- Vinyl detail modal -->
+      <div class="vinyl-modal" id="vinyl-modal">
+        <div class="vm-backdrop" data-close></div>
+        <div class="vm-card" id="vm-card">
+          <button class="vm-close" data-close>×</button>
+          <div class="vm-left">
+            <div class="vm-stage">
+              <div class="vm-rays" id="vm-rays"></div>
+              <div class="vm-disk" id="vm-disk"></div>
+            </div>
+          </div>
+          <div class="vm-right">
+            <div class="vm-rarity" id="vm-rarity">LÉGENDAIRE</div>
+            <h2 class="vm-title" id="vm-title">Bohemian Rhapsody</h2>
+            <div class="vm-artist" id="vm-artist">Queen</div>
+            <div class="vm-meta">
+              <div class="vm-row"><span class="l">Année</span><span class="v" id="vm-year">1975</span></div>
+              <div class="vm-row"><span class="l">Genre</span><span class="v" id="vm-genre">Rock</span></div>
+              <div class="vm-row"><span class="l">Joué</span><span class="v" id="vm-plays">52 fois</span></div>
+              <div class="vm-row"><span class="l">Obtenu</span><span class="v" id="vm-obtained">Pack quotidien · 12 mai</span></div>
+            </div>
+
+            <div class="vm-listen">
+              <div class="vm-listen-label">ÉCOUTER SUR</div>
+              <div class="vm-listen-row">
+                <a class="vm-stream vm-spotify" id="vm-spotify" target="_blank" rel="noopener">
+                  <span class="vs-ico">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.42-1.021.6-1.561.3z"/></svg>
+                  </span>
+                  <span class="vs-body">
+                    <span class="vs-name">Spotify</span>
+                    <span class="vs-desc">Écouter le morceau</span>
+                  </span>
+                  <span class="vs-arrow">→</span>
+                </a>
+                <a class="vm-stream vm-apple" id="vm-apple" target="_blank" rel="noopener">
+                  <span class="vs-ico">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+                  </span>
+                  <span class="vs-body">
+                    <span class="vs-name">Apple Music</span>
+                    <span class="vs-desc">Lecture sur Apple</span>
+                  </span>
+                  <span class="vs-arrow">→</span>
+                </a>
+                <a class="vm-stream vm-deezer" id="vm-deezer" target="_blank" rel="noopener">
+                  <span class="vs-ico">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="17" y="4" width="6" height="3"/><rect x="17" y="8.4" width="6" height="3"/><rect x="9" y="8.4" width="6" height="3"/><rect x="1" y="8.4" width="6" height="3"/><rect x="17" y="12.8" width="6" height="3"/><rect x="9" y="12.8" width="6" height="3"/><rect x="1" y="12.8" width="6" height="3"/><rect x="17" y="17.2" width="6" height="3"/><rect x="9" y="17.2" width="6" height="3"/><rect x="1" y="17.2" width="6" height="3"/></svg>
+                  </span>
+                  <span class="vs-body">
+                    <span class="vs-name">Deezer</span>
+                    <span class="vs-desc">Streamer sur Deezer</span>
+                  </span>
+                  <span class="vs-arrow">→</span>
+                </a>
+              </div>
+            </div>
+
+            <div class="vm-actions">
+              <button class="btn btn-ghost btn-block" id="vm-share">PARTAGER</button>
+              <button class="btn btn-accent btn-block" id="vm-equip">METTRE EN AVANT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============== SHOP ============== -->
+      <section id="screen-shop" class="screen">
+        <div class="shop-top">
+          <div class="shop-balance">
+            <div class="sb-eyebrow">TON SOLDE</div>
+            <div class="sb-amount">
+              <span class="sb-mic">🎤</span>
+              <span class="sb-val" id="shop-balance">142</span>
+            </div>
+            <div class="sb-foot">Mics — la monnaie du studio</div>
+            <button class="btn btn-accent btn-sm" data-shop-jump="recharge">+ RECHARGER</button>
+          </div>
+
+          <div class="shop-featured" data-shop-buy="pack-legendes">
+            <div class="sf-tag">À LA UNE · −40%</div>
+            <div class="sf-disk"><div class="sf-disk-inner"></div></div>
+            <div class="sf-body">
+              <div class="sf-eyebrow">PACK LÉGENDES</div>
+              <h2 class="sf-title">3 LÉGENDAIRES<br>GARANTIS</h2>
+              <p class="sf-desc">Un trio de drops épiques. Wooooooh, confettis, gros sons. Tout y est.</p>
+              <div class="sf-price">
+                <span class="old">600 🎤</span>
+                <span class="new">360 🎤</span>
+              </div>
+              <button class="btn btn-light btn-lg sf-cta">ACHETER MAINTENANT</button>
+            </div>
+            <div class="sf-confetti">
+              <span>🎉</span><span>✨</span><span>👑</span><span>🎤</span><span>💜</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="shop-chips" id="shop-chips">
+          <button class="shop-chip active" data-cat="all">⭐ Tout</button>
+          <button class="shop-chip" data-cat="packs">🎁 Packs</button>
+          <button class="shop-chip" data-cat="skins">🎭 Skins MC</button>
+          <button class="shop-chip" data-cat="themes">🏠 Thèmes & Stickers</button>
+          <button class="shop-chip" data-cat="boosters">⚡ Boosters</button>
+          <button class="shop-chip" data-cat="recharge">💰 Recharger</button>
+        </div>
+
+        <div id="shop-grid" class="shop-grid"></div>
+      </section>
+
+      <!-- ============== SKINS / LOBBY PERSO ============== -->
+      <section id="screen-skins" class="screen">
+        <div class="skins-tabs">
+          <button class="stab active" data-stab="me"><span class="stab-ico">👤</span><span>MOI</span></button>
+          <button class="stab" data-stab="mc"><span class="stab-ico">🎤</span><span>MES SKINS</span></button>
+          <button class="stab" data-stab="lobby"><span class="stab-ico">🏠</span><span>MON LOBBY</span></button>
+          <button class="stab" data-stab="sound"><span class="stab-ico">🔊</span><span>SONS</span></button>
+        </div>
+
+        <div class="stab-panel active" data-stab-panel="me">
+          <div class="me-hero">
+            <div class="me-avatar-stage">
+              <div class="me-avatar-glow"></div>
+              <div class="me-avatar" id="me-avatar-preview">
+                <img id="me-avatar-img" alt="" />
+              </div>
+              <div class="me-level">Nv. <b id="me-lvl">12</b></div>
+            </div>
+            <div class="me-form">
+              <div class="r-eyebrow">PROFIL JOUEUR</div>
+              <label class="me-field">
+                <span class="me-label">Pseudo</span>
+                <div class="me-input-wrap">
+                  <input id="me-name-input" type="text" maxlength="20" placeholder="Ton pseudo" />
+                  <span class="me-counter"><span id="me-name-count">5</span>/20</span>
+                </div>
+              </label>
+              <div class="me-stats-row">
+                <div class="me-stat"><div class="l">XP</div><div class="v" id="me-xp">847</div></div>
+                <div class="me-stat"><div class="l">Vinyles</div><div class="v">16</div></div>
+                <div class="me-stat"><div class="l">Parties</div><div class="v">142</div></div>
+                <div class="me-stat"><div class="l">Victoires</div><div class="v">38</div></div>
+              </div>
+              <div class="me-actions">
+                <button class="btn btn-ghost btn-sm" id="me-reset">Annuler</button>
+                <button class="btn btn-accent btn-sm" id="me-save">Enregistrer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-bar">
+            <h2>AVATAR</h2>
+            <span class="seemore">Choisis ton style ou génère du random</span>
+          </div>
+          <div class="avatar-grid" id="avatar-grid"></div>
+          <div class="avatar-tools">
+            <input id="me-photo-input" type="file" accept="image/*" hidden />
+            <button class="btn btn-accent btn-sm" id="me-upload">📷 Importer une photo</button>
+            <button class="btn btn-ghost btn-sm" id="me-random">🎲 Random</button>
+          </div>
+        </div>
+
+        <div class="stab-panel" data-stab-panel="mc">
+          <div class="skins-hero">
+            <div class="skins-stage">
+              <div class="skins-preview" id="skins-preview"></div>
+            </div>
+            <div class="skins-meta">
+              <div class="r-eyebrow">PRÉSENTATEUR ACTIF</div>
+              <h2 class="skins-name" id="skins-name">DJ FUNKY</h2>
+              <p class="skins-quote">"<span id="skins-quote">Yo la teamz, on lance ça en douceur ?</span>"</p>
+              <div class="skins-tags" id="skins-tags"></div>
+              <div class="skins-stat-row">
+                <div class="skins-stat">
+                  <div class="ss-lbl">RÉACTIONS</div>
+                  <div class="ss-val">+12</div>
+                </div>
+                <div class="skins-stat">
+                  <div class="ss-lbl">CITATIONS</div>
+                  <div class="ss-val">38</div>
+                </div>
+                <div class="skins-stat">
+                  <div class="ss-lbl">RARETÉ</div>
+                  <div class="ss-val" id="skins-rarity">Rare</div>
+                </div>
+              </div>
+              <button class="btn btn-accent btn-lg" id="skin-equip-btn" style="margin-top: 18px;">ÉQUIPÉ ✓</button>
+            </div>
+          </div>
+
+          <div class="section-bar"><h2>TOUS LES MC</h2><span class="seemore">Filtrer ▾</span></div>
+          <div class="skins-grid" id="skins-grid"></div>
+        </div>
+
+        <div class="stab-panel" data-stab-panel="lobby">
+          <div class="lobby-perso-hero" id="lobby-perso-hero">
+            <div class="lpp-preview" id="lpp-preview">
+              <div class="lpp-mock">
+                <div class="lpp-title" id="lpp-title">SALON DE GUIGZ</div>
+                <div class="lpp-subtitle">4 joueurs · prêts à jouer</div>
+                <div class="lpp-avatars">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="lpp-sticker" id="lpp-sticker">🎉</div>
+            </div>
+            <div class="lpp-meta">
+              <div class="r-eyebrow">MON LOBBY</div>
+              <h2 class="skins-name" id="lpp-name">PÊCHE CHAUDE</h2>
+              <p class="skins-quote">"<span id="lpp-tagline">L'ambiance par défaut, chaleureuse et accueillante.</span>"</p>
+              <div style="display:flex; gap:10px; font-size:11px; font-weight:800; letter-spacing:0.08em; color: rgba(255,255,255,0.7); margin-bottom: 14px;">
+                <span>🎨 6 THÈMES</span>
+                <span>•</span>
+                <span>🔔 5 JINGLES</span>
+                <span>•</span>
+                <span>✨ 8 STICKERS</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-bar"><h2>THÈME DU SALON</h2></div>
+          <div class="theme-grid" id="theme-grid"></div>
+
+          <div class="section-bar"><h2>STICKER D'AMBIANCE</h2><span class="seemore">L'emoji qui flotte dans ton salon</span></div>
+          <div class="sticker-grid" id="sticker-grid"></div>
+
+          <div class="section-bar"><h2>JINGLE D'ACCUEIL</h2><span class="seemore">Joué quand un joueur rejoint</span></div>
+          <div class="jingle-grid" id="jingle-grid"></div>
+        </div>
+
+        <div class="stab-panel" data-stab-panel="sound">
+          <div class="sound-hero">
+            <div class="sh-illu">
+              <div class="sh-disk"></div>
+              <div class="sh-wave w1"></div>
+              <div class="sh-wave w2"></div>
+              <div class="sh-wave w3"></div>
+              <div class="sh-emoji">📣</div>
+            </div>
+            <div class="sh-meta">
+              <div class="r-eyebrow">AMBIANCE SONORE</div>
+              <h2 class="skins-name">TON SOUND</h2>
+              <p class="skins-quote">"<span>Choisis les voix qui célèbrent tes drops de pack. Légendaire, c'est jamais discret.</span>"</p>
+              <div class="sh-toggle-row">
+                <label class="sh-toggle">
+                  <input type="checkbox" id="snd-master" checked>
+                  <span class="sh-slider"></span>
+                  <span class="sh-tlbl">Effets sonores</span>
+                </label>
+                <div class="sh-volume">
+                  <span>🔉</span>
+                  <input type="range" id="snd-volume" min="0" max="100" value="90">
+                  <span class="sh-vol-val" id="snd-vol-val">90</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-bar">
+            <h2>SON LÉGENDAIRE</h2>
+            <span class="seemore">Joué à l'ouverture d'un vinyle légendaire 👑</span>
+          </div>
+          <div class="sound-grid" id="snd-legendary-grid"></div>
+
+          <div class="section-bar">
+            <h2>SON ÉPIQUE</h2>
+            <span class="seemore">Joué à l'ouverture d'un vinyle épique ✨</span>
+          </div>
+          <div class="sound-grid" id="snd-epic-grid"></div>
+        </div>
+      </section>
+      <section id="screen-lobby" class="screen">
+        <div class="lobby-grid">
+          <aside class="panel">
+            <div class="panel-title">RÉGLAGES <span class="pt-num">HÔTE</span></div>
+            <div class="set-block">
+              <div class="set-label">Mode <span class="val" id="set-mode-val">CLASSIC</span></div>
+              <div class="seg-control" data-set="mode">
+                <button data-v="classic" class="active">Classic</button>
+                <button data-v="rush">Rush</button>
+                <button data-v="stem">Pistes</button>
+              </div>
+            </div>
+            <div class="set-block">
+              <div class="set-label">Manches <span class="val" id="set-rounds-val">10</span></div>
+              <div class="slider-row">
+                <div class="slider" data-set="rounds" data-min="5" data-max="20"><div class="fill"></div><div class="thumb"></div></div>
+                <div class="v" id="set-rounds-v">10</div>
+              </div>
+            </div>
+            <div class="set-block">
+              <div class="set-label">Durée / manche</div>
+              <div class="seg-control" data-set="duration">
+                <button data-v="15">15s</button>
+                <button data-v="30" class="active">30s</button>
+                <button data-v="45">45s</button>
+              </div>
+            </div>
+            <div class="set-block">
+              <div class="set-label">Catégories</div>
+              <div class="chip-grid" id="cats">
+                <div class="chip active">🎤 Pop</div>
+                <div class="chip active">💃 Dance</div>
+                <div class="chip">🎷 Jazz</div>
+                <div class="chip active">🔥 Rock</div>
+                <div class="chip">🎙 Rap</div>
+                <div class="chip">🌍 Monde</div>
+              </div>
+            </div>
+            <div class="set-block">
+              <div class="set-label">Privé</div>
+              <div class="seg-control" data-set="privacy">
+                <button data-v="public">Public</button>
+                <button data-v="private" class="active">🔒 Privé</button>
+              </div>
+            </div>
+          </aside>
+
+          <div class="lobby-center">
+            <div class="lobby-eyebrow">En attente du lancement</div>
+            <div class="lobby-title">SALON DE GUIGZ</div>
+            <div class="lobby-subtitle">4 joueurs sur 8 — partagez le code pour inviter</div>
+            <div class="players-stage" id="players-stage"></div>
+
+            <!-- Soundboard / Emotes -->
+            <div class="soundboard">
+              <div class="sb-row">
+                <div class="sb-label">SONS</div>
+                <div class="sb-pads" id="sb-sounds">
+                  <button class="sb-pad sb-pad-sound" data-sound="airhorn" style="--pad: #F97316;">
+                    <span class="pad-emoji">📢</span><span class="pad-name">Airhorn</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="drumroll" style="--pad: #3B4FE8;">
+                    <span class="pad-emoji">🥁</span><span class="pad-name">Roulement</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="rimshot" style="--pad: #FBBF24;">
+                    <span class="pad-emoji">🎺</span><span class="pad-name">Badum-tss</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="boo" style="--pad: #6B7280;">
+                    <span class="pad-emoji">👎</span><span class="pad-name">Boo</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="applause" style="--pad: #22C55E;">
+                    <span class="pad-emoji">👏</span><span class="pad-name">Bravo</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="bass" style="--pad: #A78BFA;">
+                    <span class="pad-emoji">🔊</span><span class="pad-name">Bass drop</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="ding" style="--pad: #F472B6;">
+                    <span class="pad-emoji">🛎️</span><span class="pad-name">Ding</span>
+                  </button>
+                  <button class="sb-pad sb-pad-sound" data-sound="laugh" style="--pad: #EF4444;">
+                    <span class="pad-emoji">😂</span><span class="pad-name">Rires</span>
+                  </button>
+                </div>
+              </div>
+              <div class="sb-row">
+                <div class="sb-label">RÉACTIONS</div>
+                <div class="sb-pads" id="sb-emotes">
+                  <button class="sb-pad sb-pad-emote" data-emote="🔥">🔥</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="😂">😂</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="🤯">🤯</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="🤝">🤝</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="💀">💀</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="👀">👀</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="❤️">❤️</button>
+                  <button class="sb-pad sb-pad-emote" data-emote="🎉">🎉</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="copy-link-btn" id="copy-link-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg>
+              pompelup.app/<b>K9XQ4P</b>
+              <span class="copy-icon">COPIER</span>
+            </div>
+          </div>
+
+          <aside class="panel chat-panel">
+            <div class="panel-title">CHAT <span class="pt-num">4</span></div>
+            <div class="chat-list" id="chat-list">
+              <div class="chat-msg system"><div class="cm-body"><div class="ct">Cath a rejoint le salon</div></div></div>
+              <div class="chat-msg">
+                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=cath-vibe&radius=50" alt=""></div>
+                <div class="cm-body">
+                  <div class="cn"><b>Cath</b> · <span>Nv. 18</span></div>
+                  <div class="ct">Salut la teamz 🎤</div>
+                </div>
+              </div>
+              <div class="chat-msg system"><div class="cm-body"><div class="ct">Jules a rejoint le salon</div></div></div>
+              <div class="chat-msg">
+                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=jules-fresh&radius=50" alt=""></div>
+                <div class="cm-body">
+                  <div class="cn"><b>Jules</b> · <span>Nv. 7</span></div>
+                  <div class="ct">prêt à dominer 💪</div>
+                </div>
+              </div>
+              <div class="chat-msg you">
+                <div class="ca"><img id="you-chat-avatar" alt=""></div>
+                <div class="cm-body">
+                  <div class="cn"><b>Toi</b></div>
+                  <div class="ct">on lance ?</div>
+                </div>
+              </div>
+              <div class="chat-msg system"><div class="cm-body"><div class="ct">Léa a rejoint le salon</div></div></div>
+              <div class="chat-msg">
+                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=lea-sunset&radius=50" alt=""></div>
+                <div class="cm-body">
+                  <div class="cn"><b>Léa</b> · <span>Nv. 24</span></div>
+                  <div class="ct">go go go 🔥🔥</div>
+                </div>
+              </div>
+            </div>
+            <div class="chat-input">
+              <input placeholder="Écris un message..." id="chat-input-field">
+              <button>→</button>
+            </div>
+          </aside>
+
+          <!-- Start game bar — spans full width below the 3-column grid -->
+          <div class="lobby-launch-bar">
+            <button class="btn btn-accent btn-xl" id="start-game-btn">LANCER LA PARTIE</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== GAME ============== -->
+      <section id="screen-game" class="screen">
+        <div class="game-grid">
+          <aside class="game-side">
+            <div class="round-card">
+              <div class="rc-eyebrow">Manche</div>
+              <div class="rc-num"><span id="g-round">1</span><span class="total">/<span id="g-total">5</span></span></div>
+              <div class="rc-progress" id="g-progress"></div>
+            </div>
+            <div class="players-rail">
+              <div class="pr-title">JOUEURS <span class="total" id="pr-total">4 joueurs</span></div>
+              <div class="pr-list" id="pr-list"></div>
+            </div>
+          </aside>
+
+          <div class="game-center">
+            <!-- Presenter widget -->
+            <div class="presenter-wrap" id="presenter-wrap">
+              <div class="presenter-bubble" id="presenter-bubble">Yo la teamz, on est partis !</div>
+              <div class="presenter-figure">
+                <div class="presenter-hat" id="presenter-hat">🎩</div>
+                <div class="presenter-avatar" id="presenter-avatar"></div>
+                <div class="presenter-mic">🎤</div>
+                <div class="presenter-name" id="presenter-name">DJ FUNKY</div>
+              </div>
+            </div>
+
+            <div class="viz-card">
+              <div class="viz-header">
+                <div class="viz-eyebrow"><span class="live"></span> Extrait en cours</div>
+                <div class="timer-big" id="timer-big">⏱ <span id="timer-num">30</span>s</div>
+              </div>
+              <div class="viz-stage">
+                <div class="dj-scene">
+                  <div class="dj-bg-glow"></div>
+                  <div class="dj-lights">
+                    <span class="dj-light l-1"></span>
+                    <span class="dj-light l-2"></span>
+                    <span class="dj-light l-3"></span>
+                    <span class="dj-light l-4"></span>
+                    <span class="dj-light l-5"></span>
+                  </div>
+                  <div class="dj-ball"></div>
+
+                  <!-- Mur des participants (rempli par JS, sans siège vide) -->
+                  <div class="scene-wall" id="scene-wall"></div>
+
+                  <!-- Présentateur à droite -->
+                  <div class="dj-presenter-scene">
+                    <div class="dps-bubble">
+                      <img id="dj-scene-avatar" alt="" />
+                    </div>
+                    <div class="dps-name" id="dj-scene-name">DJ FUNKY</div>
+                  </div>
+
+                  <!-- EQ display sous le mur -->
+                  <div class="dj-eq-strip">
+                    <div class="booth-eq" id="viz-bars-radial"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="points-display">
+                <div class="pd-label">Points disponibles</div>
+                <div class="pd-val" id="g-points">1 000</div>
+              </div>
+            </div>
+
+            <div class="answer-card" id="answer-card">
+              <form id="g-form">
+                <input id="g-input" placeholder="Titre, artiste, ou les deux..." autocomplete="off">
+                <button type="submit">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </button>
+              </form>
+            </div>
+            <div class="answer-hint" id="g-hint">&nbsp;</div>
+
+            <div class="joker-row-host">
+              <div class="joker-pill" data-joker="letter"><div class="jicon">🔤</div><div class="jlabel">1ère lettre</div><div class="jcost">1 🎤</div></div>
+              <div class="joker-pill" data-joker="artist"><div class="jicon">🎤</div><div class="jlabel">Artiste</div><div class="jcost">2 🎤</div></div>
+              <div class="joker-pill" data-joker="decade"><div class="jicon">📅</div><div class="jlabel">Décennie</div><div class="jcost">1 🎤</div></div>
+              <div class="joker-pill" data-joker="length"><div class="jicon">📏</div><div class="jlabel">Longueur</div><div class="jcost">1 🎤</div></div>
+              <div class="joker-pill" data-joker="tempo"><div class="jicon">🎵</div><div class="jlabel">BPM</div><div class="jcost">1 🎤</div></div>
+              <div class="joker-pill" data-joker="time"><div class="jicon">⏱</div><div class="jlabel">+10 sec</div><div class="jcost">1 🎤</div></div>
+              <div class="joker-pill" data-joker="double"><div class="jicon">💎</div><div class="jlabel">Points ×2</div><div class="jcost">2 🎤</div></div>
+              <div class="joker-pill" data-joker="skip"><div class="jicon">⏭️</div><div class="jlabel">Passer</div><div class="jcost">3 🎤</div></div>
+            </div>
+          </div>
+
+          <aside class="game-side">
+            <div class="panel chat-panel" style="background: #fff; flex: 1; padding: 18px;">
+              <div class="panel-title">CHAT <span class="pt-num">EN VIF</span></div>
+              <div class="chat-list" id="g-chat"></div>
+            </div>
+            <div class="emote-row">
+              <button class="emote-btn" data-emote="🔥">🔥</button>
+              <button class="emote-btn" data-emote="😭">😭</button>
+              <button class="emote-btn" data-emote="🤯">🤯</button>
+              <button class="emote-btn" data-emote="👀">👀</button>
+              <button class="emote-btn" data-emote="💀">💀</button>
+              <button class="emote-btn" data-emote="👏">👏</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="round-end" id="round-end">
+          <div class="re-eyebrow">La bonne réponse était</div>
+          <div class="re-art" id="re-art">🎸</div>
+          <div class="re-title" id="re-title">SMELLS LIKE<br>TEEN SPIRIT</div>
+          <div class="re-artist" id="re-artist">Nirvana · 1991</div>
+          <div class="re-stats">
+            <div class="re-stat"><div class="l">Tes points</div><div class="v" id="re-pts">+0</div></div>
+            <div class="re-stat"><div class="l">XP gagné</div><div class="v" id="re-xp">+0</div></div>
+            <div class="re-stat"><div class="l">Trouvée par</div><div class="v" id="re-found">3/4</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== RESULTS ============== -->
+      <section id="screen-results" class="screen">
+        <div class="results-wrap">
+          <div class="results-left">
+            <div class="r-eyebrow">Partie terminée · Manche 5/5</div>
+            <h2 class="r-title">VICTOIRE <span class="winner" id="r-winner-name">GUIGZ</span> !</h2>
+            <p class="r-sub">5 manches plus tard, le classement est tombé. T'as cartonné, on dirait.</p>
+
+            <div class="podium-bigs">
+              <div class="pcol p2">
+                <div class="ppos">2</div>
+                <div class="pavt"><img id="pod2-img" alt=""></div>
+                <div class="pnm" id="pod2-name">Cath</div>
+                <div class="pscore" id="pod2-score">3 240</div>
+              </div>
+              <div class="pcol p1">
+                <div class="crown">👑</div>
+                <div class="ppos">1</div>
+                <div class="pavt"><img id="pod1-img" alt=""></div>
+                <div class="pnm" id="pod1-name">Guigz</div>
+                <div class="pscore" id="pod1-score">4 720</div>
+              </div>
+              <div class="pcol p3">
+                <div class="ppos">3</div>
+                <div class="pavt"><img id="pod3-img" alt=""></div>
+                <div class="pnm" id="pod3-name">Jules</div>
+                <div class="pscore" id="pod3-score">2 100</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-right">
+            <div class="results-tabs">
+              <button class="active">Récap</button>
+              <button>Stats</button>
+              <button>Vinyles 🎁</button>
+            </div>
+            <div class="songs-recap" id="songs-recap"></div>
+            <div class="xp-block">
+              <div class="xpl">
+                <span class="l">Niveau 12 · Vinyl Hunter</span>
+                <span><b id="xp-cur">1137</b> / 2400 XP</span>
+              </div>
+              <div class="xpb"><div class="fill" id="xp-fill"></div></div>
+              <div class="gain">+ 290 XP gagnés · prochain niveau dans <b>1 263 XP</b></div>
+            </div>
+            <div class="results-cta">
+              <button class="btn btn-ghost btn-block" data-nav="home">Quitter</button>
+              <button class="btn btn-accent btn-block btn-lg" data-nav="lobby">REJOUER</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============== Mobile bottom nav (hidden on desktop) ============== -->
+    <nav class="mobile-nav" id="mobile-nav">
+      <button class="mn-item active" data-nav="home">
+        <span class="mn-ico">🏠</span>
+        <span class="mn-lbl">Accueil</span>
+      </button>
+      <button class="mn-item" data-nav="collection">
+        <span class="mn-ico">💿</span>
+        <span class="mn-lbl">Collection</span>
+      </button>
+      <button class="mn-item mn-cta" data-nav="lobby">
+        <span class="mn-cta-ring">
+          <span class="mn-ico">🎤</span>
+        </span>
+      </button>
+      <button class="mn-item" data-nav="shop">
+        <span class="mn-ico">🛒</span>
+        <span class="mn-lbl">Shop</span>
+      </button>
+      <button class="mn-item" data-nav="skins">
+        <span class="mn-ico-img"><img id="mn-avatar" alt=""></span>
+        <span class="mn-lbl">Profil</span>
+      </button>
+    </nav>
+
+    <!-- ============== Pack opening overlay ============== -->
+    <div class="pack-overlay" id="pack-overlay">
+      <div class="pack-rays" id="pack-rays"></div>
+      <div class="pack-halo" id="pack-halo"></div>
+      <canvas id="pack-canvas"></canvas>
+      <div class="rarity-flash" id="rarity-flash"></div>
+      <button class="pack-close" id="pack-close">×</button>
+
+      <div class="pack-stage" id="pack-stage">
+        <div class="pack-art" id="pack-art">
+          <div class="pack-stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+          <div class="pack-emoji">🎁</div>
+          <div class="pack-title">PACK<br>QUOTIDIEN</div>
+          <div class="pack-sub">3 vinyles · Mystère</div>
+        </div>
+        <div class="pack-tap-hint" id="pack-tap-hint">Clique pour ouvrir</div>
+      </div>
+
+      <div class="reveal-grid" id="reveal-grid"></div>
+    </div>
+
+    <!-- ============== Tweaks ============== -->
+    <button class="tweaks-fab" id="tweaks-fab">⚙</button>
+    <div class="tweaks-pop" id="tweaks-pop">
+      <h4>TWEAKS</h4>
+      <div class="set-label">Densité d'animation</div>
+      <div class="seg-control" data-set="anim">
+        <button data-v="calm">Calme</button>
+        <button data-v="normal" class="active">Normal</button>
+        <button data-v="chaos">Chaos</button>
+      </div>
+      <div class="set-label">Aller à un écran</div>
+      <div class="seg-control" data-set="goto" style="flex-wrap: wrap; gap: 4px;">
+        <button data-v="home">Home</button>
+        <button data-v="quests">Quêtes</button>
+        <button data-v="pass">Pass</button>
+        <button data-v="friends">Amis</button>
+        <button data-v="history">Histoire</button>
+        <button data-v="collection">Coll.</button>
+        <button data-v="lobby">Lobby</button>
+        <button data-v="game">Jeu</button>
+        <button data-v="results">Résultats</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="pompelup-web.js"></script>
+</body>
+</html>

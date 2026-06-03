@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pompelup — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="pompelup.css">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head>
+<body>
+<div class="stage">
+  <div class="device">
+    <div class="device-screen">
+
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <span>22:47</span>
+        <div class="right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+          <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="13" height="6" rx="1.5"/><rect x="2.5" y="4.5" width="9" height="3" rx="0.5" fill="currentColor"/><rect x="15" y="5" width="1.5" height="2"/></svg>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+
+      <div class="screens" id="screens">
+
+        <!-- ========== HOME ========== -->
+        <section id="screen-home" class="screen active">
+          <canvas class="home-canvas" id="home-canvas"></canvas>
+
+          <div class="home-top">
+            <button class="profile-pill" data-nav="profile">
+              <div class="avatar"><img id="home-avatar" alt=""></div>
+              <div>
+                <div class="name" id="home-name">Guigz</div>
+                <div class="lvl">Nv. <span id="home-lvl">12</span></div>
+              </div>
+            </button>
+            <div class="coin-pill">
+              <span class="mic">🎤</span>
+              <span id="home-tokens">142</span>
+            </div>
+          </div>
+
+          <div class="hero">
+            <div class="hero-vinyl-stack">
+              <div class="hero-vinyl" id="hero-vinyl-1" style="top: 0; right: 0;"></div>
+              <div class="hero-vinyl" id="hero-vinyl-2" style="top: 60px; right: 80px; width: 140px; height: 140px; opacity: 0.7;"></div>
+            </div>
+            <h1>POMPE<br><span class="accent">L'UP</span></h1>
+            <p>Devine, collectionne, domine.<br>Le blind test entre potes.</p>
+          </div>
+
+          <div class="hero-cta">
+            <button class="btn btn-accent btn-block btn-lg" data-nav="auth">JOUER</button>
+          </div>
+
+          <div class="section-title">
+            Catégories
+            <span class="all">Tout voir →</span>
+          </div>
+          <div class="cat-scroll" id="cat-scroll">
+            <div class="cat-card" style="background: linear-gradient(160deg, #F97316, #C2410C);">
+              <div class="cat-name">ANNÉES<br>80</div>
+              <div class="cat-emoji">📼</div>
+            </div>
+            <div class="cat-card" style="background: linear-gradient(160deg, #3B4FE8, #1E3A8A);">
+              <div class="cat-name">POP<br>FR 🇫🇷</div>
+              <div class="cat-emoji">🎙️</div>
+            </div>
+            <div class="cat-card" style="background: linear-gradient(160deg, #1a1a2e, #2a1a3e);">
+              <div class="cat-name">RAP<br>GOLD</div>
+              <div class="cat-emoji">🏅</div>
+            </div>
+            <div class="cat-card" style="background: linear-gradient(160deg, #F472B6, #DB2777);">
+              <div class="cat-name">HITS<br>2020+</div>
+              <div class="cat-emoji">🔥</div>
+            </div>
+            <div class="cat-card" style="background: linear-gradient(160deg, #FBBF24, #D97706);">
+              <div class="cat-name">DISNEY</div>
+              <div class="cat-emoji">🏰</div>
+            </div>
+          </div>
+
+          <div class="hot-banner" data-nav="battlepass">
+            <div class="pass-icon">GP</div>
+            <div style="flex:1">
+              <div class="hb-title">GROOVY PASS</div>
+              <div class="hb-sub">Saison Boogie Woogie · J-21</div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <div class="bottom-nav">
+            <button class="active">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 9h-3v9h-4v-6h-4v6H6v-9H3l9-9z"/></svg>
+              Accueil
+            </button>
+            <button data-nav="profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+              Collection
+            </button>
+            <button data-nav="battlepass">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h14v18l-7-4-7 4V3z"/></svg>
+              Pass
+            </button>
+            <button data-nav="profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M19 12c0-1 0-1.5-.3-2.2l1.5-1.2-2-3.4-1.8.8c-.6-.5-1.3-.9-2-1.1L14 3h-4l-.4 1.9c-.7.2-1.4.6-2 1.1l-1.8-.8-2 3.4 1.5 1.2C5 11.5 5 12 5 12s0 .5.3 1.2l-1.5 1.2 2 3.4 1.8-.8c.6.5 1.3.9 2 1.1L10 21h4l.4-1.9c.7-.2 1.4-.6 2-1.1l1.8.8 2-3.4-1.5-1.2c.3-.7.3-1.2.3-2.2z"/></svg>
+              Plus
+            </button>
+          </div>
+        </section>
+
+        <!-- ========== AUTH ========== -->
+        <section id="screen-auth" class="screen">
+          <button class="back-btn" data-nav="home" style="position:absolute;top:60px;left:20px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+
+          <div class="logo">POMPE<span class="accent">L'UP</span></div>
+          <div class="subtitle">Choisis ton pseudo et ton avatar pour commencer</div>
+
+          <div class="auth-card card">
+            <div class="guest-input">
+              <input id="auth-name" placeholder="Ton pseudo..." maxlength="14" value="Guigz">
+            </div>
+
+            <div class="eyebrow" style="margin-top: 16px;">Avatar</div>
+            <div class="avatar-grid" id="avatar-grid"></div>
+            <div style="text-align: center;">
+              <button class="shuffle-btn" id="shuffle-avatars">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7M16 21h5v-5M21 21l-7-7M8 3H3v5M3 3l7 7"/></svg>
+                Mélanger
+              </button>
+            </div>
+
+            <div class="auth-options" style="margin-top: 16px;">
+              <button class="btn btn-accent btn-block" data-nav="lobby" id="auth-continue">
+                C'est parti
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </button>
+              <button class="btn btn-dark btn-block">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.5-4.5-10-10-10S2 6.5 2 12c0 5 3.7 9.2 8.4 9.9v-7H8v-2.9h2.4V9.4c0-2.4 1.4-3.7 3.6-3.7l2 .2v2.6h-1.4c-1 0-1.3.6-1.3 1.3v1.5h2.6l-.4 2.9h-2.2v7C18.3 21.2 22 17 22 12z"/></svg>
+                Continuer avec Google
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== LOBBY ========== -->
+        <section id="screen-lobby" class="screen">
+          <div class="screen-header">
+            <button class="back-btn" data-nav="auth">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="screen-title">SALON</div>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="room-code-card">
+            <div class="eyebrow">Code de la salle</div>
+            <div class="room-code" id="room-code">
+              <span>K</span><span>9</span><span>X</span><span>Q</span><span>4</span><span>P</span>
+            </div>
+            <div class="room-code-actions">
+              <button>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+                Copier
+              </button>
+              <button>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+                Partager
+              </button>
+            </div>
+          </div>
+
+          <div class="mode-selector">
+            <div class="eyebrow" style="margin-bottom: 8px;">Mode de jeu</div>
+            <div class="mode-grid">
+              <div class="mode-pick active">
+                <div class="mode-icon">🎯</div>
+                <div class="mode-name">CLASSIC</div>
+                <div class="mode-x">XP ×1</div>
+              </div>
+              <div class="mode-pick">
+                <div class="mode-icon">⚡</div>
+                <div class="mode-name">RUSH</div>
+                <div class="mode-x">XP ×1.5</div>
+              </div>
+              <div class="mode-pick">
+                <div class="mode-icon">🎚️</div>
+                <div class="mode-name">PISTES</div>
+                <div class="mode-x">XP ×1.8</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="players-section">
+            <div class="players-count">
+              Joueurs <span class="small" id="lobby-count">4 / 8</span>
+            </div>
+            <div class="player-list" id="player-list"></div>
+          </div>
+
+          <div class="lobby-footer">
+            <button class="btn btn-accent btn-block btn-lg" data-nav="vote" id="start-game-btn">
+              LANCER LA PARTIE
+            </button>
+          </div>
+        </section>
+
+        <!-- ========== VOTE ========== -->
+        <section id="screen-vote" class="screen">
+          <div class="vote-header">
+            <div class="eyebrow">Manche 1 · choix de la catégorie</div>
+            <div class="vote-title">VOTEZ !</div>
+            <div class="vote-timer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/></svg>
+              <span id="vote-timer">8s</span>
+            </div>
+          </div>
+
+          <div class="vote-grid" id="vote-grid">
+            <div class="vote-card" data-cat="80s" style="background: linear-gradient(160deg, #F97316, #C2410C);">
+              <div class="vote-name">ANNÉES<br>80</div>
+              <div class="vote-emoji">📼</div>
+              <div class="vote-count">2</div>
+              <div class="vote-bar"><div class="vote-bar-fill" style="width:50%"></div></div>
+            </div>
+            <div class="vote-card" data-cat="pop-fr" style="background: linear-gradient(160deg, #3B4FE8, #1E3A8A);">
+              <div class="vote-name">POP<br>FR 🇫🇷</div>
+              <div class="vote-emoji">🎙️</div>
+              <div class="vote-count">1</div>
+              <div class="vote-bar"><div class="vote-bar-fill" style="width:25%"></div></div>
+            </div>
+            <div class="vote-card" data-cat="rap" style="background: linear-gradient(160deg, #1a1a2e, #2a1a3e);">
+              <div class="vote-name">RAP<br>GOLD</div>
+              <div class="vote-emoji">🏅</div>
+              <div class="vote-count">0</div>
+              <div class="vote-bar"><div class="vote-bar-fill" style="width:0%"></div></div>
+            </div>
+            <div class="vote-card" data-cat="hits" style="background: linear-gradient(160deg, #F472B6, #DB2777);">
+              <div class="vote-name">HITS<br>2020+</div>
+              <div class="vote-emoji">🔥</div>
+              <div class="vote-count">1</div>
+              <div class="vote-bar"><div class="vote-bar-fill" style="width:25%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== GAME ========== -->
+        <section id="screen-game" class="screen">
+          <div class="game-header">
+            <div class="round-pill">
+              MANCHE <span id="game-round">1</span> / <span id="game-total">5</span>
+            </div>
+            <div class="timer-circle" id="timer">
+              <svg viewBox="0 0 60 60">
+                <circle class="bg" cx="30" cy="30" r="25"/>
+                <circle class="fg" cx="30" cy="30" r="25" id="timer-ring"/>
+              </svg>
+              <div class="num" id="timer-num">30</div>
+            </div>
+          </div>
+
+          <div class="game-canvas-wrap">
+            <div class="viz-label">EXTRAIT EN COURS</div>
+            <div class="viz-bars" id="viz-bars"></div>
+            <div class="points-available">
+              <div class="pa-label">Points disponibles</div>
+              <div class="pa-num" id="points-avail">1 000</div>
+            </div>
+          </div>
+
+          <div class="answer-wrap">
+            <form class="answer-input" id="answer-form">
+              <input type="text" id="answer-input" placeholder="Titre ou artiste..." autocomplete="off">
+              <button type="submit" class="submit-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </button>
+            </form>
+            <div class="answer-hint" id="answer-hint"></div>
+          </div>
+
+          <div class="scores-mini" id="scores-mini"></div>
+
+          <div class="joker-bar" id="joker-bar">
+            <button class="joker-chip" data-joker="letter">
+              <span class="ji">🔤</span> 1ère lettre <span class="jp">1🎤</span>
+            </button>
+            <button class="joker-chip" data-joker="artist">
+              <span class="ji">🎤</span> Artiste <span class="jp">2🎤</span>
+            </button>
+            <button class="joker-chip" data-joker="time">
+              <span class="ji">⏱️</span> +10s <span class="jp">1🎤</span>
+            </button>
+            <button class="joker-chip" data-joker="tempo">
+              <span class="ji">🎵</span> BPM <span class="jp">1🎤</span>
+            </button>
+          </div>
+
+          <div class="emote-bar">
+            <button class="emote-btn" data-emote="🔥">🔥</button>
+            <button class="emote-btn" data-emote="😭">😭</button>
+            <button class="emote-btn" data-emote="🤯">🤯</button>
+            <button class="emote-btn" data-emote="👀">👀</button>
+            <button class="emote-btn" data-emote="💀">💀</button>
+            <button class="emote-btn" data-emote="👏">👏</button>
+          </div>
+
+          <!-- Round end overlay -->
+          <div class="round-end" id="round-end">
+            <div class="re-pochette" id="re-pochette">🎸</div>
+            <div class="re-eyebrow">La réponse était</div>
+            <div class="re-title" id="re-title">SMELLS LIKE<br>TEEN SPIRIT</div>
+            <div class="re-artist" id="re-artist">Nirvana · 1991</div>
+            <div class="re-pts">
+              <div class="re-pts-card">
+                <div class="l">Points</div>
+                <div class="v" id="re-pts">+1200</div>
+              </div>
+              <div class="re-pts-card">
+                <div class="l">XP</div>
+                <div class="v" id="re-xp">+80</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== RESULTS ========== -->
+        <section id="screen-results" class="screen">
+          <div class="results-eyebrow eyebrow">Partie terminée</div>
+          <div class="results-title">VICTOIRE !</div>
+
+          <div class="podium">
+            <div class="podium-col p2">
+              <div class="pavatar"><img id="pod2-avatar" alt=""></div>
+              <div class="pname" id="pod2-name">Cath</div>
+              <div class="ppts" id="pod2-pts">3 240</div>
+              <div class="podium-block">2</div>
+            </div>
+            <div class="podium-col p1">
+              <div class="crown">👑</div>
+              <div class="pavatar"><img id="pod1-avatar" alt=""></div>
+              <div class="pname" id="pod1-name">Guigz</div>
+              <div class="ppts" id="pod1-pts">4 720</div>
+              <div class="podium-block">1</div>
+            </div>
+            <div class="podium-col p3">
+              <div class="pavatar"><img id="pod3-avatar" alt=""></div>
+              <div class="pname" id="pod3-name">Jules</div>
+              <div class="ppts" id="pod3-pts">2 100</div>
+              <div class="podium-block">3</div>
+            </div>
+          </div>
+
+          <div class="results-list" id="results-list"></div>
+
+          <div class="xp-reward">
+            <div class="xp-line">
+              <span>NIVEAU <span class="lvl" id="rxp-level">12</span></span>
+              <span><span id="rxp-current">847</span> / <span id="rxp-total">2400</span> XP</span>
+            </div>
+            <div class="xp-bar"><div class="fill" id="rxp-fill"></div></div>
+            <div style="margin-top:8px; font-size:12px; font-weight:700; color: var(--orange);">+ 290 XP gagnés cette partie</div>
+          </div>
+
+          <div class="results-cta">
+            <button class="btn btn-ghost btn-block" data-nav="home">Accueil</button>
+            <button class="btn btn-accent btn-block" data-nav="lobby">Rejouer</button>
+          </div>
+        </section>
+
+        <!-- ========== PROFILE ========== -->
+        <section id="screen-profile" class="screen">
+          <div class="screen-header">
+            <button class="back-btn" data-nav="home">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="screen-title">PROFIL</div>
+            <button class="back-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            </button>
+          </div>
+
+          <div class="profile-hero">
+            <div class="avatar-lg"><img id="prof-avatar" alt=""></div>
+            <div class="pname" id="prof-name">Guigz</div>
+            <div class="pcode">Guigz#4821</div>
+            <div class="level-pill">
+              <span class="badge" id="prof-lvl-num">12</span>
+              <span>Niveau 12 · Vinyl Hunter</span>
+            </div>
+          </div>
+
+          <div class="profile-xp">
+            <div class="xp-line" style="font-size:11px;">
+              <span class="muted">XP TOTAL</span>
+              <span><b>847</b> <span class="muted">/ 2400</span></span>
+            </div>
+            <div class="xp-bar"><div class="fill" style="width:35%"></div></div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="v" style="color: var(--orange);">142</div>
+              <div class="l">Parties</div>
+            </div>
+            <div class="stat-card">
+              <div class="v" style="color: var(--green);">68</div>
+              <div class="l">Victoires</div>
+            </div>
+            <div class="stat-card">
+              <div class="v" style="color: var(--blue-primary);">7</div>
+              <div class="l">Streak 🔥</div>
+            </div>
+          </div>
+
+          <div class="daily-pack-banner" id="daily-pack">
+            <div class="pack-glow">🎁</div>
+            <div style="flex:1">
+              <div class="dpt">PACK QUOTIDIEN</div>
+              <div class="dps">Tape pour ouvrir · 3 vinyles</div>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active">Collection</button>
+            <button class="tab">Amis</button>
+            <button class="tab">Stats</button>
+          </div>
+
+          <div class="collection-grid" id="collection-grid"></div>
+
+          <div style="height: 24px;"></div>
+        </section>
+
+        <!-- ========== BATTLEPASS ========== -->
+        <section id="screen-battlepass" class="screen">
+          <div class="screen-header">
+            <button class="back-btn" data-nav="home">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="screen-title">GROOVY PASS</div>
+            <div style="width:40px"></div>
+          </div>
+
+          <div class="bp-hero">
+            <div class="bp-tier-disp">
+              <div class="l">Palier</div>
+              <div class="v">17</div>
+            </div>
+            <div class="bp-eyebrow">Saison 03</div>
+            <div class="bp-title">BOOGIE<br>WOOGIE</div>
+            <div class="bp-time">Se termine dans 21 jours · 03 mois</div>
+            <div class="bp-xp-bar"><div class="fill"></div><div class="marker"></div></div>
+            <div style="display:flex; justify-content: space-between; margin-top: 6px; font-size: 10px; font-weight: 700; opacity:0.8;">
+              <span>1 240 / 2 000 XP</span>
+              <span>PALIER 18 →</span>
+            </div>
+          </div>
+
+          <div class="bp-toggle">
+            <button class="active">Tous</button>
+            <button>Gratuit</button>
+            <button>Premium 👑</button>
+          </div>
+
+          <div class="bp-track" id="bp-track"></div>
+
+          <div class="bp-premium-cta">
+            <div style="font-size: 32px;">👑</div>
+            <div class="bpc-text">
+              <div class="bpc-title">PASSE PREMIUM</div>
+              <div class="bpc-sub">+ 30 récompenses exclusives</div>
+            </div>
+            <div class="bpc-price">3,99€</div>
+          </div>
+
+          <div style="height: 24px;"></div>
+        </section>
+
+        <!-- ========== Pack opening modal ========== -->
+        <div class="pack-modal" id="pack-modal">
+          <canvas id="pack-canvas"></canvas>
+          <button class="close-x" id="pack-close">×</button>
+          <div class="pack-art" id="pack-art">
+            <div class="pack-emoji">🎁</div>
+          </div>
+          <div class="pack-tap-hint" id="pack-tap-hint">TAP TAP TAP</div>
+          <div class="pack-reveal-grid" id="reveal-grid"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tweaks panel -->
+<button class="tweaks-fab" id="tweaks-fab" title="Tweaks">⚙</button>
+<div class="tweaks-panel" id="tweaks-panel">
+  <h4>TWEAKS</h4>
+  <div class="tweak-group">
+    <label>Ton visuel</label>
+    <div class="tweak-seg" data-tweak="tone">
+      <button data-val="default" class="active">Std</button>
+      <button data-val="kawaii">Kawaii</button>
+      <button data-val="arcade">Arcade</button>
+      <button data-val="premium">Premium</button>
+    </div>
+  </div>
+  <div class="tweak-group">
+    <label>Densité d'animation</label>
+    <div class="tweak-seg" data-tweak="anim">
+      <button data-val="calm">Calme</button>
+      <button data-val="normal" class="active">Normal</button>
+      <button data-val="chaotic">Chaos</button>
+    </div>
+  </div>
+  <div class="tweak-group">
+    <label>Aller à un écran</label>
+    <div class="tweak-seg" data-tweak="goto" style="flex-wrap: wrap;">
+      <button data-val="home">Home</button>
+      <button data-val="auth">Auth</button>
+      <button data-val="lobby">Lobby</button>
+      <button data-val="vote">Vote</button>
+      <button data-val="game">Jeu</button>
+      <button data-val="results">Résultats</button>
+      <button data-val="profile">Profil</button>
+      <button data-val="battlepass">Pass</button>
+    </div>
+  </div>
+</div>
+
+<script src="pompelup.js"></script>
+</body>
+</html>
