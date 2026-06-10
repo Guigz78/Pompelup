@@ -1668,6 +1668,17 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   align-items: center;
   border: 1.5px solid rgba(255,255,255,0.5);
 }
+.lobby-back-btn {
+  position: absolute; top: 18px; left: 18px; z-index: 20;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px 8px 10px;
+  background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px; color: var(--muted); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.lobby-back-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: rgba(255,255,255,0.25); }
+.lobby-back-btn svg { flex-shrink: 0; }
+#screen-lobby { position: relative; }
 .lobby-eyebrow {
   font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
   font-weight: 800; color: var(--muted); text-align: center;

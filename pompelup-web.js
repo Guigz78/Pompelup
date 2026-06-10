@@ -1318,6 +1318,15 @@ function initLobby() {
     }
   });
 
+  const backBtn = document.getElementById('lobby-back-btn');
+  if (backBtn) {
+    backBtn.onclick = () => {
+      sbLeaveRoom();
+      STATE.room = { code: null, _isHost: false, _joined: false };
+      navigateTo('home');
+    };
+  }
+
   const copyLinkBtn = document.getElementById('copy-link-btn');
   if (copyLinkBtn) {
     copyLinkBtn.onclick = () => {
