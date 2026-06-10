@@ -1261,7 +1261,7 @@ function initLobby() {
   const copyLinkBtn = document.getElementById('copy-link-btn');
   if (copyLinkBtn) {
     copyLinkBtn.onclick = () => {
-      const url = 'https://pompelup.app/' + STATE.room.code;
+      const url = 'https://pompelup.vercel.app/' + STATE.room.code;
       navigator.clipboard?.writeText(url).catch(() => {});
       const icon = copyLinkBtn.querySelector('.copy-icon');
       if (icon) {
