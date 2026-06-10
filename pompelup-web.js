@@ -926,11 +926,25 @@ function updateLobbyCustomPads() {
 async function searchMyInstants(query) {
   const resultsEl = $('#cs-results'); if (!resultsEl) return;
   resultsEl.innerHTML = '<div class="cs-loading">⏳ Recherche en cours…</div>';
+  const targetUrl = 'https://www.myinstants.com/fr/search/?name=' + encodeURIComponent(query);
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl),
+    'https://corsproxy.io/?' + encodeURIComponent(targetUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl),
+    'https://thingproxy.freeboard.io/fetch/' + targetUrl,
+  ];
+  let html = null;
+  for (const proxyUrl of proxies) {
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(t);
+      if (res.ok) { html = await res.text(); break; }
+    } catch(e) { continue; }
+  }
   try {
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://www.myinstants.com/fr/search/?name=' + encodeURIComponent(query));
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const html = await res.text();
+    if (!html) throw new Error('all proxies failed');
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const results = [];
     doc.querySelectorAll('.instant').forEach(inst => {
