@@ -923,76 +923,9 @@ function updateLobbyCustomPads() {
   });
 }
 
-async function searchMyInstants(query) {
-  const resultsEl = $('#cs-results'); if (!resultsEl) return;
-  resultsEl.innerHTML = '<div class="cs-loading">⏳ Recherche en cours…</div>';
-  const targetUrl = 'https://www.myinstants.com/fr/search/?name=' + encodeURIComponent(query);
-  const proxies = [
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl),
-    'https://corsproxy.io/?' + encodeURIComponent(targetUrl),
-    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl),
-    'https://thingproxy.freeboard.io/fetch/' + targetUrl,
-  ];
-  let html = null;
-  for (const proxyUrl of proxies) {
-    try {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(proxyUrl, { signal: controller.signal });
-      clearTimeout(t);
-      if (res.ok) { html = await res.text(); break; }
-    } catch(e) { continue; }
-  }
-  try {
-    if (!html) throw new Error('all proxies failed');
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const results = [];
-    doc.querySelectorAll('.instant').forEach(inst => {
-      const btn = inst.querySelector('button[onclick]');
-      const link = inst.querySelector('.instant-link');
-      if (!btn || !link) return;
-      const match = btn.getAttribute('onclick')?.match(/play\(['"]([^'"]+)['"]\)/);
-      if (!match) return;
-      results.push({ name: link.textContent?.trim() || 'Son', url: 'https://www.myinstants.com' + match[1] });
-    });
-    if (!results.length) {
-      resultsEl.innerHTML = `<div class="cs-empty">Aucun résultat — <a href="https://www.myinstants.com/fr/search/?name=${encodeURIComponent(query)}" target="_blank" rel="noopener" class="cs-ext-link">Ouvrir MyInstants ↗</a></div>`;
-      return;
-    }
-    resultsEl.innerHTML = '<div class="cs-results-grid">' +
-      results.slice(0, 16).map(r => {
-        const already = STATE.lobbyPerso.customSounds.some(s => s.url === r.url);
-        const full = STATE.lobbyPerso.customSounds.length >= 8;
-        return `<div class="cs-result-card">
-          <button class="cs-result-play" data-url="${escHtml(r.url)}">▶</button>
-          <span class="cs-result-name">${escHtml(r.name)}</span>
-          <button class="cs-result-add ${already ? 'added' : ''}" data-url="${escHtml(r.url)}" data-name="${escHtml(r.name)}" ${(already || full) ? 'disabled' : ''}>${already ? '✓' : '+'}</button>
-        </div>`;
-      }).join('') + '</div>';
-    $$('.cs-result-play').forEach(btn => {
-      btn.onclick = () => { previewSfx(btn.dataset.url); gsap.fromTo(btn, { scale: 0.8 }, { scale: 1, duration: 0.2, ease: 'back.out(2)' }); };
-    });
-    $$('.cs-result-add:not([disabled])').forEach(btn => {
-      btn.onclick = () => {
-        if (STATE.lobbyPerso.customSounds.length >= 8) { shopToast('Max 8 sons custom atteint', 'bad'); return; }
-        const sound = { id: 'cs-' + Date.now(), name: btn.dataset.name, url: btn.dataset.url, source: 'myinstants' };
-        STATE.lobbyPerso.customSounds.push(sound); saveCustomSounds();
-        btn.textContent = '✓'; btn.classList.add('added'); btn.disabled = true;
-        renderCustomSoundsLibrary();
-        shopToast('✓ ' + sound.name + ' ajouté !', 'good');
-        gsap.fromTo(btn, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
-      };
-    });
-    gsap.from('.cs-result-card', { y: 10, opacity: 0, stagger: 0.03, duration: 0.3 });
-  } catch(e) {
-    resultsEl.innerHTML = `<div class="cs-empty">Connexion échouée — <a href="https://www.myinstants.com/fr/search/?name=${encodeURIComponent(query)}" target="_blank" rel="noopener" class="cs-ext-link">Ouvrir MyInstants ↗</a></div>`;
-  }
-}
-
 function initCustomSounds() {
   loadCustomSounds(); renderCustomSoundsLibrary();
   const fileInput = $('#cs-file-input'); const importBtn = $('#cs-import-btn');
-  const searchInput = $('#cs-search-input'); const searchBtn = $('#cs-search-btn');
   if (!importBtn) return;
   importBtn.onclick = () => fileInput?.click();
   if (fileInput) {
@@ -1009,8 +942,6 @@ function initCustomSounds() {
       fileInput.value = '';
     };
   }
-  if (searchBtn) searchBtn.onclick = () => { const q = searchInput?.value.trim(); if (q) searchMyInstants(q); };
-  if (searchInput) searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const q = searchInput.value.trim(); if (q) searchMyInstants(q); } });
 }
 
 // ===== SOUND TAB =====
