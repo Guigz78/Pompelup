@@ -1213,17 +1213,25 @@ function initLobby() {
 
   renderLobbyPlayers([]);
 
+  function broadcastSoundsSync() {
+    if (!sbIsHost()) return;
+    const sounds = STATE.lobbyPerso.customSounds.map(s => ({ id: s.id, name: s.name, url: s.url, source: s.source }));
+    sbBroadcast('sync', { type: 'sounds', sounds });
+  }
+
   const connectFn = STATE.room._isHost ? sbCreateRoom : sbJoinRoom;
   connectFn(STATE.room.code, (event, data) => {
     if (event === 'ready') {
       renderLobbyPlayers(sbRoomPlayers());
       updateLobbyCount();
+      broadcastSoundsSync();
     }
     if (event === 'join' || event === 'leave') {
       renderLobbyPlayers(sbRoomPlayers());
       updateLobbyCount();
       if (event === 'join' && data && data.id !== sbMyId()) {
         pushChatMsg('system', `${data.name} a rejoint le salon 👋`);
+        broadcastSoundsSync();
       }
       if (event === 'leave' && data && data.name) {
         pushChatMsg('system', `${data.name} a quitté le salon`);
@@ -1234,6 +1242,10 @@ function initLobby() {
       if (data.soundUrl) previewSfx(data.soundUrl);
       spawnLobbyEmote(data.emoji || '🎵');
       pushChatMsg('system', `${data.name} a joué un son 🔊`);
+    }
+    if (event === 'sync' && data.type === 'sounds' && !sbIsHost()) {
+      STATE.lobbyPerso.customSounds = data.sounds || [];
+      updateLobbyCustomPads();
     }
     if (event === 'game' && data.type === 'start') {
       STATE.game.songs = data.songs;

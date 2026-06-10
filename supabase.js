@@ -153,6 +153,9 @@ function _setupChannel(code, selfMode) {
     .on('broadcast', { event: 'sound' }, ({ payload }) => {
       _onRoomEvent?.('sound', payload);
     })
+    .on('broadcast', { event: 'sync' }, ({ payload }) => {
+      _onRoomEvent?.('sync', payload);
+    })
     .on('broadcast', { event: 'game' }, ({ payload }) => {
       _onRoomEvent?.('game', payload);
     });
