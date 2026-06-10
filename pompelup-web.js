@@ -911,7 +911,7 @@ function updateLobbyCustomPads() {
   }
   const colors = ['#8B5CF6','#F97316','#3B4FE8','#22C55E','#F472B6','#FBBF24','#EF4444','#06B6D4'];
   pads.innerHTML = sounds.map((s, i) => `
-    <button class="sb-pad sb-pad-custom" data-sound-url="${escHtml(s.url)}" style="--pad: ${colors[i % colors.length]};">
+    <button class="sb-pad sb-pad-sound" data-sound-url="${escHtml(s.url)}" style="--pad: ${colors[i % colors.length]};">
       <span class="pad-emoji">🎵</span>
       <span class="pad-name">${escHtml(s.name.slice(0, 10))}</span>
     </button>`).join('');
@@ -1561,12 +1561,16 @@ function spawnLobbyEmote(emoji, fromX, fromY) {
 
 // Wire up sound pads
 document.addEventListener('click', (e) => {
-  const sound = e.target.closest('.sb-pad-custom');
+  const sound = e.target.closest('.sb-pad-sound');
   if (sound) {
     sound.classList.remove('firing');
     void sound.offsetWidth;
     sound.classList.add('firing');
-    previewSfx(sound.dataset.soundUrl);
+    if (sound.dataset.soundUrl) {
+      previewSfx(sound.dataset.soundUrl);
+    } else if (sound.dataset.sound) {
+      playSoundFx(sound.dataset.sound);
+    }
     setTimeout(() => sound.classList.remove('firing'), 400);
     const cRect = $('.lobby-center')?.getBoundingClientRect();
     if (cRect) {
