@@ -854,6 +854,20 @@
 
           <div class="section-bar"><h2>JINGLE D'ACCUEIL</h2><span class="seemore">Joué quand un joueur rejoint</span></div>
           <div class="jingle-grid" id="jingle-grid"></div>
+
+          <div class="section-bar"><h2>SONS CUSTOM</h2><span class="seemore">Tes sons perso dans le soundboard</span></div>
+          <div id="custom-sounds-wrap">
+            <input type="file" id="cs-file-input" accept="audio/*" hidden>
+            <div class="cs-actions">
+              <button class="btn btn-ghost btn-sm" id="cs-import-btn">📁 Importer un son</button>
+              <div class="cs-mi-search">
+                <input type="text" id="cs-search-input" placeholder="🔍 Chercher sur MyInstants…" autocomplete="off">
+                <button id="cs-search-btn" class="btn btn-accent btn-sm">GO</button>
+              </div>
+            </div>
+            <div id="cs-results" class="cs-results"></div>
+            <div id="cs-library" class="cs-library"></div>
+          </div>
         </div>
 
         <div class="stab-panel" data-stab-panel="sound">
@@ -980,6 +994,10 @@
                     <span class="pad-emoji">😂</span><span class="pad-name">Rires</span>
                   </button>
                 </div>
+              </div>
+              <div class="sb-row" id="sb-custom-row" style="display:none;">
+                <div class="sb-label">MES SONS</div>
+                <div class="sb-pads" id="sb-custom-pads"></div>
               </div>
               <div class="sb-row">
                 <div class="sb-label">RÉACTIONS</div>
@@ -1152,6 +1170,15 @@
               <button class="emote-btn" data-emote="👀">👀</button>
               <button class="emote-btn" data-emote="💀">💀</button>
               <button class="emote-btn" data-emote="👏">👏</button>
+              <button class="emote-btn gif-btn" id="game-gif-btn" title="Envoyer un GIF">GIF</button>
+            </div>
+            <!-- GIF picker popup -->
+            <div class="gif-picker" id="gif-picker">
+              <div class="gif-picker-head">
+                <input type="text" id="gif-search-input" placeholder="Cherche un GIF…" autocomplete="off">
+                <button id="gif-picker-close">×</button>
+              </div>
+              <div class="gif-grid" id="gif-grid"></div>
             </div>
           </aside>
         </div>

@@ -799,7 +799,8 @@ const LOBBY_JINGLES = [
   { id: 'soft',     name: 'Soft Bell',    desc: 'Discret et élégant',   icon: '🔔' },
   { id: 'silence',  name: 'Silence',      desc: 'Pas de son',           icon: '🤫' }
 ];
-if (!STATE.lobbyPerso) STATE.lobbyPerso = { theme: 'peach', sticker: '🎉', jingle: 'rec-blip' };
+if (!STATE.lobbyPerso) STATE.lobbyPerso = { theme: 'peach', sticker: '🎉', jingle: 'rec-blip', customSounds: [] };
+if (!STATE.lobbyPerso.customSounds) STATE.lobbyPerso.customSounds = [];
 
 function renderThemes() {
   const grid = $('#theme-grid'); if (!grid) return;
@@ -857,6 +858,145 @@ function initLobbyPerso() {
   $('#lpp-preview').style.background = t.bg;
   $('#lpp-sticker').textContent = STATE.lobbyPerso.sticker;
   renderThemes(); renderStickers(); renderJingles();
+  initCustomSounds();
+}
+
+// ===== CUSTOM SOUNDS =====
+function loadCustomSounds() {
+  try {
+    const raw = localStorage.getItem('pompelup-custom-sounds');
+    if (raw) STATE.lobbyPerso.customSounds = JSON.parse(raw).filter(s => s.source !== 'local');
+  } catch(e) {}
+}
+function saveCustomSounds() {
+  try { localStorage.setItem('pompelup-custom-sounds', JSON.stringify(STATE.lobbyPerso.customSounds.filter(s => s.source !== 'local'))); } catch(e) {}
+}
+
+function renderCustomSoundsLibrary() {
+  const lib = $('#cs-library'); if (!lib) return;
+  const sounds = STATE.lobbyPerso.customSounds;
+  if (!sounds.length) {
+    lib.innerHTML = '<div class="cs-empty">Aucun son ajouté · max 8 · apparaissent dans le soundboard</div>';
+  } else {
+    lib.innerHTML = `<div class="cs-lib-title">MA BIBLIOTHÈQUE <span>${sounds.length}/8</span></div>` +
+      sounds.map(s => `
+        <div class="cs-lib-row">
+          <button class="cs-play-btn" data-url="${escHtml(s.url)}">▶</button>
+          <div class="cs-lib-info">
+            <div class="cs-lib-name">${escHtml(s.name)}</div>
+            <div class="cs-lib-src">${s.source === 'local' ? '📁 Local' : '🌐 MyInstants'}</div>
+          </div>
+          <button class="cs-remove-btn" data-cs-id="${escHtml(s.id)}">×</button>
+        </div>`).join('');
+    $$('.cs-play-btn', lib).forEach(btn => {
+      btn.onclick = () => { previewSfx(btn.dataset.url); gsap.fromTo(btn, { scale: 0.8 }, { scale: 1, duration: 0.2, ease: 'back.out(2)' }); };
+    });
+    $$('.cs-remove-btn', lib).forEach(btn => {
+      btn.onclick = () => {
+        STATE.lobbyPerso.customSounds = STATE.lobbyPerso.customSounds.filter(s => s.id !== btn.dataset.csId);
+        saveCustomSounds(); renderCustomSoundsLibrary(); updateLobbyCustomPads();
+      };
+    });
+  }
+  updateLobbyCustomPads();
+}
+
+function updateLobbyCustomPads() {
+  const row = $('#sb-custom-row'); const pads = $('#sb-custom-pads');
+  if (!row || !pads) return;
+  const sounds = STATE.lobbyPerso.customSounds;
+  if (!sounds.length) { row.style.display = 'none'; return; }
+  row.style.display = '';
+  pads.innerHTML = sounds.map(s => `
+    <button class="sb-pad sb-pad-sound" data-sound-url="${escHtml(s.url)}" data-sound-name="${escHtml(s.name)}" style="--pad: #8B5CF6;">
+      <span class="pad-emoji">🎵</span>
+      <span class="pad-name">${escHtml(s.name.slice(0, 10))}</span>
+    </button>`).join('');
+  $$('.sb-pad[data-sound-url]', pads).forEach(pad => {
+    pad.onclick = () => {
+      pad.classList.remove('firing'); void pad.offsetWidth; pad.classList.add('firing');
+      previewSfx(pad.dataset.soundUrl);
+      pushChatMsg('system', `${STATE.player.name} a joué un son 🔊`);
+      if (sbHasRoom()) sbBroadcast('sound', { soundUrl: pad.dataset.soundUrl, name: STATE.player.name });
+      setTimeout(() => pad.classList.remove('firing'), 400);
+    };
+  });
+}
+
+async function searchMyInstants(query) {
+  const resultsEl = $('#cs-results'); if (!resultsEl) return;
+  resultsEl.innerHTML = '<div class="cs-loading">⏳ Recherche en cours…</div>';
+  try {
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://www.myinstants.com/fr/search/?name=' + encodeURIComponent(query));
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const results = [];
+    doc.querySelectorAll('.instant').forEach(inst => {
+      const btn = inst.querySelector('button[onclick]');
+      const link = inst.querySelector('.instant-link');
+      if (!btn || !link) return;
+      const match = btn.getAttribute('onclick')?.match(/play\(['"]([^'"]+)['"]\)/);
+      if (!match) return;
+      results.push({ name: link.textContent?.trim() || 'Son', url: 'https://www.myinstants.com' + match[1] });
+    });
+    if (!results.length) {
+      resultsEl.innerHTML = `<div class="cs-empty">Aucun résultat — <a href="https://www.myinstants.com/fr/search/?name=${encodeURIComponent(query)}" target="_blank" rel="noopener" class="cs-ext-link">Ouvrir MyInstants ↗</a></div>`;
+      return;
+    }
+    resultsEl.innerHTML = '<div class="cs-results-grid">' +
+      results.slice(0, 16).map(r => {
+        const already = STATE.lobbyPerso.customSounds.some(s => s.url === r.url);
+        const full = STATE.lobbyPerso.customSounds.length >= 8;
+        return `<div class="cs-result-card">
+          <button class="cs-result-play" data-url="${escHtml(r.url)}">▶</button>
+          <span class="cs-result-name">${escHtml(r.name)}</span>
+          <button class="cs-result-add ${already ? 'added' : ''}" data-url="${escHtml(r.url)}" data-name="${escHtml(r.name)}" ${(already || full) ? 'disabled' : ''}>${already ? '✓' : '+'}</button>
+        </div>`;
+      }).join('') + '</div>';
+    $$('.cs-result-play').forEach(btn => {
+      btn.onclick = () => { previewSfx(btn.dataset.url); gsap.fromTo(btn, { scale: 0.8 }, { scale: 1, duration: 0.2, ease: 'back.out(2)' }); };
+    });
+    $$('.cs-result-add:not([disabled])').forEach(btn => {
+      btn.onclick = () => {
+        if (STATE.lobbyPerso.customSounds.length >= 8) { shopToast('Max 8 sons custom atteint', 'bad'); return; }
+        const sound = { id: 'cs-' + Date.now(), name: btn.dataset.name, url: btn.dataset.url, source: 'myinstants' };
+        STATE.lobbyPerso.customSounds.push(sound); saveCustomSounds();
+        btn.textContent = '✓'; btn.classList.add('added'); btn.disabled = true;
+        renderCustomSoundsLibrary();
+        shopToast('✓ ' + sound.name + ' ajouté !', 'good');
+        gsap.fromTo(btn, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
+      };
+    });
+    gsap.from('.cs-result-card', { y: 10, opacity: 0, stagger: 0.03, duration: 0.3 });
+  } catch(e) {
+    resultsEl.innerHTML = `<div class="cs-empty">Connexion échouée — <a href="https://www.myinstants.com/fr/search/?name=${encodeURIComponent(query)}" target="_blank" rel="noopener" class="cs-ext-link">Ouvrir MyInstants ↗</a></div>`;
+  }
+}
+
+function initCustomSounds() {
+  loadCustomSounds(); renderCustomSoundsLibrary();
+  const fileInput = $('#cs-file-input'); const importBtn = $('#cs-import-btn');
+  const searchInput = $('#cs-search-input'); const searchBtn = $('#cs-search-btn');
+  if (!importBtn) return;
+  importBtn.onclick = () => fileInput?.click();
+  if (fileInput) {
+    fileInput.onchange = (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      if (!file.type.startsWith('audio/')) { shopToast('Format non supporté — MP3, WAV, OGG…', 'bad'); return; }
+      if (file.size > 5 * 1024 * 1024) { shopToast('Fichier trop lourd (max 5 Mo)', 'bad'); return; }
+      if (STATE.lobbyPerso.customSounds.length >= 8) { shopToast('Max 8 sons custom atteint', 'bad'); return; }
+      const url = URL.createObjectURL(file);
+      const name = file.name.replace(/\.[^.]+$/, '').slice(0, 24);
+      STATE.lobbyPerso.customSounds.push({ id: 'cs-' + Date.now(), name, url, source: 'local' });
+      saveCustomSounds(); renderCustomSoundsLibrary();
+      shopToast('✓ ' + name + ' importé !', 'good');
+      fileInput.value = '';
+    };
+  }
+  if (searchBtn) searchBtn.onclick = () => { const q = searchInput?.value.trim(); if (q) searchMyInstants(q); };
+  if (searchInput) searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const q = searchInput.value.trim(); if (q) searchMyInstants(q); } });
 }
 
 // ===== SOUND TAB =====
@@ -1182,6 +1322,7 @@ function initLobby() {
   gsap.from('.lobby-title', { y: -20, opacity: 0, duration: 0.5 / mult });
   gsap.from('.lobby-grid .panel', { x: -30, opacity: 0, stagger: 0.08, duration: 0.4 });
   gsap.from('.copy-link-btn', { y: 20, opacity: 0, duration: 0.4, delay: 0.4 });
+  updateLobbyCustomPads();
   gsap.killTweensOf('#start-game-btn');
   gsap.set('#start-game-btn', { scale: 1, clearProps: 'box-shadow' });
   gsap.fromTo('#start-game-btn', { scale: 0 }, { scale: 1, duration: 0.55, delay: 0.5, ease: 'back.out(1.7)', overwrite: 'auto' });
@@ -2005,8 +2146,88 @@ $$('.joker-pill').forEach(p => {
   });
 });
 
-$$('.emote-btn').forEach(b => {
+$$('.emote-btn:not(.gif-btn)').forEach(b => {
   b.addEventListener('click', () => spawnFloatingEmote(b.dataset.emote));
+});
+
+// ===== GIF PICKER (Giphy) =====
+const GIPHY_KEY = 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh';
+let _gifSearchTimer = null;
+
+function openGifPicker() {
+  const picker = $('#gif-picker'); if (!picker) return;
+  picker.classList.add('active');
+  const input = $('#gif-search-input');
+  if (input) { input.value = ''; input.focus(); }
+  loadGifs('trending');
+}
+function closeGifPicker() {
+  const picker = $('#gif-picker'); if (!picker) return;
+  picker.classList.remove('active');
+}
+
+async function loadGifs(query) {
+  const grid = $('#gif-grid'); if (!grid) return;
+  grid.innerHTML = '<div class="gif-loading">⏳</div>';
+  try {
+    const isTrending = query === 'trending';
+    const url = isTrending
+      ? `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=18&rating=g`
+      : `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=18&rating=g`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Giphy error');
+    const json = await res.json();
+    const gifs = json.data;
+    if (!gifs.length) { grid.innerHTML = '<div class="gif-loading">Aucun résultat</div>'; return; }
+    grid.innerHTML = gifs.map(g => `
+      <button class="gif-item" data-gif-url="${escHtml(g.images.fixed_height_small.url)}" data-gif-full="${escHtml(g.images.fixed_height.url)}" title="${escHtml(g.title)}">
+        <img src="${escHtml(g.images.fixed_height_small.url)}" alt="${escHtml(g.title)}" loading="lazy">
+      </button>`).join('');
+    $$('.gif-item', grid).forEach(btn => {
+      btn.onclick = () => {
+        sendGif(btn.dataset.gifFull, btn.dataset.gifUrl);
+        closeGifPicker();
+      };
+    });
+    gsap.from('.gif-item', { scale: 0.8, opacity: 0, stagger: 0.02, duration: 0.25, ease: 'back.out(1.4)' });
+  } catch(e) {
+    grid.innerHTML = '<div class="gif-loading">Erreur de chargement</div>';
+  }
+}
+
+function sendGif(gifUrl, previewUrl) {
+  const list = $('#g-chat'); if (!list) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg you gif-msg';
+  div.innerHTML = `
+    <div class="ca"><img src="${escHtml(avatarUrl(STATE.player.avatar))}" alt=""></div>
+    <div class="cm-body">
+      <div class="cn"><b>${escHtml(STATE.player.name)}</b></div>
+      <div class="ct ct-gif"><img class="chat-gif" src="${escHtml(gifUrl)}" alt="GIF" loading="lazy"></div>
+    </div>`;
+  list.appendChild(div);
+  list.scrollTop = list.scrollHeight;
+  gsap.from(div, { y: 12, opacity: 0, duration: 0.3 });
+  while (list.children.length > 12) list.removeChild(list.firstChild);
+  if (sbHasRoom()) sbBroadcast('chat', { gif: gifUrl, name: STATE.player.name, avatar: STATE.player.avatar });
+}
+
+document.getElementById('game-gif-btn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const picker = $('#gif-picker');
+  if (picker?.classList.contains('active')) closeGifPicker(); else openGifPicker();
+});
+document.getElementById('gif-picker-close')?.addEventListener('click', closeGifPicker);
+document.getElementById('gif-search-input')?.addEventListener('input', (e) => {
+  clearTimeout(_gifSearchTimer);
+  const q = e.target.value.trim();
+  _gifSearchTimer = setTimeout(() => loadGifs(q || 'trending'), 400);
+});
+document.addEventListener('mousedown', (e) => {
+  const picker = $('#gif-picker');
+  if (picker?.classList.contains('active') && !picker.contains(e.target) && e.target.id !== 'game-gif-btn') {
+    closeGifPicker();
+  }
 });
 function spawnFloatingEmote(em) {
   const stage = $('#stage');

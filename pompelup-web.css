@@ -6009,6 +6009,76 @@ img[src^="data:"] {
 .auth-sso-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.22); }
 .auth-sso-apple { background: rgba(255,255,255,0.96); color: #000; border-color: transparent; }
 
+/* ── Custom Sounds (lobby perso) ─────────────────── */
+#custom-sounds-wrap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.cs-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.cs-mi-search { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 200px; }
+.cs-mi-search input {
+  flex: 1; padding: 9px 14px; background: rgba(255,255,255,0.1);
+  border: 1.5px solid rgba(255,255,255,0.15); border-radius: 10px;
+  color: inherit; font-size: 13px; font-family: inherit;
+}
+.cs-mi-search input::placeholder { color: rgba(255,255,255,0.35); }
+.cs-mi-search input:focus { outline: none; border-color: var(--orange); }
+.cs-loading { padding: 16px; text-align: center; font-size: 13px; opacity: 0.7; }
+.cs-empty { padding: 14px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.06); border-radius: 12px; }
+.cs-ext-link { color: var(--orange); font-weight: 700; text-decoration: none; }
+.cs-ext-link:hover { text-decoration: underline; }
+.cs-results-grid { display: flex; flex-direction: column; gap: 6px; max-height: 270px; overflow-y: auto; padding: 2px; }
+.cs-results-grid::-webkit-scrollbar { width: 4px; }
+.cs-results-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.cs-result-card { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(255,255,255,0.07); border-radius: 10px; }
+.cs-result-play { width: 30px; height: 30px; border-radius: 8px; background: var(--orange); color: #fff; font-size: 11px; flex-shrink: 0; display: grid; place-items: center; transition: background 0.15s; }
+.cs-result-play:hover { background: var(--orange-deep); }
+.cs-result-name { flex: 1; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-result-add { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.12); color: inherit; font-size: 18px; font-weight: 700; flex-shrink: 0; display: grid; place-items: center; transition: background 0.15s; }
+.cs-result-add:not([disabled]):hover { background: var(--green); color: #fff; }
+.cs-result-add.added { background: var(--green); color: #fff; font-size: 13px; }
+.cs-result-add[disabled] { opacity: 0.35; cursor: not-allowed; }
+.cs-lib-title { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); display: flex; justify-content: space-between; margin-bottom: 4px; }
+.cs-library { display: flex; flex-direction: column; gap: 6px; }
+.cs-lib-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(255,255,255,0.07); border-radius: 10px; }
+.cs-play-btn { width: 30px; height: 30px; border-radius: 8px; background: var(--purple); color: #fff; font-size: 11px; flex-shrink: 0; display: grid; place-items: center; }
+.cs-lib-info { flex: 1; min-width: 0; }
+.cs-lib-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-lib-src { font-size: 10px; opacity: 0.5; margin-top: 1px; }
+.cs-remove-btn { width: 24px; height: 24px; border-radius: 6px; color: rgba(255,255,255,0.4); font-size: 16px; display: grid; place-items: center; flex-shrink: 0; transition: color 0.15s, background 0.15s; }
+.cs-remove-btn:hover { color: #fff; background: var(--red); }
+
+/* ── GIF Picker ───────────────────────────────────── */
+.gif-btn {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: #fff; border-radius: 10px; padding: 0 8px; height: 36px;
+}
+.gif-btn:hover { opacity: 0.85; }
+.gif-picker {
+  position: absolute; bottom: 56px; right: 0; width: 300px;
+  background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  z-index: 80; overflow: hidden;
+  opacity: 0; pointer-events: none; transform: translateY(8px) scale(0.96);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.gif-picker.active { opacity: 1; pointer-events: auto; transform: none; }
+.gif-picker-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.gif-picker-head input {
+  flex: 1; padding: 8px 12px; background: var(--bg-soft); border-radius: 10px;
+  font-size: 13px; font-family: inherit; color: var(--text);
+}
+.gif-picker-head input::placeholder { color: var(--muted); }
+#gif-picker-close { width: 28px; height: 28px; border-radius: 8px; color: var(--muted); font-size: 18px; display: grid; place-items: center; flex-shrink: 0; }
+#gif-picker-close:hover { background: var(--bg-soft); color: var(--text); }
+.gif-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; max-height: 240px; overflow-y: auto; }
+.gif-grid::-webkit-scrollbar { width: 4px; }
+.gif-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+.gif-item { border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: var(--bg-soft); cursor: pointer; transition: transform 0.15s; }
+.gif-item:hover { transform: scale(1.04); }
+.gif-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gif-loading { padding: 24px; text-align: center; font-size: 13px; color: var(--muted); }
+.chat-gif { max-width: 180px; border-radius: 10px; display: block; margin-top: 4px; }
+.ct-gif { padding: 0; background: none; }
+.game-side { position: relative; }
+
 /* ── Results extra panels ───────────────────────── */
 .results-stats-panel { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 16px; }
 .rs-row {
