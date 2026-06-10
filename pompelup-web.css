@@ -733,8 +733,9 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   background: rgba(0,0,0,0.05);
   border-radius: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-align: center;
+  text-transform: uppercase;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 16px;
 }
@@ -5956,6 +5957,13 @@ img[src^="data:"] {
   font-size: 12px; color: #F87171;
   font-weight: 600; min-height: 16px; text-align: center;
 }
+.auth-forgot {
+  font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 600;
+  text-align: right; padding: 0; background: none; border: none;
+  cursor: pointer; margin-top: -4px; align-self: flex-end;
+  transition: color 0.15s;
+}
+.auth-forgot:hover { color: rgba(255,255,255,0.8); }
 .auth-note { margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.32); text-align: center; }
 .auth-guest { color: var(--orange); font-weight: 700; font-size: 11px; text-decoration: underline; cursor: pointer; }
 
@@ -6000,6 +6008,32 @@ img[src^="data:"] {
 }
 .auth-sso-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.22); }
 .auth-sso-apple { background: rgba(255,255,255,0.96); color: #000; border-color: transparent; }
+
+/* ── Results extra panels ───────────────────────── */
+.results-stats-panel { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 16px; }
+.rs-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-soft); border-radius: 14px; padding: 10px 14px;
+}
+.rs-row.you { background: linear-gradient(135deg, var(--orange), var(--yellow)); color: var(--text); }
+.rs-rank { font-family: 'Bebas Neue', sans-serif; font-size: 20px; width: 28px; text-align: center; }
+.rs-avt img { width: 36px; height: 36px; border-radius: 50%; }
+.rs-name { flex: 1; font-weight: 700; font-size: 14px; }
+.rs-score { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.04em; }
+
+.results-vinyls-panel { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 16px; }
+.rv-heading { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.rv-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg-soft); border-radius: 14px; padding: 10px 14px;
+}
+.rv-disk { width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 38%, #fff 0 18%, var(--label) 18%); flex-shrink: 0; }
+.rv-info { flex: 1; }
+.rv-name { font-weight: 700; font-size: 13px; }
+.rv-artist { font-size: 11px; color: var(--muted); }
+.rv-rar { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; margin-top: 2px; }
+.rv-item.legendary .rv-rar { color: var(--yellow); }
+.rv-item.rare .rv-rar { color: var(--purple); }
 
 /* ── Performance hints ────────────────────────── */
 .disc { will-change: transform; }

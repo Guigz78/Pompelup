@@ -73,6 +73,13 @@ async function sbSignInWithProvider(provider) {
   if (error) throw new Error(error.message);
 }
 
+async function sbResetPassword(email) {
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+  if (error) throw new Error(error.message);
+}
+
 async function sbFetchProfile(id) {
   const { data } = await sb.from('profiles').select('*').eq('id', id).single();
   return data;

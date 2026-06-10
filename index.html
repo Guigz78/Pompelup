@@ -259,7 +259,7 @@
         <!-- Categories with illustrations -->
         <div class="section-bar first">
           <h2>CATÉGORIES POPULAIRES</h2>
-          <span class="seemore">Tout voir →</span>
+          <span class="seemore" data-nav="collection" style="cursor:pointer;">Tout voir →</span>
         </div>
         <div class="cat-row">
           <div class="cat-illu-card" style="background: linear-gradient(160deg, #FCE7F3, #FBCFE8);" data-action="create-room">
@@ -315,7 +315,7 @@
         <!-- Activity strip -->
         <div class="section-bar">
           <h2>POUR TOI</h2>
-          <span class="seemore">→</span>
+          <span class="seemore" data-nav="quests" style="cursor:pointer;">Tout voir →</span>
         </div>
         <div class="activity-strip">
           <div class="act-card quest-mini" data-nav="quests">
@@ -1202,11 +1202,13 @@
 
           <div class="results-right">
             <div class="results-tabs">
-              <button class="active">Récap</button>
-              <button>Stats</button>
-              <button>Vinyles 🎁</button>
+              <button class="active" data-results-tab="recap">Récap</button>
+              <button data-results-tab="stats">Stats</button>
+              <button data-results-tab="vinyls">Vinyles 🎁</button>
             </div>
             <div class="songs-recap" id="songs-recap"></div>
+            <div id="results-panel-stats" style="display:none;"></div>
+            <div id="results-panel-vinyls" style="display:none;"></div>
             <div class="xp-block">
               <div class="xpl">
                 <span class="l">Niveau 12 · Vinyl Hunter</span>
@@ -1343,6 +1345,7 @@
     <div class="auth-panel active" id="auth-panel-login">
       <input type="email" class="auth-input" id="auth-email-login" placeholder="Email" autocomplete="email">
       <input type="password" class="auth-input" id="auth-pass-login" placeholder="Mot de passe" autocomplete="current-password">
+      <button type="button" class="auth-forgot" id="auth-forgot-btn">Mot de passe oublié ?</button>
       <button class="btn btn-accent auth-submit" id="auth-login-btn">Se connecter</button>
       <div class="auth-err" id="auth-login-err"></div>
     </div>

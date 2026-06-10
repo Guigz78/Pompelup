@@ -218,8 +218,10 @@ document.body.addEventListener('click', (e) => {
           STATE.room._isHost = false;
           STATE.room._joined = true;
           navigateTo('lobby');
-        } else {
+        } else if (code && code.length > 0) {
           showJoinCodeError();
+        } else {
+          document.getElementById('join-code-input')?.focus();
         }
       }
     }
@@ -1162,6 +1164,20 @@ function initLobby() {
     }
   });
 
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+  if (copyLinkBtn) {
+    copyLinkBtn.onclick = () => {
+      const url = 'https://pompelup.app/' + STATE.room.code;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      const icon = copyLinkBtn.querySelector('.copy-icon');
+      if (icon) {
+        icon.textContent = 'COPIÉ ✓';
+        copyLinkBtn.style.background = 'rgba(34,197,94,0.12)';
+        setTimeout(() => { icon.textContent = 'COPIER'; copyLinkBtn.style.background = ''; }, 2000);
+      }
+    };
+  }
+
   const mult = STATE.animDensity === 'calm' ? 0.5 : STATE.animDensity === 'chaos' ? 1.6 : 1;
   gsap.from('.lobby-title', { y: -20, opacity: 0, duration: 0.5 / mult });
   gsap.from('.lobby-grid .panel', { x: -30, opacity: 0, stagger: 0.08, duration: 0.4 });
@@ -2071,15 +2087,15 @@ function initResults() {
   }
   const sorted = players.slice().sort((a, b) => (STATE.totals[b.name] || 0) - (STATE.totals[a.name] || 0));
 
-  $('#pod1-name').textContent = sorted[0].name;
-  $('#pod1-score').textContent = (STATE.totals[sorted[0].name] || 0).toLocaleString('fr');
-  $('#pod1-img').src = avatarUrl(sorted[0].seed);
-  $('#pod2-name').textContent = sorted[1].name;
-  $('#pod2-score').textContent = (STATE.totals[sorted[1].name] || 0).toLocaleString('fr');
-  $('#pod2-img').src = avatarUrl(sorted[1].seed);
-  $('#pod3-name').textContent = sorted[2].name;
-  $('#pod3-score').textContent = (STATE.totals[sorted[2].name] || 0).toLocaleString('fr');
-  $('#pod3-img').src = avatarUrl(sorted[2].seed);
+  $('#pod1-name').textContent = sorted[0]?.name ?? '—';
+  $('#pod1-score').textContent = (STATE.totals[sorted[0]?.name] || 0).toLocaleString('fr');
+  $('#pod1-img').src = sorted[0] ? avatarUrl(sorted[0].seed) : '';
+  $('#pod2-name').textContent = sorted[1]?.name ?? '—';
+  $('#pod2-score').textContent = (STATE.totals[sorted[1]?.name] || 0).toLocaleString('fr');
+  $('#pod2-img').src = sorted[1] ? avatarUrl(sorted[1].seed) : '';
+  $('#pod3-name').textContent = sorted[2]?.name ?? '—';
+  $('#pod3-score').textContent = (STATE.totals[sorted[2]?.name] || 0).toLocaleString('fr');
+  $('#pod3-img').src = sorted[2] ? avatarUrl(sorted[2].seed) : '';
 
   const playerRank = sorted.findIndex(p => p.name === STATE.player.name) + 1;
   const title = $('.r-title');
@@ -2121,10 +2137,53 @@ function initResults() {
   }, 1200);
 
   if (playerRank === 1) setTimeout(() => spawnConfetti(), 600);
+
+  // Wire results tabs
+  $$('[data-results-tab]').forEach(btn => {
+    btn.onclick = () => {
+      $$('[data-results-tab]').forEach(b => b.classList.toggle('active', b === btn));
+      const tab = btn.dataset.resultsTab;
+      $('#songs-recap').style.display = tab === 'recap' ? '' : 'none';
+      const statsPanel = $('#results-panel-stats');
+      const vinylsPanel = $('#results-panel-vinyls');
+      if (statsPanel) statsPanel.style.display = tab === 'stats' ? '' : 'none';
+      if (vinylsPanel) vinylsPanel.style.display = tab === 'vinyls' ? '' : 'none';
+      if (tab === 'stats' && statsPanel && !statsPanel.innerHTML) {
+        statsPanel.innerHTML = `<div class="results-stats-panel">${
+          sorted.map((p, i) => `<div class="rs-row${p.name === STATE.player.name ? ' you' : ''}">
+            <div class="rs-rank">#${i + 1}</div>
+            <div class="rs-avt"><img src="${avatarUrl(p.seed)}" alt=""></div>
+            <div class="rs-name">${escHtml(p.name)}</div>
+            <div class="rs-score">${(STATE.totals[p.name] || 0).toLocaleString('fr')} pts</div>
+          </div>`).join('')
+        }</div>`;
+        gsap.from('.rs-row', { x: -20, opacity: 0, stagger: 0.08, duration: 0.4 });
+      }
+      if (tab === 'vinyls' && vinylsPanel && !vinylsPanel.innerHTML) {
+        vinylsPanel.innerHTML = `<div class="results-vinyls-panel"><div class="rv-heading">🎁 Vinyles gagnés cette partie</div>${
+          PACK_ITEMS.map(item => `<div class="rv-item ${item.rarity}">
+            <div class="v-disk rv-disk" style="--label:${item.color}"></div>
+            <div class="rv-info">
+              <div class="rv-name">${escHtml(item.title)}</div>
+              <div class="rv-artist">${escHtml(item.artist)}</div>
+              <div class="rv-rar">${item.rarity === 'legendary' ? '👑 LÉG' : item.rarity === 'rare' ? '💎 RARE' : 'COMMUN'}</div>
+            </div>
+          </div>`).join('')
+        }</div>`;
+        gsap.from('.rv-item', { y: 20, opacity: 0, stagger: 0.1, duration: 0.4 });
+      }
+    };
+  });
 }
 
 // ===== TWEAKS =====
 $('#tweaks-fab').addEventListener('click', () => $('#tweaks-pop').classList.toggle('active'));
+
+// Hide tweaks button in production
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  const fab = document.getElementById('tweaks-fab');
+  if (fab) fab.style.display = 'none';
+}
 
 // ===== VINYL SCRATCH (home) =====
 function playScratchSound() {
@@ -3189,6 +3248,25 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('auth-login-btn')?.addEventListener('click', handleAuthLogin);
 document.getElementById('auth-signup-btn')?.addEventListener('click', handleAuthSignup);
 document.getElementById('auth-guest-btn')?.addEventListener('click', hideAuth);
+
+document.getElementById('auth-forgot-btn')?.addEventListener('click', async () => {
+  const email = document.getElementById('auth-email-login').value.trim();
+  const err = document.getElementById('auth-login-err');
+  if (!email) {
+    err.style.color = '';
+    err.textContent = 'Saisis ton email d\'abord';
+    document.getElementById('auth-email-login').focus();
+    return;
+  }
+  try {
+    await sbResetPassword(email);
+    err.style.color = '#22C55E';
+    err.textContent = '✓ Email de réinitialisation envoyé !';
+  } catch(e) {
+    err.style.color = '';
+    err.textContent = e.message;
+  }
+});
 
 document.getElementById('auth-google-btn')?.addEventListener('click', async () => {
   try { await sbSignInWithProvider('google'); }
