@@ -694,6 +694,22 @@ function initMeTab() {
     updateMePreview();
     renderAvatarGrid();
   };
+
+  // Spotify connect
+  spLoadFromStorage();
+  refreshSpotifyUI();
+  const spBtn = $('#sp-connect-btn');
+  if (spBtn) {
+    spBtn.onclick = async () => {
+      if (spIsConnected()) {
+        spDisconnect();
+        refreshSpotifyUI();
+        shopToast('Spotify déconnecté', '');
+      } else {
+        await spConnect();
+      }
+    };
+  }
 }
 
 function updateMePreview() {
@@ -1190,6 +1206,125 @@ function initCollection() {
   gsap.from('.col-hero > *', { y: -20, opacity: 0, stagger: 0.1, duration: 0.5 });
   gsap.from('.col-chip', { y: -10, opacity: 0, stagger: 0.04, duration: 0.3, delay: 0.15 });
   gsap.from('.col-tools > *', { y: -10, opacity: 0, stagger: 0.06, duration: 0.3, delay: 0.2 });
+}
+
+// ===== SPOTIFY =====
+const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID'; // Register at developer.spotify.com
+const SPOTIFY_SCOPES = 'user-read-email user-read-private';
+let _spToken = null;
+let _spExpires = 0;
+let _spAudio = null;
+
+function spIsConnected() { return !!_spToken && Date.now() < _spExpires; }
+
+function spLoadFromStorage() {
+  const tok = localStorage.getItem('sp_token');
+  const exp = parseInt(localStorage.getItem('sp_expires') || '0');
+  if (tok && exp > Date.now()) { _spToken = tok; _spExpires = exp; return true; }
+  return false;
+}
+
+async function spConnect() {
+  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  localStorage.setItem('sp_verifier', verifier);
+  const params = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: window.location.origin + window.location.pathname,
+    scope: SPOTIFY_SCOPES,
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+    state: 'sp_auth'
+  });
+  window.location.href = 'https://accounts.spotify.com/authorize?' + params;
+}
+
+async function spHandleCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code || params.get('state') !== 'sp_auth') return;
+  const verifier = localStorage.getItem('sp_verifier');
+  if (!verifier) return;
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: SPOTIFY_CLIENT_ID,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: window.location.origin + window.location.pathname,
+      code_verifier: verifier
+    })
+  });
+  const data = await res.json();
+  if (data.access_token) {
+    _spToken = data.access_token;
+    _spExpires = Date.now() + data.expires_in * 1000;
+    localStorage.setItem('sp_token', _spToken);
+    localStorage.setItem('sp_expires', _spExpires.toString());
+    if (data.refresh_token) localStorage.setItem('sp_refresh', data.refresh_token);
+    localStorage.removeItem('sp_verifier');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+function spDisconnect() {
+  _spToken = null; _spExpires = 0;
+  ['sp_token', 'sp_expires', 'sp_refresh', 'sp_verifier'].forEach(k => localStorage.removeItem(k));
+}
+
+async function spSearchPreviews(title, artist) {
+  if (!spIsConnected()) return null;
+  try {
+    const q = encodeURIComponent(`track:${title} artist:${artist}`);
+    const res = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=3`, {
+      headers: { 'Authorization': 'Bearer ' + _spToken }
+    });
+    const data = await res.json();
+    const track = (data.tracks?.items || []).find(t => t.preview_url);
+    if (!track) return null;
+    return { previewUrl: track.preview_url, albumArt: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url };
+  } catch(e) { return null; }
+}
+
+async function spLoadPreviews(songs) {
+  if (!spIsConnected()) return songs;
+  const enriched = await Promise.all(songs.map(async s => {
+    const info = await spSearchPreviews(s.title, s.artist);
+    return info ? { ...s, ...info } : s;
+  }));
+  return enriched;
+}
+
+function spPlayPreview(url) {
+  spStopPreview();
+  if (!url) return;
+  _spAudio = new Audio(url);
+  _spAudio.volume = 0.55;
+  _spAudio.play().catch(() => {});
+}
+
+function spStopPreview() {
+  if (_spAudio) { _spAudio.pause(); _spAudio.src = ''; _spAudio = null; }
+}
+
+function refreshSpotifyUI() {
+  const btn = $('#sp-connect-btn');
+  const status = $('#sp-status');
+  if (!btn) return;
+  if (spIsConnected()) {
+    btn.textContent = 'Déconnecter Spotify';
+    btn.className = 'btn btn-ghost btn-sm';
+    if (status) status.textContent = '✓ Connecté — les previews Spotify sont actives';
+  } else {
+    btn.textContent = 'Connecter Spotify';
+    btn.className = 'btn btn-accent btn-sm';
+    if (status) status.textContent = 'Connecte ton compte pour les previews 30s en jeu';
+  }
 }
 
 // ===== LOBBY =====
@@ -1884,6 +2019,14 @@ function startGame() {
   animateViz();
   refreshPresenter();
   setTimeout(() => presenterSay('intro', 'excited', 2500), 300);
+  const songPool = SONGS.slice(0, STATE.game.total);
+  if (spIsConnected()) {
+    spLoadPreviews(songPool).then(enriched => {
+      STATE.game.songs = enriched;
+    });
+  } else {
+    STATE.game.songs = songPool;
+  }
   startRound();
 }
 
@@ -1921,7 +2064,16 @@ function startRound() {
   $('#timer-big').classList.remove('danger');
 
   updatePlayersRail();
-  startSongLoop(song);
+  if (song.previewUrl) {
+    spPlayPreview(song.previewUrl);
+  } else {
+    startSongLoop(song);
+  }
+  // Show album art in round-end overlay if available
+  if (song.albumArt) {
+    const reArt = $('#re-art');
+    if (reArt) { reArt.innerHTML = `<img src="${escHtml(song.albumArt)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="">`; }
+  }
 
   gsap.from('.viz-card', { y: -20, opacity: 0, duration: 0.4 });
   gsap.from('.answer-card', { y: 20, opacity: 0, duration: 0.4, delay: 0.1 });
@@ -2022,6 +2174,7 @@ function stopGameLoop() {
   clearBotTimers();
   cancelAnimationFrame(vizAnim);
   stopSongLoop();
+  spStopPreview();
 }
 
 const gForm = $('#g-form');
@@ -2226,14 +2379,22 @@ function endRound() {
   clearInterval(gameTimer);
   clearBotTimers();
   stopSongLoop();
+  spStopPreview();
   if (!STATE.game.found) {
     presenterSay('tooLate', 'sad', 2500);
   }
   const song = STATE.game.currentSong;
   STATE.game.history.push({ song, ...STATE.game.perRound });
 
-  $('#re-art').textContent = song.emoji;
-  $('#re-art').style.background = `linear-gradient(135deg, ${song.color}, #1a1a1a)`;
+  const reArt = $('#re-art');
+  if (song.albumArt) {
+    reArt.innerHTML = `<img src="${escHtml(song.albumArt)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="">`;
+    reArt.style.background = '';
+  } else {
+    reArt.innerHTML = '';
+    reArt.textContent = song.emoji;
+    reArt.style.background = `linear-gradient(135deg, ${song.color}, #1a1a1a)`;
+  }
   $('#re-title').innerHTML = song.title.toUpperCase().replace(' ', '<br>');
   $('#re-artist').textContent = `${song.artist} · ${song.year}`;
   $('#re-pts').textContent = '+' + STATE.game.perRound.points;
@@ -2347,16 +2508,30 @@ function initResults() {
         gsap.from('.rs-row', { x: -20, opacity: 0, stagger: 0.08, duration: 0.4 });
       }
       if (tab === 'vinyls' && vinylsPanel && !vinylsPanel.innerHTML) {
-        vinylsPanel.innerHTML = `<div class="results-vinyls-panel"><div class="rv-heading">🎁 Vinyles gagnés cette partie</div>${
-          PACK_ITEMS.map(item => `<div class="rv-item ${item.rarity}">
+        const gameSongs = STATE.game.history.length
+          ? STATE.game.history.map(h => h.song)
+          : (STATE.game.songs || SONGS).slice(0, STATE.game.total);
+        vinylsPanel.innerHTML = `<div class="results-vinyls-panel">
+          <div class="rv-heading">🎵 Musiques de la partie</div>
+          ${gameSongs.map(song => `<div class="rv-item">
+            ${song.albumArt
+              ? `<img class="rv-album-art" src="${escHtml(song.albumArt)}" alt="">`
+              : `<div class="v-disk rv-disk" style="--label:${song.color}"></div>`}
+            <div class="rv-info">
+              <div class="rv-name">${escHtml(song.title)}</div>
+              <div class="rv-artist">${escHtml(song.artist)} · ${song.year}</div>
+            </div>
+          </div>`).join('')}
+          <div class="rv-heading" style="margin-top:10px;">🎁 Vinyles gagnés</div>
+          ${PACK_ITEMS.map(item => `<div class="rv-item ${item.rarity}">
             <div class="v-disk rv-disk" style="--label:${item.color}"></div>
             <div class="rv-info">
               <div class="rv-name">${escHtml(item.title)}</div>
               <div class="rv-artist">${escHtml(item.artist)}</div>
               <div class="rv-rar">${item.rarity === 'legendary' ? '👑 LÉG' : item.rarity === 'rare' ? '💎 RARE' : 'COMMUN'}</div>
             </div>
-          </div>`).join('')
-        }</div>`;
+          </div>`).join('')}
+        </div>`;
         gsap.from('.rv-item', { y: 20, opacity: 0, stagger: 0.1, duration: 0.4 });
       }
     };
@@ -3186,7 +3361,8 @@ function renderShop(cat) {
       const slice = SHOP_ITEMS.filter(i => i.cat === k);
       if (!slice.length) return;
       html += `<div class="shop-section-bar"><h3>${label}</h3></div>`;
-      html += `<div class="shop-row">${slice.map(renderShopCard).join('')}</div>`;
+      const rowClass = k === 'packs' ? 'shop-row shop-row-packs' : 'shop-row';
+      html += `<div class="${rowClass}">${slice.map(renderShopCard).join('')}</div>`;
     });
   } else {
     html = `<div class="shop-row">${items.map(renderShopCard).join('')}</div>`;
@@ -3194,7 +3370,7 @@ function renderShop(cat) {
   grid.innerHTML = html;
 
   // Wire buy buttons
-  $$('.shop-card .sc-buy', grid).forEach(b => {
+  $$('.shop-card .sc-buy, .pack-pochette .pp-buy', grid).forEach(b => {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
       attemptBuy(b.dataset.id);
@@ -3204,7 +3380,43 @@ function renderShop(cat) {
   gsap.from('.shop-card', { y: 24, opacity: 0, stagger: 0.04, duration: 0.4, ease: 'back.out(1.3)' });
 }
 
+const PACK_AURA = {
+  'pack-standard': '#3B82F6',
+  'pack-premium':  '#8B5CF6',
+  'pack-legendes': '#F59E0B',
+  'pack-80s':      '#EC4899',
+  'pack-rap':      '#22C55E',
+  'pack-rock':     '#EF4444'
+};
+
+function renderPackPochette(item) {
+  const [c1, c2] = TINTS[item.tint] || TINTS.orange;
+  const aura = PACK_AURA[item.id] || '#3B82F6';
+  const insufficient = STATE.player.tokens < item.price;
+  const oldPriceHtml = item.oldPrice
+    ? `<span class="pp-price-old">${item.oldPrice}</span> ` : '';
+  return `
+    <div class="pack-pochette shop-item" style="--c1:${c1};--c2:${c2};--aura:${aura};" data-id="${item.id}">
+      ${item.tag ? `<div class="pack-tag">${item.tag}</div>` : ''}
+      <div class="pp-illu">
+        <div class="pp-bg"></div>
+        <div class="pp-shine"></div>
+        <div class="pp-emoji">${item.emoji}</div>
+        <div class="pp-lines"></div>
+      </div>
+      <div class="pp-body">
+        <div class="pp-name">${item.name}</div>
+        <div class="pp-sub">${item.sub}</div>
+        <div class="pp-price-row">${oldPriceHtml}<span class="pp-price">${item.price} 🎤</span></div>
+        <button class="pp-buy${insufficient ? ' disabled' : ''}" data-id="${item.id}" ${insufficient ? 'disabled' : ''}>
+          ${insufficient ? 'MANQUE' : 'OUVRIR'}
+        </button>
+      </div>
+    </div>`;
+}
+
 function renderShopCard(item) {
+  if (item.cat === 'packs') return renderPackPochette(item);
   const [c1, c2] = TINTS[item.tint] || TINTS.orange;
   const insufficient = !item.real && STATE.player.tokens < item.price;
   const priceMarkup = item.real
@@ -3465,6 +3677,8 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
 });
 
 (async () => {
+  spLoadFromStorage();
+  try { await spHandleCallback(); } catch(e) { console.warn('spHandleCallback:', e); }
   try {
     const ok = await sbInit();
     if (ok) { applyProfileToState(); hideAuth(); }

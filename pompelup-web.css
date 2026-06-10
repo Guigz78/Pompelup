@@ -6094,12 +6094,142 @@ img[src^="data:"] {
   background: var(--bg-soft); border-radius: 14px; padding: 10px 14px;
 }
 .rv-disk { width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 38%, #fff 0 18%, var(--label) 18%); flex-shrink: 0; }
+.rv-album-art { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 .rv-info { flex: 1; }
 .rv-name { font-weight: 700; font-size: 13px; }
 .rv-artist { font-size: 11px; color: var(--muted); }
 .rv-rar { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; margin-top: 2px; }
 .rv-item.legendary .rv-rar { color: var(--yellow); }
 .rv-item.rare .rv-rar { color: var(--purple); }
+
+/* ── Spotify connect card ────────────────────── */
+.sp-connect-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-soft);
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 2px solid #1DB95430;
+  margin-bottom: 8px;
+}
+.sp-logo { flex-shrink: 0; }
+.sp-info { flex: 1; min-width: 0; }
+.sp-title { font-weight: 800; font-size: 14px; }
+.sp-status { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Hearthstone Pack Pochettes ─────────────── */
+.shop-row-packs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.pack-pochette {
+  position: relative;
+  width: 130px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  display: flex; flex-direction: column;
+  border: 2px solid transparent;
+  transition: transform 200ms, box-shadow 250ms, border-color 200ms;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pack-pochette:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 0 0 2px var(--aura), 0 16px 40px -8px color-mix(in srgb, var(--aura) 60%, transparent);
+  border-color: var(--aura);
+}
+.pp-illu {
+  position: relative;
+  height: 150px;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.pp-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, var(--c1), var(--c2));
+}
+.pp-shine {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.45), transparent 40%),
+    radial-gradient(circle at 75% 80%, rgba(0,0,0,0.15), transparent 35%);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+.pack-pochette:hover .pp-shine { opacity: 1; }
+.pp-lines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(255,255,255,0.05) 8px,
+    rgba(255,255,255,0.05) 10px
+  );
+}
+.pp-emoji {
+  position: relative;
+  font-size: 56px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  z-index: 2;
+  transition: transform 200ms;
+}
+.pack-pochette:hover .pp-emoji { transform: scale(1.12) translateY(-3px); }
+.pp-body {
+  background: #fff;
+  padding: 10px 12px 12px;
+  display: flex; flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.pp-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #1a1a1a;
+}
+.pp-sub {
+  font-size: 9.5px;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.3;
+  min-height: 24px;
+}
+.pp-price-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.pp-price { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: #1a1a1a; }
+.pp-price-old { font-size: 11px; color: var(--muted); text-decoration: line-through; }
+.pack-tag {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: #1a1a1a;
+  color: #FBBF24;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 3px 7px;
+  border-radius: 999px;
+  z-index: 5;
+}
+.pp-buy {
+  margin-top: 6px;
+  width: 100%;
+  padding: 7px 0;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  border: none;
+  cursor: pointer;
+  background: var(--c2);
+  color: #fff;
+  transition: background 160ms, transform 100ms;
+}
+.pp-buy:hover:not(:disabled) { filter: brightness(1.1); transform: scale(1.02); }
+.pp-buy.disabled { background: var(--bg-soft); color: var(--muted); cursor: not-allowed; }
 
 /* ── Performance hints ────────────────────────── */
 .disc { will-change: transform; }
