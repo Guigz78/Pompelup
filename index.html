@@ -240,6 +240,19 @@
                 </div>
                 <input class="ac-foot ac-join-input" placeholder="CODE" maxlength="6" id="join-code-input" style="text-align: center; background: rgba(0,0,0,0.05); cursor: text;">
               </div>
+              <div class="home-cta-card solo" data-action="play-solo">
+                <div class="ac-body" style="display:flex; align-items:center; gap:14px;">
+                  <div class="ac-icon">🎮</div>
+                  <div>
+                    <div class="ac-title">JOUER SOLO</div>
+                    <div class="ac-sub">Entraîne-toi, bats les bots, grimpe en XP</div>
+                  </div>
+                </div>
+                <div class="ac-foot">
+                  <span>Tous les modes disponibles</span>
+                  <span>→</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1369,6 +1382,46 @@
       <button class="btn btn-accent auth-submit" id="auth-signup-btn">Créer un compte</button>
       <div class="auth-err" id="auth-signup-err"></div>
     </div>
+  </div>
+</div>
+
+<!-- ============== SOLO MODAL ============== -->
+<div class="solo-overlay" id="solo-overlay">
+  <div class="solo-sheet">
+    <div class="solo-sheet-header">
+      <div class="solo-sheet-title">PARTIE SOLO</div>
+      <button class="solo-close" id="solo-close">✕</button>
+    </div>
+
+    <div class="solo-section">
+      <div class="solo-label">Mode de jeu</div>
+      <div class="solo-seg" id="solo-mode-seg">
+        <button class="active" data-v="classic">🎵 Classic</button>
+        <button data-v="rush">⚡ Rush</button>
+        <button data-v="stem">🎛️ Pistes</button>
+      </div>
+    </div>
+
+    <div class="solo-section">
+      <div class="solo-label">Manches <span id="solo-rounds-val">10</span></div>
+      <div class="solo-rounds-row">
+        <button class="solo-rnd-btn" data-r="5">5</button>
+        <button class="solo-rnd-btn active" data-r="10">10</button>
+        <button class="solo-rnd-btn" data-r="15">15</button>
+        <button class="solo-rnd-btn" data-r="20">20</button>
+      </div>
+    </div>
+
+    <div class="solo-section">
+      <div class="solo-label">Difficulté</div>
+      <div class="solo-seg" id="solo-diff-seg">
+        <button data-v="easy">😌 Facile</button>
+        <button class="active" data-v="normal">😎 Normal</button>
+        <button data-v="hard">🔥 Difficile</button>
+      </div>
+    </div>
+
+    <button class="btn btn-accent btn-xl solo-play-btn" id="solo-play-btn">JOUER !</button>
   </div>
 </div>
 

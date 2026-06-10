@@ -741,6 +741,96 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 }
 .home-cta-card .ac-join-input::placeholder { color: var(--soft); letter-spacing: 0.12em; }
 
+/* Solo CTA card */
+.home-cta-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.home-cta-card.solo {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #312e81, #4c1d95);
+  color: #fff;
+  box-shadow: 0 6px 0 #1e1b4b;
+}
+.home-cta-card.solo .ac-icon { background: rgba(255,255,255,0.15); }
+.home-cta-card.solo .ac-foot { background: rgba(255,255,255,0.12); }
+.home-cta-card.solo:hover { box-shadow: 0 9px 0 #1e1b4b; }
+
+/* Solo modal */
+.solo-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  place-items: center;
+}
+.solo-overlay.active { display: grid; }
+.solo-sheet {
+  background: var(--card, #fff);
+  border-radius: 28px;
+  padding: 28px 28px 24px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+}
+.solo-sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px;
+}
+.solo-sheet-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; letter-spacing: 0.03em;
+}
+.solo-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.07);
+  font-size: 14px; font-weight: 700;
+  display: grid; place-items: center;
+  border: none; cursor: pointer;
+  color: inherit;
+}
+.solo-close:hover { background: rgba(0,0,0,0.14); }
+.solo-section { margin-bottom: 20px; }
+.solo-label {
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.solo-seg {
+  display: flex; gap: 8px;
+}
+.solo-seg button {
+  flex: 1; padding: 9px 6px;
+  border-radius: 12px;
+  font-size: 12px; font-weight: 700;
+  background: rgba(0,0,0,0.06);
+  border: 2px solid transparent;
+  cursor: pointer; color: inherit;
+  transition: all 140ms;
+}
+.solo-seg button.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+.solo-rounds-row { display: flex; gap: 8px; }
+.solo-rnd-btn {
+  flex: 1; padding: 9px 0;
+  border-radius: 12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; letter-spacing: 0.04em;
+  background: rgba(0,0,0,0.06);
+  border: 2px solid transparent;
+  cursor: pointer; color: inherit;
+  transition: all 140ms;
+}
+.solo-rnd-btn.active {
+  background: var(--orange);
+  color: #fff; border-color: var(--orange);
+}
+.solo-play-btn { width: 100%; margin-top: 6px; }
+
 .home-right {
   position: relative;
   height: 100%;

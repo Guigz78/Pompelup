@@ -210,6 +210,9 @@ document.body.addEventListener('click', (e) => {
       STATE.room._joined = false;
       navigateTo('lobby');
     }
+    if (a.dataset.action === 'play-solo') {
+      openSoloModal();
+    }
     if (a.dataset.action === 'join-room') {
       if (e.target.tagName !== 'INPUT') {
         const code = document.getElementById('join-code-input')?.value?.trim().toUpperCase();
@@ -227,6 +230,85 @@ document.body.addEventListener('click', (e) => {
     }
   }
 });
+
+// ===== SOLO MODAL =====
+const SOLO_STATE = { mode: 'classic', rounds: 10, diff: 'normal' };
+const SOLO_BOTS = {
+  easy:   [
+    { name: 'Cath',  seed: 'cath-vibe',   color: '#3B4FE8', level: 6,  accuracy: 0.35, delay: 0.9 },
+    { name: 'Jules', seed: 'jules-fresh', color: '#22C55E', level: 4,  accuracy: 0.25, delay: 1.1 },
+    { name: 'Léa',   seed: 'lea-sunset',  color: '#F472B6', level: 5,  accuracy: 0.3,  delay: 1.0 }
+  ],
+  normal: [
+    { name: 'Cath',  seed: 'cath-vibe',   color: '#3B4FE8', level: 18, accuracy: 0.7,  delay: 0.45 },
+    { name: 'Jules', seed: 'jules-fresh', color: '#22C55E', level: 7,  accuracy: 0.5,  delay: 0.7 },
+    { name: 'Léa',   seed: 'lea-sunset',  color: '#F472B6', level: 24, accuracy: 0.65, delay: 0.55 }
+  ],
+  hard: [
+    { name: 'Cath',  seed: 'cath-vibe',   color: '#3B4FE8', level: 42, accuracy: 0.92, delay: 0.12 },
+    { name: 'Jules', seed: 'jules-fresh', color: '#22C55E', level: 38, accuracy: 0.85, delay: 0.18 },
+    { name: 'Léa',   seed: 'lea-sunset',  color: '#F472B6', level: 50, accuracy: 0.95, delay: 0.08 }
+  ]
+};
+
+function openSoloModal() {
+  document.getElementById('solo-overlay').classList.add('active');
+  gsap.fromTo('.solo-sheet', { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'back.out(1.4)' });
+}
+
+function closeSoloModal() {
+  gsap.to('.solo-sheet', { y: 40, opacity: 0, duration: 0.22, ease: 'power2.in',
+    onComplete: () => document.getElementById('solo-overlay').classList.remove('active')
+  });
+}
+
+function launchSolo() {
+  closeSoloModal();
+  STATE.room.mode = SOLO_STATE.mode;
+  STATE.game.total = SOLO_STATE.rounds;
+  STATE._multiPlayers = null;
+  STATE.bots = SOLO_BOTS[SOLO_STATE.diff].map(b => ({ ...b }));
+  STATE.totals = {};
+  STATE.totals[STATE.player.name] = 0;
+  STATE.bots.forEach(b => { STATE.totals[b.name] = 0; });
+  const songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
+  STATE.game.songs = songs;
+  setTimeout(() => navigateTo('game'), 260);
+}
+
+(function initSoloModal() {
+  document.getElementById('solo-close').onclick = closeSoloModal;
+  document.getElementById('solo-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeSoloModal();
+  });
+
+  document.getElementById('solo-mode-seg').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-v]');
+    if (!btn) return;
+    $$('#solo-mode-seg [data-v]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    SOLO_STATE.mode = btn.dataset.v;
+  });
+
+  document.getElementById('solo-diff-seg').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-v]');
+    if (!btn) return;
+    $$('#solo-diff-seg [data-v]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    SOLO_STATE.diff = btn.dataset.v;
+  });
+
+  $$('.solo-rnd-btn').forEach(btn => {
+    btn.onclick = () => {
+      $$('.solo-rnd-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      SOLO_STATE.rounds = parseInt(btn.dataset.r);
+      document.getElementById('solo-rounds-val').textContent = btn.dataset.r;
+    };
+  });
+
+  document.getElementById('solo-play-btn').onclick = launchSolo;
+})();
 
 // ===== NOTES CANVAS =====
 const canvas = $('#notes-canvas');
@@ -1209,7 +1291,7 @@ function initCollection() {
 }
 
 // ===== SPOTIFY =====
-const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID'; // Register at developer.spotify.com
+const SPOTIFY_CLIENT_ID = 'd6fc0be86a20420aba09326f27cabefa';
 const SPOTIFY_SCOPES = 'user-read-email user-read-private';
 let _spToken = null;
 let _spExpires = 0;
