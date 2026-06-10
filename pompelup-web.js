@@ -3068,6 +3068,8 @@ async function handleAuthLogin() {
   const btn = document.getElementById('auth-login-btn');
   try {
     err.textContent = '';
+    if (!email) throw new Error('Email requis');
+    if (!pass) throw new Error('Mot de passe requis');
     btn.textContent = '...';
     await sbSignIn(email, pass);
     applyProfileToState();
@@ -3087,6 +3089,8 @@ async function handleAuthSignup() {
   try {
     err.textContent = '';
     if (!username || username.length < 2) throw new Error('Pseudo trop court (2 car. min)');
+    if (!email) throw new Error('Email requis');
+    if (pass.length < 6) throw new Error('Mot de passe trop court (6 car. min)');
     btn.textContent = '...';
     await sbSignUp(email, pass, username);
     applyProfileToState();
@@ -3123,6 +3127,15 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('auth-login-btn')?.addEventListener('click', handleAuthLogin);
 document.getElementById('auth-signup-btn')?.addEventListener('click', handleAuthSignup);
 document.getElementById('auth-guest-btn')?.addEventListener('click', hideAuth);
+
+document.getElementById('auth-google-btn')?.addEventListener('click', async () => {
+  try { await sbSignInWithProvider('google'); }
+  catch(e) { document.getElementById('auth-login-err').textContent = e.message; }
+});
+document.getElementById('auth-apple-btn')?.addEventListener('click', async () => {
+  try { await sbSignInWithProvider('apple'); }
+  catch(e) { document.getElementById('auth-login-err').textContent = e.message; }
+});
 
 (async () => {
   try {

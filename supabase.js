@@ -17,9 +17,28 @@ async function sbInit() {
   if (session?.user) {
     _sbUser = session.user;
     _sbProfile = await sbFetchProfile(_sbUser.id);
+    if (!_sbProfile) await sbAutoCreateProfile(session.user);
   }
-  sb.auth.onAuthStateChange((_e, session) => { _sbUser = session?.user || null; });
+  sb.auth.onAuthStateChange(async (_e, session) => {
+    _sbUser = session?.user || null;
+    if (_sbUser && !_sbProfile) {
+      _sbProfile = await sbFetchProfile(_sbUser.id);
+      if (!_sbProfile) await sbAutoCreateProfile(_sbUser);
+    }
+  });
   return !!_sbUser;
+}
+
+async function sbAutoCreateProfile(user) {
+  const base = user.user_metadata?.full_name?.split(' ')[0]
+    || user.email?.split('@')[0]
+    || 'Joueur';
+  const seed = 'user' + Math.random().toString(36).slice(2, 6);
+  for (let suffix of ['', Math.floor(Math.random()*9999), Math.floor(Math.random()*9999)]) {
+    const username = base + suffix;
+    const { error } = await sb.from('profiles').insert({ id: user.id, username, avatar_seed: seed });
+    if (!error) { _sbProfile = await sbFetchProfile(user.id); return; }
+  }
 }
 
 async function sbSignUp(email, password, username) {
@@ -44,6 +63,14 @@ async function sbSignIn(email, password) {
 async function sbSignOut() {
   await sb.auth.signOut();
   _sbUser = null; _sbProfile = null;
+}
+
+async function sbSignInWithProvider(provider) {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: window.location.origin }
+  });
+  if (error) throw new Error(error.message);
 }
 
 async function sbFetchProfile(id) {
