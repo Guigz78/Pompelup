@@ -902,25 +902,19 @@ function renderCustomSoundsLibrary() {
 }
 
 function updateLobbyCustomPads() {
-  const row = $('#sb-custom-row'); const pads = $('#sb-custom-pads');
-  if (!row || !pads) return;
+  const pads = $('#sb-custom-pads');
+  if (!pads) return;
   const sounds = STATE.lobbyPerso.customSounds;
-  if (!sounds.length) { row.style.display = 'none'; return; }
-  row.style.display = '';
-  pads.innerHTML = sounds.map(s => `
-    <button class="sb-pad sb-pad-sound" data-sound-url="${escHtml(s.url)}" data-sound-name="${escHtml(s.name)}" style="--pad: #8B5CF6;">
+  if (!sounds.length) {
+    pads.innerHTML = '<div class="sb-empty-hint">Ajoute tes sons dans Personnalisation → Sons custom</div>';
+    return;
+  }
+  const colors = ['#8B5CF6','#F97316','#3B4FE8','#22C55E','#F472B6','#FBBF24','#EF4444','#06B6D4'];
+  pads.innerHTML = sounds.map((s, i) => `
+    <button class="sb-pad sb-pad-custom" data-sound-url="${escHtml(s.url)}" style="--pad: ${colors[i % colors.length]};">
       <span class="pad-emoji">🎵</span>
       <span class="pad-name">${escHtml(s.name.slice(0, 10))}</span>
     </button>`).join('');
-  $$('.sb-pad[data-sound-url]', pads).forEach(pad => {
-    pad.onclick = () => {
-      pad.classList.remove('firing'); void pad.offsetWidth; pad.classList.add('firing');
-      previewSfx(pad.dataset.soundUrl);
-      pushChatMsg('system', `${STATE.player.name} a joué un son 🔊`);
-      if (sbHasRoom()) sbBroadcast('sound', { soundUrl: pad.dataset.soundUrl, name: STATE.player.name });
-      setTimeout(() => pad.classList.remove('firing'), 400);
-    };
-  });
 }
 
 function initCustomSounds() {
@@ -1237,7 +1231,7 @@ function initLobby() {
     }
     if (event === 'chat') pushChatMsg('msg', data.content, data.name, data.avatar);
     if (event === 'sound') {
-      playSoundFx(data.sound);
+      if (data.soundUrl) previewSfx(data.soundUrl);
       spawnLobbyEmote(data.emoji || '🎵');
       pushChatMsg('system', `${data.name} a joué un son 🔊`);
     }
@@ -1567,20 +1561,22 @@ function spawnLobbyEmote(emoji, fromX, fromY) {
 
 // Wire up sound pads
 document.addEventListener('click', (e) => {
-  const sound = e.target.closest('.sb-pad-sound');
+  const sound = e.target.closest('.sb-pad-custom');
   if (sound) {
     sound.classList.remove('firing');
     void sound.offsetWidth;
     sound.classList.add('firing');
-    playSoundFx(sound.dataset.sound);
+    previewSfx(sound.dataset.soundUrl);
     setTimeout(() => sound.classList.remove('firing'), 400);
-    const rect = sound.getBoundingClientRect();
-    const cRect = $('.lobby-center').getBoundingClientRect();
-    spawnLobbyEmote(sound.querySelector('.pad-emoji')?.textContent || '🎵',
-      rect.left - cRect.left + rect.width / 2,
-      rect.top - cRect.top);
+    const cRect = $('.lobby-center')?.getBoundingClientRect();
+    if (cRect) {
+      const rect = sound.getBoundingClientRect();
+      spawnLobbyEmote(sound.querySelector('.pad-emoji')?.textContent || '🎵',
+        rect.left - cRect.left + rect.width / 2,
+        rect.top - cRect.top);
+    }
     pushChatMsg('system', `${STATE.player.name} a joué un son 🔊`);
-    if (sbHasRoom()) sbBroadcast('sound', { sound: sound.dataset.sound, emoji: sound.querySelector('.pad-emoji')?.textContent, name: STATE.player.name });
+    if (sbHasRoom()) sbBroadcast('sound', { soundUrl: sound.dataset.soundUrl, emoji: sound.querySelector('.pad-emoji')?.textContent, name: STATE.player.name });
   }
   const emote = e.target.closest('.sb-pad-emote');
   if (emote) {
