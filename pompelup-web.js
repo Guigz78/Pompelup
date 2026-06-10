@@ -68,6 +68,7 @@ const COLLECTION_DATA = [
   { title: '???',                artist: '???',          rarity: 'rare',       label: '#888',    year: null, genre: '—',          plays: 0,  locked: true },
   { title: '???',                artist: '???',          rarity: 'legendary',  label: '#888',    year: null, genre: '—',          plays: 0,  locked: true }
 ];
+const COLLECTION_DATA_IDX = COLLECTION_DATA.map((v, i) => Object.assign({}, v, { _idx: i }));
 
 const HISTORY = [
   { place: 1, mode: 'Classic',   players: ['cath-vibe', 'jules-fresh', 'lea-sunset'],   pts: 4720, when: 'Il y a 2h' },
@@ -98,6 +99,7 @@ const SCREENS_WITHOUT_CHROME = ['lobby', 'game', 'results'];
 
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
+const escHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const avatarUrl = (seed) => {
   if (!seed) return '';
   if (seed.startsWith('data:') || seed.startsWith('http://') || seed.startsWith('https://')) return seed;
@@ -228,13 +230,13 @@ document.body.addEventListener('click', (e) => {
 const canvas = $('#notes-canvas');
 let ctx, notes = [];
 function setupCanvas() {
-  canvas.width = 1440;
-  canvas.height = 900;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   ctx = canvas.getContext('2d');
   for (let i = 0; i < 22; i++) {
     notes.push({
-      x: Math.random() * 1440,
-      y: Math.random() * 900,
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
       v: 0.15 + Math.random() * 0.5,
       r: 12 + Math.random() * 16,
       o: 0.08 + Math.random() * 0.18,
@@ -245,7 +247,7 @@ function setupCanvas() {
 }
 function drawNotes() {
   if (!ctx) return;
-  ctx.clearRect(0, 0, 1440, 900);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   const mult = STATE.animDensity === 'calm' ? 0.3 : STATE.animDensity === 'chaos' ? 2 : 1;
   const cnt = Math.floor(notes.length * (STATE.animDensity === 'calm' ? 0.4 : 1));
   for (let i = 0; i < cnt; i++) {
@@ -255,7 +257,7 @@ function drawNotes() {
     ctx.globalAlpha = n.o;
     ctx.fillText(n.ch, n.x, n.y);
     n.y -= n.v * mult;
-    if (n.y < -30) { n.y = 920; n.x = Math.random() * 1440; }
+    if (n.y < -30) { n.y = canvas.height + 10; n.x = Math.random() * canvas.width; }
   }
   ctx.globalAlpha = 1;
   requestAnimationFrame(drawNotes);
@@ -948,7 +950,7 @@ const COLLECTION_STATE = { filter: 'all', sort: 'recent', search: '' };
 function rarityRank(r) { return r === 'legendary' ? 0 : r === 'rare' ? 1 : 2; }
 
 function getFilteredCollection() {
-  let list = COLLECTION_DATA.map((v, i) => ({ ...v, _idx: i }));
+  let list = COLLECTION_DATA_IDX.slice();
   const q = COLLECTION_STATE.search.trim().toLowerCase();
   if (q) {
     list = list.filter(v => !v.locked && (v.title + ' ' + v.artist + ' ' + v.genre).toLowerCase().includes(q));
@@ -968,23 +970,33 @@ function getFilteredCollection() {
 }
 
 function updateCollectionKpis() {
-  const owned = COLLECTION_DATA.filter(v => !v.locked);
+  let cmnOwned=0, rareOwned=0, legOwned=0, cmnAll=0, rareAll=0, legAll=0, locked=0;
+  COLLECTION_DATA.forEach(v => {
+    if (v.rarity === 'common') cmnAll++;
+    else if (v.rarity === 'rare') rareAll++;
+    else if (v.rarity === 'legendary') legAll++;
+    if (v.locked) { locked++; }
+    else if (v.rarity === 'common') cmnOwned++;
+    else if (v.rarity === 'rare') rareOwned++;
+    else if (v.rarity === 'legendary') legOwned++;
+  });
+  const owned = cmnOwned + rareOwned + legOwned;
   const totalGoal = 180;
-  const pct = Math.round((owned.length / totalGoal) * 100);
-  $('#kpi-common').textContent = owned.filter(v => v.rarity === 'common').length;
-  $('#kpi-rare').textContent = owned.filter(v => v.rarity === 'rare').length;
-  $('#kpi-legendary').textContent = owned.filter(v => v.rarity === 'legendary').length;
-  $('#kpi-locked').textContent = totalGoal - owned.length;
+  const pct = Math.round((owned / totalGoal) * 100);
+  $('#kpi-common').textContent = cmnOwned;
+  $('#kpi-rare').textContent = rareOwned;
+  $('#kpi-legendary').textContent = legOwned;
+  $('#kpi-locked').textContent = totalGoal - owned;
   $('#ring-num').textContent = pct + '%';
   const r = 42, c = 2 * Math.PI * r;
   const fg = $('#ring-fg');
   if (fg) { fg.style.strokeDasharray = c; fg.style.strokeDashoffset = c - (c * pct / 100); }
   $('#cnt-all').textContent = COLLECTION_DATA.length;
-  $('#cnt-common').textContent = COLLECTION_DATA.filter(v => v.rarity === 'common').length;
-  $('#cnt-rare').textContent = COLLECTION_DATA.filter(v => v.rarity === 'rare').length;
-  $('#cnt-legendary').textContent = COLLECTION_DATA.filter(v => v.rarity === 'legendary').length;
-  $('#cnt-owned').textContent = owned.length;
-  $('#cnt-locked').textContent = COLLECTION_DATA.filter(v => v.locked).length;
+  $('#cnt-common').textContent = cmnAll;
+  $('#cnt-rare').textContent = rareAll;
+  $('#cnt-legendary').textContent = legAll;
+  $('#cnt-owned').textContent = owned;
+  $('#cnt-locked').textContent = locked;
 }
 
 function updateCollectionFeatured() {
@@ -1066,11 +1078,17 @@ function closeVinylModal() {
   gsap.to('.vm-backdrop', { opacity: 0, duration: 0.25 });
 }
 
+let _colSearchTimer = null;
 function initCollection() {
   updateCollectionKpis();
   updateCollectionFeatured();
-  renderCollectionGrid();
+  // Sync UI controls with persisted state
+  const searchEl = $('#col-search');
+  if (searchEl) searchEl.value = COLLECTION_STATE.search;
+  const sortEl = $('#col-sort');
+  if (sortEl) sortEl.value = COLLECTION_STATE.sort;
   $$('.col-chip', $('#col-chips')).forEach(c => {
+    c.classList.toggle('active', c.dataset.filter === COLLECTION_STATE.filter);
     c.onclick = () => {
       $$('.col-chip', $('#col-chips')).forEach(x => x.classList.remove('active'));
       c.classList.add('active');
@@ -1078,8 +1096,13 @@ function initCollection() {
       renderCollectionGrid();
     };
   });
-  $('#col-sort').onchange = (e) => { COLLECTION_STATE.sort = e.target.value; renderCollectionGrid(); };
-  $('#col-search').oninput = (e) => { COLLECTION_STATE.search = e.target.value; renderCollectionGrid(); };
+  renderCollectionGrid();
+  if (sortEl) sortEl.onchange = (e) => { COLLECTION_STATE.sort = e.target.value; renderCollectionGrid(); };
+  if (searchEl) searchEl.oninput = (e) => {
+    COLLECTION_STATE.search = e.target.value;
+    clearTimeout(_colSearchTimer);
+    _colSearchTimer = setTimeout(renderCollectionGrid, 200);
+  };
   $$('[data-close], .vm-backdrop', $('#vinyl-modal')).forEach(el => el.onclick = closeVinylModal);
   $('#vm-equip').onclick = () => { shopToast('✓ Mis en avant sur ton profil', 'good'); closeVinylModal(); };
   $('#vm-share').onclick = () => { shopToast('Lien copié 🔗', 'good'); };
@@ -1467,27 +1490,30 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function pushChatMsg(kind, content, name, seed) {
-  const list = $('#chat-list');
+function _pushMsg(listId, kind, content, name, seed, maxMsgs) {
+  const list = $('#' + listId);
   if (!list) return;
   const div = document.createElement('div');
+  const safe = escHtml(content);
   if (kind === 'system') {
     div.className = 'chat-msg system';
-    div.innerHTML = `<div class="cm-body"><div class="ct">${content}</div></div>`;
+    div.innerHTML = `<div class="cm-body"><div class="ct">${safe}</div></div>`;
   } else {
     div.className = 'chat-msg' + (kind === 'you' ? ' you' : '');
     div.innerHTML = `
-      <div class="ca"><img src="${avatarUrl(seed)}" alt=""></div>
+      <div class="ca"><img src="${escHtml(avatarUrl(seed))}" alt=""></div>
       <div class="cm-body">
-        <div class="cn"><b>${name}</b></div>
-        <div class="ct">${content}</div>
+        <div class="cn"><b>${escHtml(name || '')}</b></div>
+        <div class="ct">${safe}</div>
       </div>
     `;
   }
   list.appendChild(div);
   list.scrollTop = list.scrollHeight;
   gsap.from(div, { y: 12, opacity: 0, duration: 0.3 });
+  if (maxMsgs) while (list.children.length > maxMsgs) list.removeChild(list.firstChild);
 }
+function pushChatMsg(kind, content, name, seed) { _pushMsg('chat-list', kind, content, name, seed); }
 
 const chatField = $('#chat-input-field');
 if (chatField) {
@@ -1738,28 +1764,7 @@ function startGame() {
   startRound();
 }
 
-function pushGameChat(kind, content, name, seed) {
-  const list = $('#g-chat');
-  if (!list) return;
-  const div = document.createElement('div');
-  if (kind === 'system') {
-    div.className = 'chat-msg system';
-    div.innerHTML = `<div class="cm-body"><div class="ct">${content}</div></div>`;
-  } else {
-    div.className = 'chat-msg' + (kind === 'you' ? ' you' : '');
-    div.innerHTML = `
-      <div class="ca"><img src="${avatarUrl(seed)}" alt=""></div>
-      <div class="cm-body">
-        <div class="cn"><b>${name}</b></div>
-        <div class="ct">${content}</div>
-      </div>
-    `;
-  }
-  list.appendChild(div);
-  list.scrollTop = list.scrollHeight;
-  gsap.from(div, { y: 10, opacity: 0, duration: 0.3 });
-  while (list.children.length > 12) list.removeChild(list.firstChild);
-}
+function pushGameChat(kind, content, name, seed) { _pushMsg('g-chat', kind, content, name, seed, 12); }
 
 function startRound() {
   STATE.game.round++;
@@ -3082,6 +3087,10 @@ function initShop() {
 
 setupCanvas();
 drawNotes();
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 refreshSidebar();
 renderPackCta();
 initHome();

@@ -6000,4 +6000,9 @@ img[src^="data:"] {
 }
 .auth-sso-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.22); }
 .auth-sso-apple { background: rgba(255,255,255,0.96); color: #000; border-color: transparent; }
+
+/* ── Performance hints ────────────────────────── */
+.disc { will-change: transform; }
+.vinyl-card, .skin-card, .shop-card, .lp-card { will-change: transform, opacity; }
+.floating-emote, .lobby-floating-emote { will-change: transform, opacity; }
 .auth-sso-apple:hover { background: #fff; }
