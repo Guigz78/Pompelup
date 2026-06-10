@@ -144,7 +144,7 @@ function navigateTo(id) {
   const cur = $('.screen.active');
   const next = $('#screen-' + id);
   if (!next) return;
-  if (cur === next) return;
+  if (cur === next) { onScreenEnter(id); return; }
 
   if (cur && cur.id === 'screen-game') stopGameLoop();
 
@@ -217,7 +217,7 @@ document.body.addEventListener('click', (e) => {
           STATE.room._joined = true;
           navigateTo('lobby');
         } else {
-          document.getElementById('join-code-input')?.focus();
+          showJoinCodeError();
         }
       }
     }
@@ -949,13 +949,16 @@ function rarityRank(r) { return r === 'legendary' ? 0 : r === 'rare' ? 1 : 2; }
 
 function getFilteredCollection() {
   let list = COLLECTION_DATA.map((v, i) => ({ ...v, _idx: i }));
-  const f = COLLECTION_STATE.filter;
-  if (f === 'common' || f === 'rare' || f === 'legendary') {
-    list = list.filter(v => v.rarity === f);
-  } else if (f === 'owned')  list = list.filter(v => !v.locked);
-  else if (f === 'locked')   list = list.filter(v => v.locked);
   const q = COLLECTION_STATE.search.trim().toLowerCase();
-  if (q) list = list.filter(v => (v.title + ' ' + v.artist + ' ' + v.genre).toLowerCase().includes(q));
+  if (q) {
+    list = list.filter(v => !v.locked && (v.title + ' ' + v.artist + ' ' + v.genre).toLowerCase().includes(q));
+  } else {
+    const f = COLLECTION_STATE.filter;
+    if (f === 'common' || f === 'rare' || f === 'legendary') {
+      list = list.filter(v => v.rarity === f && !v.locked);
+    } else if (f === 'owned')  list = list.filter(v => !v.locked);
+    else if (f === 'locked')   list = list.filter(v => v.locked);
+  }
   const s = COLLECTION_STATE.sort;
   if (s === 'rarity') list.sort((a, b) => rarityRank(a.rarity) - rarityRank(b.rarity) || a._idx - b._idx);
   else if (s === 'alpha') list.sort((a, b) => (a.locked ? 1 : 0) - (b.locked ? 1 : 0) || a.title.localeCompare(b.title));
@@ -1057,8 +1060,10 @@ function openVinylModal(v) {
 }
 function closeVinylModal() {
   const modal = $('#vinyl-modal');
+  if (!modal) return;
+  modal.classList.remove('active');
   gsap.to('.vm-card', { scale: 0.9, opacity: 0, y: 20, duration: 0.25, ease: 'power2.in' });
-  gsap.to('.vm-backdrop', { opacity: 0, duration: 0.25, onComplete: () => modal.classList.remove('active') });
+  gsap.to('.vm-backdrop', { opacity: 0, duration: 0.25 });
 }
 
 function initCollection() {
@@ -1075,7 +1080,7 @@ function initCollection() {
   });
   $('#col-sort').onchange = (e) => { COLLECTION_STATE.sort = e.target.value; renderCollectionGrid(); };
   $('#col-search').oninput = (e) => { COLLECTION_STATE.search = e.target.value; renderCollectionGrid(); };
-  $$('[data-close]', $('#vinyl-modal')).forEach(el => el.onclick = closeVinylModal);
+  $$('[data-close], .vm-backdrop', $('#vinyl-modal')).forEach(el => el.onclick = closeVinylModal);
   $('#vm-equip').onclick = () => { shopToast('✓ Mis en avant sur ton profil', 'good'); closeVinylModal(); };
   $('#vm-share').onclick = () => { shopToast('Lien copié 🔗', 'good'); };
   gsap.from('.col-hero > *', { y: -20, opacity: 0, stagger: 0.1, duration: 0.5 });
@@ -1106,6 +1111,10 @@ function initLobby() {
 
   const connectFn = STATE.room._isHost ? sbCreateRoom : sbJoinRoom;
   connectFn(STATE.room.code, (event, data) => {
+    if (event === 'ready') {
+      renderLobbyPlayers(sbRoomPlayers());
+      updateLobbyCount();
+    }
     if (event === 'join' || event === 'leave') {
       renderLobbyPlayers(sbRoomPlayers());
       updateLobbyCount();
@@ -1170,6 +1179,18 @@ function updateLobbyCount() {
   if (!sub) return;
   const n = sbRoomPlayers().length;
   sub.textContent = `${n} joueur${n > 1 ? 's' : ''} sur 8 — partagez le code pour inviter`;
+  const startBtn = document.getElementById('start-game-btn');
+  if (startBtn && STATE.room._isHost) {
+    if (n <= 1) {
+      startBtn.disabled = true;
+      startBtn.textContent = 'EN ATTENTE DE JOUEURS…';
+      startBtn.title = 'Attends au moins 1 autre joueur pour lancer';
+    } else {
+      startBtn.disabled = false;
+      startBtn.textContent = 'LANCER LA PARTIE';
+      startBtn.title = '';
+    }
+  }
 }
 
 // Settings / chip / segment handlers
@@ -1488,6 +1509,28 @@ if (chatField) {
   });
 }
 
+function showJoinCodeError() {
+  const input = document.getElementById('join-code-input');
+  if (!input) return;
+  input.classList.add('shake');
+  input.style.borderColor = '#EF4444';
+  let hint = input.parentElement.querySelector('.join-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'join-hint';
+    input.parentElement.appendChild(hint);
+  }
+  hint.textContent = '6 caractères requis';
+  hint.style.cssText = 'color:#EF4444;font-size:11px;text-align:center;margin-top:4px;';
+  input.value = '';
+  setTimeout(() => {
+    input.classList.remove('shake');
+    input.style.borderColor = '';
+    if (hint) hint.textContent = '';
+  }, 1500);
+  input.focus();
+}
+
 const joinInput = document.getElementById('join-code-input');
 if (joinInput) {
   joinInput.addEventListener('keydown', (e) => {
@@ -1498,6 +1541,8 @@ if (joinInput) {
         STATE.room._isHost = false;
         STATE.room._joined = true;
         navigateTo('lobby');
+      } else {
+        showJoinCodeError();
       }
     }
   });
@@ -2007,14 +2052,17 @@ function endGame() {
 
 // ===== RESULTS =====
 function initResults() {
-  const players = [
-    { name: STATE.player.name, seed: STATE.player.avatar },
-    { name: 'Cath',  seed: 'cath-vibe' },
-    { name: 'Jules', seed: 'jules-fresh' },
-    { name: 'Léa',   seed: 'lea-sunset' }
-  ];
-  if (!STATE.totals[STATE.player.name]) {
-    STATE.totals = { 'Guigz': 4720, 'Cath': 3240, 'Jules': 2100, 'Léa': 1880 };
+  const realPlayers = STATE._multiPlayers;
+  const players = realPlayers
+    ? realPlayers.map(p => ({ name: p.name, seed: p.avatar || 'guest' }))
+    : [
+        { name: STATE.player.name, seed: STATE.player.avatar },
+        ...STATE.bots.map(b => ({ name: b.name, seed: b.seed }))
+      ];
+  if (!Object.keys(STATE.totals).some(k => STATE.totals[k] > 0)) {
+    const demo = {};
+    players.forEach((p, i) => { demo[p.name] = [4720, 3240, 2100, 1880][i] || 1000; });
+    STATE.totals = demo;
   }
   const sorted = players.slice().sort((a, b) => (STATE.totals[b.name] || 0) - (STATE.totals[a.name] || 0));
 
@@ -2916,7 +2964,7 @@ function renderShopCard(item) {
   const btnLabel = item.real ? 'ACHETER' : (insufficient ? 'PAS ASSEZ' : 'ACHETER');
   const btnCls = item.real ? 'btn-light-green' : (insufficient ? 'btn-disabled' : 'btn-light');
   return `
-    <div class="shop-card" style="--c1: ${c1}; --c2: ${c2};">
+    <div class="shop-card shop-item" style="--c1: ${c1}; --c2: ${c2};">
       ${item.tag ? `<div class="sc-tag-tl">${item.tag}</div>` : ''}
       <div class="sc-illu">
         <div class="sc-illu-bg"></div>
@@ -3058,6 +3106,11 @@ function applyProfileToState() {
 function hideAuth() {
   const overlay = document.getElementById('auth-overlay');
   if (!overlay) return;
+  if (!sbGetProfile()) {
+    PAGE_INFO.home.sub = 'Prêt à jouer ? Lance une partie !';
+    const sub = document.getElementById('tb-sub');
+    if (sub) sub.textContent = PAGE_INFO.home.sub;
+  }
   gsap.to(overlay, { opacity: 0, scale: 0.97, duration: 0.35, ease: 'power2.in', onComplete: () => overlay.remove() });
 }
 
