@@ -1678,7 +1678,6 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 }
 .lobby-back-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: rgba(255,255,255,0.25); }
 .lobby-back-btn svg { flex-shrink: 0; }
-#screen-lobby { position: relative; }
 .lobby-eyebrow {
   font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
   font-weight: 800; color: var(--muted); text-align: center;
