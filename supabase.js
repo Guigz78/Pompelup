@@ -161,7 +161,7 @@ function _setupChannel(code, selfMode) {
 function sbCreateRoom(code, onEvent) {
   _isHost = true;
   _onRoomEvent = onEvent;
-  _setupChannel(code, true);
+  _setupChannel(code, false);
   _roomChannel.subscribe(async (status) => {
     if (status === 'SUBSCRIBED') {
       const me = sbPlayerPayload(true);
