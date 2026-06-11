@@ -4896,6 +4896,19 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
     inset 0 -3px 6px rgba(0,0,0,0.3);
 }
 
+/* Album art overlay on the center label */
+.v-disk-art {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 31%; height: 31%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.45);
+}
+
 /* Hover: peek the sleeve — a card edge appearing right of the disk */
 .vinyl-card .v-art .v-disk + .v-shine,
 .vinyl-card.v-legendary .v-art::before {

@@ -25,11 +25,36 @@ const STATE = {
 };
 
 const SONGS = [
-  { id: 's1', title: 'Smells Like Teen Spirit', artist: 'Nirvana', year: 1991, emoji: '🎸', bpm: 117, color: '#F97316' },
-  { id: 's2', title: 'Billie Jean', artist: 'Michael Jackson', year: 1982, emoji: '🕺', bpm: 116, color: '#3B4FE8' },
-  { id: 's3', title: 'Bohemian Rhapsody', artist: 'Queen', year: 1975, emoji: '👑', bpm: 144, color: '#FBBF24' },
-  { id: 's4', title: 'Lose Yourself', artist: 'Eminem', year: 2002, emoji: '🎤', bpm: 86, color: '#22C55E' },
-  { id: 's5', title: 'Take On Me', artist: 'a-ha', year: 1985, emoji: '📻', bpm: 169, color: '#F472B6' }
+  { id: 's1',  title: 'Smells Like Teen Spirit',      artist: 'Nirvana',           year: 1991, emoji: '🎸', bpm: 117, color: '#F97316' },
+  { id: 's2',  title: 'Billie Jean',                  artist: 'Michael Jackson',   year: 1982, emoji: '🕺', bpm: 116, color: '#3B4FE8' },
+  { id: 's3',  title: 'Bohemian Rhapsody',            artist: 'Queen',             year: 1975, emoji: '👑', bpm: 144, color: '#FBBF24' },
+  { id: 's4',  title: 'Lose Yourself',                artist: 'Eminem',            year: 2002, emoji: '🎤', bpm: 86,  color: '#22C55E' },
+  { id: 's5',  title: 'Take On Me',                   artist: 'a-ha',              year: 1985, emoji: '📻', bpm: 169, color: '#F472B6' },
+  { id: 's6',  title: 'Blinding Lights',              artist: 'The Weeknd',        year: 2019, emoji: '🌙', bpm: 171, color: '#EF4444' },
+  { id: 's7',  title: 'Shape of You',                 artist: 'Ed Sheeran',        year: 2017, emoji: '💚', bpm: 96,  color: '#22C55E' },
+  { id: 's8',  title: 'Uptown Funk',                  artist: 'Mark Ronson',       year: 2014, emoji: '🕶️', bpm: 115, color: '#F97316' },
+  { id: 's9',  title: 'Rolling in the Deep',          artist: 'Adele',             year: 2010, emoji: '🖤', bpm: 105, color: '#374151' },
+  { id: 's10', title: 'Happy',                        artist: 'Pharrell Williams', year: 2013, emoji: '😊', bpm: 160, color: '#FBBF24' },
+  { id: 's11', title: 'Get Lucky',                    artist: 'Daft Punk',         year: 2013, emoji: '🤖', bpm: 116, color: '#FBBF24' },
+  { id: 's12', title: "Stayin' Alive",                artist: 'Bee Gees',          year: 1977, emoji: '🪩', bpm: 103, color: '#8B5CF6' },
+  { id: 's13', title: 'Africa',                       artist: 'Toto',              year: 1982, emoji: '🌍', bpm: 93,  color: '#22C55E' },
+  { id: 's14', title: "Sweet Child O' Mine",          artist: "Guns N' Roses",     year: 1987, emoji: '🎸', bpm: 122, color: '#EF4444' },
+  { id: 's15', title: 'Hotel California',             artist: 'Eagles',            year: 1977, emoji: '🏨', bpm: 75,  color: '#A16207' },
+  { id: 's16', title: 'Like a Prayer',                artist: 'Madonna',           year: 1989, emoji: '🙏', bpm: 128, color: '#8B5CF6' },
+  { id: 's17', title: 'Mr. Brightside',               artist: 'The Killers',       year: 2003, emoji: '🌅', bpm: 148, color: '#F97316' },
+  { id: 's18', title: 'Somebody That I Used to Know', artist: 'Gotye',             year: 2011, emoji: '💔', bpm: 129, color: '#3B4FE8' },
+  { id: 's19', title: 'Pumped Up Kicks',              artist: 'Foster the People', year: 2010, emoji: '👟', bpm: 128, color: '#F472B6' },
+  { id: 's20', title: 'Chandelier',                   artist: 'Sia',               year: 2014, emoji: '💡', bpm: 124, color: '#FBBF24' },
+  { id: 's21', title: 'Levitating',                   artist: 'Dua Lipa',          year: 2020, emoji: '🚀', bpm: 103, color: '#8B5CF6' },
+  { id: 's22', title: 'drivers license',              artist: 'Olivia Rodrigo',    year: 2021, emoji: '🚗', bpm: 75,  color: '#3B4FE8' },
+  { id: 's23', title: 'Watermelon Sugar',             artist: 'Harry Styles',      year: 2020, emoji: '🍉', bpm: 95,  color: '#EF4444' },
+  { id: 's24', title: 'Dance Monkey',                 artist: 'Tones and I',       year: 2019, emoji: '🐒', bpm: 98,  color: '#F97316' },
+  { id: 's25', title: 'Thunder',                      artist: 'Imagine Dragons',   year: 2017, emoji: '⚡', bpm: 168, color: '#FBBF24' },
+  { id: 's26', title: 'Shallow',                      artist: 'Lady Gaga',         year: 2018, emoji: '🎬', bpm: 96,  color: '#3B4FE8' },
+  { id: 's27', title: 'Bad Guy',                      artist: 'Billie Eilish',     year: 2019, emoji: '😈', bpm: 135, color: '#22C55E' },
+  { id: 's28', title: 'Old Town Road',                artist: 'Lil Nas X',         year: 2019, emoji: '🤠', bpm: 136, color: '#F97316' },
+  { id: 's29', title: 'Despacito',                    artist: 'Luis Fonsi',        year: 2017, emoji: '🎵', bpm: 89,  color: '#F472B6' },
+  { id: 's30', title: 'Believer',                     artist: 'Imagine Dragons',   year: 2017, emoji: '✊', bpm: 125, color: '#EF4444' },
 ];
 
 const FRIENDS = [
@@ -1204,7 +1229,9 @@ function renderCollectionGrid() {
       ${!v.locked && v.rarity !== 'common' ? `<div class="v-rar ${v.rarity}">${v.rarity === 'legendary' ? '👑 LÉG' : '💎 RARE'}</div>` : ''}
       ${v.locked ? '<div class="v-lock">🔒</div>' : ''}
       <div class="v-art">
-        <div class="v-disk" style="--label: ${v.label}"></div>
+        <div class="v-disk" style="--label: ${v.label}">
+          ${!v.locked && SP_ART_CACHE[`${v.title}|||${v.artist}`] ? `<img class="v-disk-art" src="${escHtml(SP_ART_CACHE[`${v.title}|||${v.artist}`])}" alt="">` : ''}
+        </div>
         ${!v.locked && v.rarity === 'legendary' ? '<div class="v-shine"></div>' : ''}
       </div>
       <div class="v-info">
@@ -1258,9 +1285,30 @@ function closeVinylModal() {
 }
 
 let _colSearchTimer = null;
+const SP_ART_CACHE = {};
+
+async function spFetchArt(title, artist) {
+  const key = `${title}|||${artist}`;
+  if (SP_ART_CACHE[key] !== undefined) return SP_ART_CACHE[key];
+  SP_ART_CACHE[key] = null; // mark as fetching to avoid duplicate requests
+  const info = await spSearchPreviews(title, artist);
+  SP_ART_CACHE[key] = info?.albumArt || null;
+  return SP_ART_CACHE[key];
+}
+
+async function loadCollectionArt() {
+  if (!spIsConnected()) return;
+  const unlocked = COLLECTION_DATA.filter(v => !v.locked);
+  for (const v of unlocked) {
+    await spFetchArt(v.title, v.artist);
+  }
+  renderCollectionGrid();
+}
+
 function initCollection() {
   updateCollectionKpis();
   updateCollectionFeatured();
+  if (spIsConnected()) loadCollectionArt();
   // Sync UI controls with persisted state
   const searchEl = $('#col-search');
   if (searchEl) searchEl.value = COLLECTION_STATE.search;
@@ -2065,7 +2113,7 @@ function animateViz() {
   vizAnim = requestAnimationFrame(animateViz);
 }
 
-function startGame() {
+async function startGame() {
   const rp = sbRoomPlayers();
   if (rp.length > 1) {
     STATE._multiPlayers = rp;
@@ -2096,19 +2144,27 @@ function startGame() {
     prog.appendChild(d);
   }
   $('#g-chat').innerHTML = '';
-  pushGameChat('system', 'Manche 1 — Catégorie : Hits 80s 🎵');
   buildRadialBars();
   animateViz();
   refreshPresenter();
   setTimeout(() => presenterSay('intro', 'excited', 2500), 300);
-  const songPool = SONGS.slice(0, STATE.game.total);
-  if (spIsConnected()) {
-    spLoadPreviews(songPool).then(enriched => {
-      STATE.game.songs = enriched;
-    });
-  } else {
-    STATE.game.songs = songPool;
+
+  // Songs set by lobby/solo launch; if missing, pick a random pool
+  if (!STATE.game.songs || STATE.game.songs.length < STATE.game.total) {
+    STATE.game.songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
   }
+
+  if (spIsConnected()) {
+    pushGameChat('system', '🎵 Chargement des previews Spotify…');
+    STATE.game.songs = await spLoadPreviews(STATE.game.songs);
+    const n = STATE.game.songs.filter(s => s.previewUrl).length;
+    pushGameChat('system', n > 0
+      ? `✓ ${n} / ${STATE.game.total} musiques Spotify actives`
+      : '⚠ Aucune preview disponible — synthèse audio');
+  } else {
+    pushGameChat('system', 'Manche 1 — Catégorie : Hits 🎵');
+  }
+
   startRound();
 }
 
