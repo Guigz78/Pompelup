@@ -1621,13 +1621,13 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
    LOBBY
    ================================================= */
 .lobby-grid {
-  position: absolute;
-  inset: 0;
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 290px 1fr 320px;
   grid-template-rows: 1fr auto;
   gap: 16px 20px;
-  padding: 18px 28px 18px;
+  padding: 0 28px 18px;
 }
 .lobby-grid > .panel:first-child { grid-row: 1; grid-column: 1; }
 .lobby-grid > .lobby-center { grid-row: 1; grid-column: 2; }
@@ -1642,7 +1642,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   width: 100%;
   max-width: 100%;
 }
-#screen-lobby { padding: 0; }
+#screen-lobby { padding: 0; display: flex; flex-direction: column; }
 
 .panel {
   background: rgba(255, 255, 255, 0.65);
@@ -1758,8 +1758,13 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   align-items: center;
   border: 1.5px solid rgba(255,255,255,0.5);
 }
+.lobby-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 28px 4px;
+  flex-shrink: 0;
+}
 .lobby-back-btn {
-  position: absolute; top: 18px; left: 18px; z-index: 20;
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px 8px 10px;
   background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12);
