@@ -822,9 +822,12 @@ function initMeTab() {
     if (!name) { shopToast('Le pseudo ne peut pas être vide', 'bad'); return; }
     STATE.player.name = name;
     STATE.player.avatar = ME_DRAFT.avatar;
+    localStorage.setItem('pompe_player_name', name);
+    localStorage.setItem('pompe_player_avatar', ME_DRAFT.avatar);
     refreshSidebar();
     shopToast('✓ Profil mis à jour', 'good');
     gsap.fromTo('.sb-user', { scale: 0.95 }, { scale: 1, duration: 0.4, ease: 'back.out(2)' });
+    if (typeof sbSaveProfile === 'function') sbSaveProfile({ username: name, avatar_seed: ME_DRAFT.avatar }).catch(() => {});
   };
   $('#me-reset').onclick = () => {
     ME_DRAFT.name = STATE.player.name;
@@ -1576,6 +1579,10 @@ function initLobby() {
       renderLobbyPlayers(sbRoomPlayers());
       updateLobbyCount();
       broadcastSoundsSync();
+    }
+    if (event === 'presence') {
+      renderLobbyPlayers(sbRoomPlayers());
+      updateLobbyCount();
     }
     if (event === 'join' || event === 'leave') {
       renderLobbyPlayers(sbRoomPlayers());
@@ -3966,6 +3973,13 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
     try { await spRefreshToken(); } catch(e) {}
   }
   try { await spHandleCallback(); } catch(e) { console.warn('spHandleCallback:', e); }
+  // Restore player info from localStorage (persists across sessions for guests too)
+  const savedName   = localStorage.getItem('pompe_player_name');
+  const savedAvatar = localStorage.getItem('pompe_player_avatar');
+  if (savedName)   STATE.player.name   = savedName;
+  if (savedAvatar) STATE.player.avatar = savedAvatar;
+  refreshSidebar();
+
   try {
     const ok = await sbInit();
     if (ok) { applyProfileToState(); hideAuth(); }

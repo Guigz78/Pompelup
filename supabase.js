@@ -25,7 +25,16 @@ async function sbInit() {
       _sbProfile = await sbFetchProfile(_sbUser.id);
       if (!_sbProfile) await sbAutoCreateProfile(_sbUser);
     }
+    if (_sbUser && _sbProfile) {
+      // Persist name/avatar to localStorage so guest fallback stays consistent
+      localStorage.setItem('pompe_player_name', _sbProfile.username);
+      localStorage.setItem('pompe_player_avatar', _sbProfile.avatar_seed || 'guest');
+    }
   });
+  if (_sbUser && _sbProfile) {
+    localStorage.setItem('pompe_player_name', _sbProfile.username);
+    localStorage.setItem('pompe_player_avatar', _sbProfile.avatar_seed || 'guest');
+  }
   return !!_sbUser;
 }
 
@@ -50,6 +59,8 @@ async function sbSignUp(email, password, username) {
     const { error: pe } = await sb.from('profiles').insert({ id: _sbUser.id, username, avatar_seed: seed });
     if (pe) throw new Error(pe.message);
     _sbProfile = { id: _sbUser.id, username, avatar_seed: seed, level: 1, xp: 0, tokens: 100, wins: 0, games_played: 0 };
+    localStorage.setItem('pompe_player_name', username);
+    localStorage.setItem('pompe_player_avatar', seed);
   }
 }
 
@@ -58,6 +69,10 @@ async function sbSignIn(email, password) {
   if (error) throw new Error(error.message);
   _sbUser = data.user;
   _sbProfile = await sbFetchProfile(_sbUser.id);
+  if (_sbProfile) {
+    localStorage.setItem('pompe_player_name', _sbProfile.username);
+    localStorage.setItem('pompe_player_avatar', _sbProfile.avatar_seed || 'guest');
+  }
 }
 
 async function sbSignOut() {
@@ -89,6 +104,8 @@ async function sbSaveProfile(updates) {
   if (!_sbUser) return;
   await sb.from('profiles').update(updates).eq('id', _sbUser.id);
   if (_sbProfile) Object.assign(_sbProfile, updates);
+  if (updates.username) localStorage.setItem('pompe_player_name', updates.username);
+  if (updates.avatar_seed) localStorage.setItem('pompe_player_avatar', updates.avatar_seed);
 }
 
 async function sbSaveMatch(roomCode, score, rank, playersCount) {
@@ -107,22 +124,29 @@ async function sbSaveMatch(roomCode, score, rank, playersCount) {
   } catch(e) { console.warn('sbSaveMatch:', e); }
 }
 
-function sbMyId() { return _sbUser?.id || null; }
+function sbMyId() { return _sbUser?.id || _getGuestId(); }
 function sbGetProfile() { return _sbProfile; }
+
+// Stable guest ID persisted in localStorage
+function _getGuestId() {
+  let id = localStorage.getItem('pompe_guest_id');
+  if (!id) {
+    id = 'guest-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('pompe_guest_id', id);
+  }
+  return id;
+}
 
 function sbPlayerPayload(isHost) {
   const colors = ['#3B4FE8', '#22C55E', '#F472B6', '#F97316', '#8B5CF6', '#FBBF24'];
-  const ci = _sbUser
-    ? Math.abs([..._sbUser.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % colors.length
-    : 0;
-  return {
-    id: _sbUser?.id || ('guest-' + Date.now()),
-    name: _sbProfile?.username || 'Joueur',
-    avatar: _sbProfile?.avatar_seed || 'guest',
-    level: _sbProfile?.level || 1,
-    color: colors[ci],
-    isHost: !!isHost
-  };
+  const id = _sbUser?.id || _getGuestId();
+  const ci = Math.abs([...id].reduce((a, c) => a + c.charCodeAt(0), 0)) % colors.length;
+  // Use authenticated profile, then localStorage cache, then STATE.player fallback
+  const st = window.STATE?.player;
+  const name   = _sbProfile?.username   || localStorage.getItem('pompe_player_name')   || st?.name   || 'Joueur';
+  const avatar = _sbProfile?.avatar_seed || localStorage.getItem('pompe_player_avatar') || st?.avatar || 'guest';
+  const level  = _sbProfile?.level      || st?.level  || 1;
+  return { id, name, avatar, level, color: colors[ci], isHost: !!isHost };
 }
 
 function generateRoomCode() {
@@ -130,41 +154,45 @@ function generateRoomCode() {
 }
 
 // ---- Room management ----
-function _setupChannel(code, selfMode) {
+function _setupChannel(code) {
   if (_roomChannel) {
     try { _roomChannel.unsubscribe(); } catch(e) {}
     _roomChannel = null;
   }
   _roomPlayers = {};
-  _roomChannel = sb.channel('room:' + code, { config: { broadcast: { self: selfMode } } });
+  _roomChannel = sb.channel('room:' + code, { config: { broadcast: { self: false } } });
   _roomChannel
     .on('broadcast', { event: 'join' }, ({ payload }) => {
       _roomPlayers[payload.p.id] = payload.p;
       _onRoomEvent?.('join', payload.p);
+      // Host immediately re-broadcasts the full player list so the new joiner sees everyone
+      if (_isHost) {
+        _roomChannel.send({
+          type: 'broadcast', event: 'presence',
+          payload: { players: Object.values(_roomPlayers) }
+        });
+      }
+    })
+    .on('broadcast', { event: 'presence' }, ({ payload }) => {
+      // Merge host's snapshot into local player list
+      (payload.players || []).forEach(p => { _roomPlayers[p.id] = p; });
+      _onRoomEvent?.('presence', null);
     })
     .on('broadcast', { event: 'leave' }, ({ payload }) => {
       const leaving = _roomPlayers[payload.id];
       delete _roomPlayers[payload.id];
       _onRoomEvent?.('leave', leaving || { id: payload.id });
     })
-    .on('broadcast', { event: 'chat' }, ({ payload }) => {
-      _onRoomEvent?.('chat', payload);
-    })
-    .on('broadcast', { event: 'sound' }, ({ payload }) => {
-      _onRoomEvent?.('sound', payload);
-    })
-    .on('broadcast', { event: 'sync' }, ({ payload }) => {
-      _onRoomEvent?.('sync', payload);
-    })
-    .on('broadcast', { event: 'game' }, ({ payload }) => {
-      _onRoomEvent?.('game', payload);
-    });
+    .on('broadcast', { event: 'chat' },  ({ payload }) => { _onRoomEvent?.('chat',  payload); })
+    .on('broadcast', { event: 'sound' }, ({ payload }) => { _onRoomEvent?.('sound', payload); })
+    .on('broadcast', { event: 'sync' },  ({ payload }) => { _onRoomEvent?.('sync',  payload); })
+    .on('broadcast', { event: 'game' },  ({ payload }) => { _onRoomEvent?.('game',  payload); });
 }
 
 function sbCreateRoom(code, onEvent) {
   _isHost = true;
   _onRoomEvent = onEvent;
-  _setupChannel(code, false);
+  _setupChannel(code);
   _roomChannel.subscribe(async (status) => {
     if (status === 'SUBSCRIBED') {
       const me = sbPlayerPayload(true);
@@ -178,7 +206,7 @@ function sbCreateRoom(code, onEvent) {
 function sbJoinRoom(code, onEvent) {
   _isHost = false;
   _onRoomEvent = onEvent;
-  _setupChannel(code, false);
+  _setupChannel(code);
   _roomChannel.subscribe(async (status) => {
     if (status === 'SUBSCRIBED') {
       const me = sbPlayerPayload(false);
