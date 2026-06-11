@@ -1113,16 +1113,6 @@
               </div>
             </div>
 
-            <div class="answer-card" id="answer-card">
-              <form id="g-form">
-                <input id="g-input" placeholder="Titre, artiste, ou les deux..." autocomplete="off">
-                <button type="submit">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                </button>
-              </form>
-            </div>
-            <div class="answer-hint" id="g-hint">&nbsp;</div>
-
             <div class="joker-row-host">
               <div class="joker-pill" data-joker="letter"><div class="jicon">🔤</div><div class="jlabel">1ère lettre</div><div class="jcost">1 🎤</div></div>
               <div class="joker-pill" data-joker="artist"><div class="jicon">🎤</div><div class="jlabel">Artiste</div><div class="jcost">2 🎤</div></div>
@@ -1133,12 +1123,26 @@
               <div class="joker-pill" data-joker="double"><div class="jicon">💎</div><div class="jlabel">Points ×2</div><div class="jcost">2 🎤</div></div>
               <div class="joker-pill" data-joker="skip"><div class="jicon">⏭️</div><div class="jlabel">Passer</div><div class="jcost">3 🎤</div></div>
             </div>
+
+            <div class="answer-card" id="answer-card">
+              <form id="g-form">
+                <input id="g-input" placeholder="Titre, artiste, ou les deux..." autocomplete="off">
+                <button type="submit">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </button>
+              </form>
+            </div>
+            <div class="answer-hint" id="g-hint">&nbsp;</div>
           </div>
 
           <aside class="game-side">
-            <div class="panel chat-panel" style="background: #fff; flex: 1; padding: 18px;">
+            <div class="panel chat-panel" style="background: #fff; flex: 1; padding: 18px; min-height: 0;">
               <div class="panel-title">CHAT <span class="pt-num">EN VIF</span></div>
               <div class="chat-list" id="g-chat"></div>
+              <form class="gchat-send" id="g-chat-form">
+                <input type="text" id="g-chat-input" placeholder="Message..." autocomplete="off">
+                <button type="submit">→</button>
+              </form>
             </div>
             <div class="emote-row">
               <button class="emote-btn" data-emote="🔥">🔥</button>

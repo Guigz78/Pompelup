@@ -2184,7 +2184,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 }
 
 /* GAME center */
-.game-center { display: flex; flex-direction: column; gap: 10px; position: relative; }
+.game-center { display: flex; flex-direction: column; gap: 8px; position: relative; }
 .viz-card {
   flex: 1;
   min-height: 0;
@@ -2370,6 +2370,40 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   box-shadow: var(--shadow-soft);
 }
 .emote-btn:active { transform: scale(0.9); }
+
+/* Game chat input */
+.gchat-send {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  background: var(--bg-soft);
+  border-radius: 14px;
+  padding: 4px 4px 4px 14px;
+  border: 2px solid transparent;
+  transition: border-color 200ms;
+  flex-shrink: 0;
+}
+.gchat-send:focus-within { border-color: var(--orange); }
+.gchat-send input {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 8px 0;
+  background: none;
+  min-width: 0;
+}
+.gchat-send input::placeholder { color: var(--soft); }
+.gchat-send button {
+  background: var(--orange);
+  color: #fff;
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 15px;
+  box-shadow: 0 2px 0 var(--orange-deep);
+  flex-shrink: 0;
+}
 
 .floating-emote {
   position: absolute;

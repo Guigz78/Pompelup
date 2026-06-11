@@ -2222,6 +2222,18 @@ async function startGame() {
 
 function pushGameChat(kind, content, name, seed) { _pushMsg('g-chat', kind, content, name, seed, 12); }
 
+$('#g-chat-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = $('#g-chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  pushGameChat('you', msg, STATE.player.name, STATE.player.avatar);
+  if (sbHasRoom()) {
+    await sbBroadcast('chat', { content: msg, name: STATE.player.name, avatar: STATE.player.avatar });
+  }
+});
+
 function startRound() {
   STATE.game.round++;
   $$('#g-progress .rcp').forEach((d, i) => {
