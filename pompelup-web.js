@@ -178,7 +178,6 @@ function navigateTo(id) {
   // Sidebar / topbar / ads visibility
   const fullscreen = SCREENS_WITHOUT_CHROME.includes(id);
   $('#sidebar').classList.toggle('hidden', fullscreen);
-  $('#ads-panel').classList.toggle('hidden', fullscreen);
   $('#topbar').style.display = fullscreen ? 'none' : 'flex';
   $('#content-area').classList.toggle('fullscreen', fullscreen);
   $('#tb-room').style.display = (id === 'lobby' || id === 'game') ? 'flex' : 'none';
