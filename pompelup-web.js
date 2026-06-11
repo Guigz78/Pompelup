@@ -382,7 +382,41 @@ function refreshSidebar() {
 }
 
 // ===== HOME =====
+function showXpToast(gained) {
+  const toast = document.createElement('div');
+  toast.className = 'xp-toast';
+  toast.innerHTML = `⭐ +${gained} XP`;
+  document.body.appendChild(toast);
+  gsap.fromTo(toast,
+    { y: 20, opacity: 0, scale: 0.8 },
+    { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.8)',
+      onComplete: () => gsap.to(toast, { y: -10, opacity: 0, duration: 0.4, delay: 2.5, onComplete: () => toast.remove() })
+    }
+  );
+}
+
 function initHome() {
+  // Sidebar XP bar update
+  const sbFill = $('.sb-xp .fill');
+  const sbLvl  = $('.sb-lvl');
+  const newPct = STATE.player.xp / 2400 * 100;
+  if (sbLvl) sbLvl.textContent = `Nv. ${STATE.player.level} · ${STATE.player.xp} / 2400 XP`;
+
+  if (STATE._pendingXP && sbFill) {
+    const { gained, before } = STATE._pendingXP;
+    STATE._pendingXP = null;
+    const fromPct = Math.min(before / 2400 * 100, 100);
+    sbFill.style.transition = 'none';
+    sbFill.style.width = fromPct + '%';
+    showXpToast(gained);
+    setTimeout(() => {
+      sbFill.style.transition = 'width 1500ms cubic-bezier(0.4,0,0.2,1)';
+      sbFill.style.width = newPct + '%';
+    }, 700);
+  } else if (sbFill) {
+    sbFill.style.width = newPct + '%';
+  }
+
   const mult = STATE.animDensity === 'calm' ? 0.5 : STATE.animDensity === 'chaos' ? 1.4 : 1;
   gsap.from('.home-eyebrow', { y: -10, opacity: 0, duration: 0.4 / mult });
   gsap.from('.home-title', { y: 30, opacity: 0, duration: 0.7 / mult, ease: 'back.out(1.3)' });
@@ -2188,6 +2222,10 @@ async function startGame() {
   STATE.game.round = 0;
   STATE.game.history = [];
   $('#g-total').textContent = STATE.game.total;
+
+  // Wire game header buttons
+  $('#gh-back').onclick = () => showQuitConfirm(() => navigateTo('home'));
+  $('#gh-quit').onclick = () => showQuitConfirm(() => navigateTo('home'));
   const prog = $('#g-progress');
   prog.innerHTML = '';
   for (let i = 0; i < STATE.game.total; i++) {
@@ -2617,8 +2655,24 @@ function endRound() {
 
 function endGame() {
   stopGameLoop();
-  STATE.player.xp = Math.min(2400, STATE.player.xp + 290);
+  const xpBefore = STATE.player.xp;
+  const xpGained = 290;
+  STATE.player.xp = Math.min(2400, xpBefore + xpGained);
+  STATE._pendingXP = { gained: xpGained, before: xpBefore };
   navigateTo('results');
+}
+
+function showQuitConfirm(onConfirm) {
+  const modal = $('#quit-modal');
+  modal.style.display = 'flex';
+  gsap.fromTo('.quit-modal-box', { scale: 0.85, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.8)' });
+  $('#quit-cancel').onclick = () => {
+    gsap.to('.quit-modal-box', { scale: 0.85, opacity: 0, duration: 0.2, onComplete: () => { modal.style.display = 'none'; } });
+  };
+  $('#quit-confirm').onclick = () => {
+    modal.style.display = 'none';
+    onConfirm();
+  };
 }
 
 // ===== RESULTS =====

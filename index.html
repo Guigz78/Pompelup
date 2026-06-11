@@ -1048,6 +1048,10 @@
 
       <!-- ============== GAME ============== -->
       <section id="screen-game" class="screen">
+        <div class="game-header">
+          <button class="gh-btn gh-back" id="gh-back">← Retour</button>
+          <button class="gh-btn gh-quit" id="gh-quit">Quitter la partie</button>
+        </div>
         <div class="game-grid">
           <aside class="game-side">
             <div class="round-card">
@@ -1404,6 +1408,17 @@
     </div>
 
     <button class="btn btn-accent btn-xl solo-play-btn" id="solo-play-btn">JOUER !</button>
+  </div>
+</div>
+
+<div class="quit-modal" id="quit-modal" style="display:none;">
+  <div class="quit-modal-box">
+    <div class="quit-modal-title">Quitter la partie ?</div>
+    <div class="quit-modal-sub">Tu vas perdre ta progression de cette manche.</div>
+    <div class="quit-modal-actions">
+      <button class="btn btn-ghost" id="quit-cancel">Annuler</button>
+      <button class="btn" id="quit-confirm" style="background:#ef4444;color:#fff;">Quitter</button>
+    </div>
   </div>
 </div>
 
