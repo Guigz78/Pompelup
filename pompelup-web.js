@@ -3014,10 +3014,7 @@ function revealPack() {
       onComplete: () => {
         art.style.display = 'none';
         hint.style.display = 'none';
-        // PHASE 3: rarity flash
-        showRarityFlash(topRarity);
-        // PHASE 4: reveal cards after flash
-        setTimeout(() => showRevealed(), 800);
+        showRevealed();
       }
     });
   });
@@ -3178,13 +3175,47 @@ function packBurst(topRarity) {
   step();
 }
 
+const VINYL_PREVIEW_CACHE = {};
+
+async function playVinylHoverPreview(wrap) {
+  if (!wrap.classList.contains('revealed')) return;
+  const title  = wrap.querySelector('.rcb-title')?.textContent?.trim();
+  const artist = wrap.querySelector('.rcb-artist')?.textContent?.trim();
+  if (!title || !artist) return;
+  const key = `${title}|||${artist}`;
+  let url = VINYL_PREVIEW_CACHE[key];
+  if (url === null) return;
+  if (!url) {
+    try {
+      const it = await itunesSearch(title, artist);
+      VINYL_PREVIEW_CACHE[key] = it?.previewUrl || null;
+      url = VINYL_PREVIEW_CACHE[key];
+    } catch(e) { return; }
+  }
+  if (!url) return;
+  // Only play if still hovering
+  if (!wrap.matches(':hover')) return;
+  spStopPreview();
+  spPlayPreview(url);
+  if (!wrap.querySelector('.rcb-music-playing')) {
+    const badge = document.createElement('div');
+    badge.className = 'rcb-music-playing';
+    badge.innerHTML = '🎵';
+    wrap.querySelector('.rcb-art')?.appendChild(badge);
+    gsap.fromTo(badge, { scale:0, opacity:0 }, { scale:1, opacity:1, duration:0.3, ease:'back.out(2)' });
+  }
+}
+
+function stopVinylHoverPreview(wrap) {
+  spStopPreview();
+  const badge = wrap.querySelector('.rcb-music-playing');
+  if (badge) gsap.to(badge, { scale:0, opacity:0, duration:0.2, onComplete: () => badge.remove() });
+}
+
 function showRevealed() {
   const grid = $('#reveal-grid');
-  const items = PACK_ITEMS;
-
-  const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
-  const topItem = items.reduce((best, i) =>
-    (rarityOrder[i.rarity] || 0) > (rarityOrder[best?.rarity] || 0) ? i : best, items[0]);
+  // Shuffle items so legendary isn't always last
+  const items = [...PACK_ITEMS].sort(() => Math.random() - 0.5);
   const rarityLabels = { common: 'COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE' };
   const auraColors = {
     common:    'rgba(156,163,175,0.5)',
@@ -3306,29 +3337,15 @@ function showRevealed() {
         tl.call(() => startSparkles(card, rarity), null, '-=0.25');
       }
 
+      // Hover preview on this card once revealed
+      setTimeout(() => {
+        wrap.addEventListener('mouseenter', () => playVinylHoverPreview(wrap));
+        wrap.addEventListener('mouseleave', () => stopVinylHoverPreview(wrap));
+      }, 600);
+
       revealedCount++;
       if (revealedCount === items.length) {
         gsap.to('.reveal-actions', { opacity: 1, duration: 0.5, delay: 0.9 });
-        // Auto-play preview of the top rarity card
-        if (topItem && rarityOrder[topItem.rarity] >= 2) {
-          setTimeout(async () => {
-            try {
-              const it = await itunesSearch(topItem.title, topItem.artist);
-              if (it?.previewUrl) {
-                spStopPreview();
-                spPlayPreview(it.previewUrl);
-                const topCard = grid.querySelector(`.pochette-wrap.${topItem.rarity} .reveal-card-big`);
-                if (topCard) {
-                  const badge = document.createElement('div');
-                  badge.className = 'rcb-music-playing';
-                  badge.innerHTML = '🎵';
-                  topCard.querySelector('.rcb-art')?.appendChild(badge);
-                  gsap.fromTo(badge, { scale:0, opacity:0 }, { scale:1, opacity:1, duration:0.4, ease:'back.out(2)' });
-                }
-              }
-            } catch(e) {}
-          }, 1200);
-        }
       }
     }
 
