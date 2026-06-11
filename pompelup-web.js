@@ -1287,28 +1287,55 @@ function closeVinylModal() {
 let _colSearchTimer = null;
 const SP_ART_CACHE = {};
 
+// iTunes Search API — CORS ouvert, previews 30s AAC, aucune auth
+async function itunesSearch(title, artist) {
+  try {
+    const q = encodeURIComponent(`${title} ${artist}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=5`);
+    const data = await res.json();
+    const track = (data.results || []).find(t => t.previewUrl);
+    if (!track) return null;
+    return {
+      previewUrl: track.previewUrl,
+      albumArt: track.artworkUrl100?.replace('100x100', '300x300') || null
+    };
+  } catch(e) { return null; }
+}
+
+async function loadGamePreviews(songs) {
+  return Promise.all(songs.map(async s => {
+    const it = await itunesSearch(s.title, s.artist);
+    if (it) return { ...s, ...it };
+    // Fallback : Spotify art uniquement (preview_url déprécié par Spotify)
+    if (spIsConnected()) {
+      const sp = await spSearchPreviews(s.title, s.artist);
+      if (sp?.albumArt) return { ...s, albumArt: sp.albumArt };
+    }
+    return s;
+  }));
+}
+
 async function spFetchArt(title, artist) {
   const key = `${title}|||${artist}`;
   if (SP_ART_CACHE[key] !== undefined) return SP_ART_CACHE[key];
-  SP_ART_CACHE[key] = null; // mark as fetching to avoid duplicate requests
-  const info = await spSearchPreviews(title, artist);
-  SP_ART_CACHE[key] = info?.albumArt || null;
+  SP_ART_CACHE[key] = null;
+  const it = await itunesSearch(title, artist);
+  SP_ART_CACHE[key] = it?.albumArt || null;
   return SP_ART_CACHE[key];
 }
 
 async function loadCollectionArt() {
-  if (!spIsConnected()) return;
   const unlocked = COLLECTION_DATA.filter(v => !v.locked);
   for (const v of unlocked) {
     await spFetchArt(v.title, v.artist);
+    renderCollectionGrid();
   }
-  renderCollectionGrid();
 }
 
 function initCollection() {
   updateCollectionKpis();
   updateCollectionFeatured();
-  if (spIsConnected()) loadCollectionArt();
+  loadCollectionArt();
   // Sync UI controls with persisted state
   const searchEl = $('#col-search');
   if (searchEl) searchEl.value = COLLECTION_STATE.search;
@@ -2149,21 +2176,21 @@ async function startGame() {
   refreshPresenter();
   setTimeout(() => presenterSay('intro', 'excited', 2500), 300);
 
+  // Unlock AudioContext NOW while still in user-gesture context
+  initAudio();
+  if (audioCtx?.state === 'suspended') audioCtx.resume();
+
   // Songs set by lobby/solo launch; if missing, pick a random pool
   if (!STATE.game.songs || STATE.game.songs.length < STATE.game.total) {
     STATE.game.songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
   }
 
-  if (spIsConnected()) {
-    pushGameChat('system', '🎵 Chargement des previews Spotify…');
-    STATE.game.songs = await spLoadPreviews(STATE.game.songs);
-    const n = STATE.game.songs.filter(s => s.previewUrl).length;
-    pushGameChat('system', n > 0
-      ? `✓ ${n} / ${STATE.game.total} musiques Spotify actives`
-      : '⚠ Aucune preview disponible — synthèse audio');
-  } else {
-    pushGameChat('system', 'Manche 1 — Catégorie : Hits 🎵');
-  }
+  pushGameChat('system', '🎵 Chargement des musiques…');
+  STATE.game.songs = await loadGamePreviews(STATE.game.songs);
+  const n = STATE.game.songs.filter(s => s.previewUrl).length;
+  pushGameChat('system', n > 0
+    ? `✓ ${n} / ${STATE.game.total} previews prêtes`
+    : '🎛️ Mode synthèse audio');
 
   startRound();
 }
