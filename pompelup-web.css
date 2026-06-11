@@ -2092,14 +2092,15 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   inset: 0;
   display: grid;
   grid-template-columns: 260px 1fr 300px;
+  grid-template-rows: 1fr;
+  align-items: stretch;
   gap: 18px;
   padding: 20px 24px;
+  overflow: hidden;
 }
 #screen-game { padding: 0; overflow: hidden; }
 
-.game-grid { overflow: hidden; }
-
-.game-side, .game-center { min-height: 0; overflow: hidden; }
+.game-side, .game-center { min-height: 0; overflow: hidden; height: 100%; }
 
 .game-side { display: flex; flex-direction: column; gap: 14px; }
 .round-card {
