@@ -3183,20 +3183,20 @@ async function playVinylHoverPreview(wrap) {
   const artist = wrap.querySelector('.rcb-artist')?.textContent?.trim();
   if (!title || !artist) return;
   const key = `${title}|||${artist}`;
-  let url = VINYL_PREVIEW_CACHE[key];
-  if (url === null) return;
-  if (!url) {
+  let cached = VINYL_PREVIEW_CACHE[key];
+  if (cached === null) return;
+  if (!cached) {
     try {
       const it = await itunesSearch(title, artist);
-      VINYL_PREVIEW_CACHE[key] = it?.previewUrl || null;
-      url = VINYL_PREVIEW_CACHE[key];
+      VINYL_PREVIEW_CACHE[key] = it ? { previewUrl: it.previewUrl || null, albumArt: it.albumArt || null } : null;
+      cached = VINYL_PREVIEW_CACHE[key];
     } catch(e) { return; }
   }
-  if (!url) return;
-  // Only play if still hovering
+  if (!cached?.previewUrl) return;
   if (!wrap.matches(':hover')) return;
   spStopPreview();
-  spPlayPreview(url);
+  spPlayPreview(cached.previewUrl);
+  wrap.classList.add('playing');
   if (!wrap.querySelector('.rcb-music-playing')) {
     const badge = document.createElement('div');
     badge.className = 'rcb-music-playing';
@@ -3208,6 +3208,7 @@ async function playVinylHoverPreview(wrap) {
 
 function stopVinylHoverPreview(wrap) {
   spStopPreview();
+  wrap.classList.remove('playing');
   const badge = wrap.querySelector('.rcb-music-playing');
   if (badge) gsap.to(badge, { scale:0, opacity:0, duration:0.2, onComplete: () => badge.remove() });
 }
@@ -3335,6 +3336,30 @@ function showRevealed() {
         tl.to(card, { scale: settleScale, duration:0.4, ease:'power3.out' }, '-=0.08');
         tl.to(content, { opacity:1, duration:0.4, ease:'power2.out' }, '-=0.35');
         tl.call(() => startSparkles(card, rarity), null, '-=0.25');
+      }
+
+      // Fetch album art and cache iTunes data
+      const rcbTitle  = card.querySelector('.rcb-title')?.textContent?.trim();
+      const rcbArtist = card.querySelector('.rcb-artist')?.textContent?.trim();
+      if (rcbTitle && rcbArtist) {
+        const cKey = `${rcbTitle}|||${rcbArtist}`;
+        const injectArt = (artUrl) => {
+          const disk = card.querySelector('.rcb-disk');
+          if (disk && !disk.querySelector('.rcb-disk-art')) {
+            const img = document.createElement('img');
+            img.className = 'rcb-disk-art';
+            img.src = artUrl;
+            disk.appendChild(img);
+          }
+        };
+        if (VINYL_PREVIEW_CACHE[cKey]?.albumArt) {
+          injectArt(VINYL_PREVIEW_CACHE[cKey].albumArt);
+        } else if (!VINYL_PREVIEW_CACHE[cKey]) {
+          itunesSearch(rcbTitle, rcbArtist).then(it => {
+            VINYL_PREVIEW_CACHE[cKey] = it ? { previewUrl: it.previewUrl || null, albumArt: it.albumArt || null } : null;
+            if (it?.albumArt) injectArt(it.albumArt);
+          }).catch(() => { VINYL_PREVIEW_CACHE[cKey] = null; });
+        }
       }
 
       // Hover preview on this card once revealed
