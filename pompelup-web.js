@@ -1428,6 +1428,32 @@ async function spHandleCallback() {
   }
 }
 
+async function spRefreshToken() {
+  const refresh = localStorage.getItem('sp_refresh');
+  if (!refresh) return false;
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refresh,
+        client_id: SPOTIFY_CLIENT_ID
+      })
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      _spToken = data.access_token;
+      _spExpires = Date.now() + data.expires_in * 1000;
+      localStorage.setItem('sp_token', _spToken);
+      localStorage.setItem('sp_expires', _spExpires.toString());
+      if (data.refresh_token) localStorage.setItem('sp_refresh', data.refresh_token);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
 function spDisconnect() {
   _spToken = null; _spExpires = 0;
   ['sp_token', 'sp_expires', 'sp_refresh', 'sp_verifier'].forEach(k => localStorage.removeItem(k));
@@ -2844,66 +2870,10 @@ function setupVinylScratch() {
 const PACK_ITEMS = [
   { title: 'Voyage Voyage',     artist: 'Desireless',   rarity: 'common',    color: '#F472B6' },
   { title: 'Africa',            artist: 'Toto',         rarity: 'rare',      color: '#22C55E' },
+  { title: 'Sweet Dreams',      artist: 'Eurythmics',   rarity: 'epic',      color: '#A78BFA' },
   { title: 'Bohemian Rhapsody', artist: 'Queen',        rarity: 'legendary', color: '#FBBF24' }
 ];
 
-function playPackOpenAmbience() {
-  initAudio();
-  if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  const ctx = audioCtx;
-  const t = ctx.currentTime;
-  // Building sub-bass swell
-  const o = ctx.createOscillator();
-  o.type = 'sine'; o.frequency.value = 55;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(0.3, t + 1.2);
-  g.gain.linearRampToValueAtTime(0, t + 2);
-  o.connect(g); g.connect(ctx.destination);
-  o.start(t); o.stop(t + 2);
-  // Sparkle pad
-  [880, 1100, 1320].forEach((f, i) => {
-    const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = f;
-    const og = ctx.createGain();
-    og.gain.setValueAtTime(0, t + i * 0.15);
-    og.gain.linearRampToValueAtTime(0.04, t + i * 0.15 + 0.3);
-    og.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
-    osc.connect(og); og.connect(ctx.destination);
-    osc.start(t + i * 0.15); osc.stop(t + 1.7);
-  });
-}
-
-function playPackTearSound() {
-  initAudio();
-  if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  const ctx = audioCtx;
-  const t = ctx.currentTime;
-  // Paper tear (filtered noise + downsweep)
-  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) {
-    const env = Math.exp(-i / d.length * 3);
-    d[i] = (Math.random() * 2 - 1) * env;
-  }
-  const noise = ctx.createBufferSource(); noise.buffer = buf;
-  const bp = ctx.createBiquadFilter();
-  bp.type = 'bandpass'; bp.Q.value = 4;
-  bp.frequency.setValueAtTime(2800, t);
-  bp.frequency.exponentialRampToValueAtTime(400, t + 0.5);
-  const g = ctx.createGain(); g.gain.value = 0.35;
-  noise.connect(bp); bp.connect(g); g.connect(ctx.destination);
-  noise.start(t);
-  // Whoosh
-  const o = ctx.createOscillator(); o.type = 'sawtooth';
-  o.frequency.setValueAtTime(1400, t);
-  o.frequency.exponentialRampToValueAtTime(80, t + 0.4);
-  const og = ctx.createGain();
-  og.gain.setValueAtTime(0.15, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-  o.connect(og); og.connect(ctx.destination);
-  o.start(t); o.stop(t + 0.5);
-}
 
 function playRevealChime(rarity, delaySec = 0) {
   initAudio();
@@ -2985,7 +2955,6 @@ function openDailyPack() {
     .to(hint, { opacity: 1, y: 0, duration: 0.4 }, 0.9)
     .to(art, { rotation: 4, duration: 0.7, repeat: -1, yoyo: true, ease: 'sine.inOut' }, 1.2);
 
-  playPackOpenAmbience();
 }
 
 function revealPack() {
@@ -3002,6 +2971,7 @@ function revealPack() {
 
   // Determine top rarity in pack
   const topRarity = PACK_ITEMS.some(i => i.rarity === 'legendary') ? 'legendary'
+                  : PACK_ITEMS.some(i => i.rarity === 'epic') ? 'epic'
                   : PACK_ITEMS.some(i => i.rarity === 'rare') ? 'rare'
                   : 'common';
 
@@ -3019,7 +2989,6 @@ function revealPack() {
 
   // PHASE 2: tear-open animation
   shake.add(() => {
-    playPackTearSound();
     // Burst particles
     packBurst(topRarity);
     // Pack splits horizontally
@@ -3103,11 +3072,13 @@ function showRarityFlash(rarity) {
   const labels = {
     common: 'PAS MAL !',
     rare: '✨ RARE ! ✨',
+    epic: '💎 ÉPIQUE ! 💎',
     legendary: '👑 LÉGENDAIRE ! 👑'
   };
   flash.className = 'rarity-flash ' + rarity;
   flash.textContent = labels[rarity] || labels.common;
   if (rarity === 'legendary') playLegendarySfx();
+  else if (rarity === 'epic') playEpicSfx();
   gsap.killTweensOf(flash);
   gsap.set(flash, { scale: 0, opacity: 0 });
 
@@ -3200,25 +3171,30 @@ function packBurst(topRarity) {
 function showRevealed() {
   const grid = $('#reveal-grid');
   const items = PACK_ITEMS;
+
+  const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+  const topItem = items.reduce((best, i) => (rarityOrder[i.rarity] || 0) > (rarityOrder[best?.rarity] || 0) ? i : best, items[0]);
+  const rarityLabels = { common: 'COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE' };
+
   grid.innerHTML = '<h3>NOUVEAUX VINYLES</h3>' +
     `<div class="reveal-row">${items.map((i) => `
-      <div class="reveal-card-big ${i.rarity}" style="--rcb-color:${i.color}">
-        ${i.rarity === 'legendary' || i.rarity === 'rare' ? `
+      <div class="reveal-card-big ${i.rarity}" style="--rcb-color:${i.color}" data-title="${escHtml(i.title)}" data-artist="${escHtml(i.artist)}">
+        <span class="rcb-rar-badge">${rarityLabels[i.rarity] || i.rarity}</span>
+        ${i.rarity === 'legendary' || i.rarity === 'epic' || i.rarity === 'rare' ? `
           <div class="rcb-beams"></div>
           <div class="rcb-frame">
             <span class="cn cn-tl"></span><span class="cn cn-tr"></span>
             <span class="cn cn-bl"></span><span class="cn cn-br"></span>
             <span class="ed ed-t"></span><span class="ed ed-r"></span>
             <span class="ed ed-b"></span><span class="ed ed-l"></span>
-            ${i.rarity === 'legendary' ? '<span class="rcb-crown">👑</span>' : '<span class="rcb-crown rcb-gem">💎</span>'}
+            ${i.rarity === 'legendary' ? '<span class="rcb-crown">👑</span>' : i.rarity === 'epic' ? '<span class="rcb-crown rcb-gem">💎</span>' : ''}
           </div>
           <div class="rcb-sparkles"></div>
         ` : ''}
         <div class="rcb-art"><div class="rcb-disk"></div></div>
         <div class="rcb-info">
-          <div class="rcb-title">${i.title}</div>
-          <div class="rcb-artist">${i.artist}</div>
-          <div class="rcb-rar">${i.rarity}</div>
+          <div class="rcb-title">${escHtml(i.title)}</div>
+          <div class="rcb-artist">${escHtml(i.artist)}</div>
         </div>
       </div>
     `).join('')}</div>
@@ -3234,10 +3210,11 @@ function showRevealed() {
   let lastEnd = 0;
   cards.forEach((c, i) => {
     const rarity = c.classList.contains('legendary') ? 'legendary'
+                 : c.classList.contains('epic') ? 'epic'
                  : c.classList.contains('rare') ? 'rare' : 'common';
     const delay = 0.4 + i * 0.5;
 
-    if (rarity === 'legendary' || rarity === 'rare') {
+    if (rarity === 'legendary' || rarity === 'epic' || rarity === 'rare') {
       // Hide content first
       const content = c.querySelectorAll('.rcb-art, .rcb-info');
       const beams   = c.querySelector('.rcb-beams');
@@ -3251,9 +3228,10 @@ function showRevealed() {
       gsap.set(edges,   { scaleX: 0, scaleY: 0, opacity: 0 });
       gsap.set(crown,   { opacity: 0, y: -30, scale: 0 });
 
-      const isLeg = rarity === 'legendary';
-      const popScale    = isLeg ? 1.18 : 1.10;
-      const settleScale = isLeg ? 1.08 : 1.04;
+      const isLeg  = rarity === 'legendary';
+      const isEpic = rarity === 'epic';
+      const popScale    = isLeg ? 1.18 : isEpic ? 1.14 : 1.10;
+      const settleScale = isLeg ? 1.08 : isEpic ? 1.06 : 1.04;
       const pushScale   = isLeg ? 0.92 : 0.96;
       const pushOpacity = isLeg ? 0.82 : 0.82;
 
@@ -3328,10 +3306,35 @@ function showRevealed() {
   // Show actions
   gsap.to('.reveal-actions', { opacity: 1, y: 0, duration: 0.5, delay: lastEnd + 0.2 });
 
+  // Auto-play preview of the top rarity card
+  if (topItem && (topItem.rarity === 'legendary' || topItem.rarity === 'epic' || topItem.rarity === 'rare')) {
+    setTimeout(async () => {
+      try {
+        const it = await itunesSearch(topItem.title, topItem.artist);
+        if (it?.previewUrl) {
+          spStopPreview();
+          spPlayPreview(it.previewUrl);
+          // Find the top card and show music indicator
+          const topCard = grid.querySelector(`.reveal-card-big.${topItem.rarity}`);
+          if (topCard) {
+            const badge = document.createElement('div');
+            badge.className = 'rcb-music-playing';
+            badge.innerHTML = '🎵';
+            topCard.querySelector('.rcb-art')?.appendChild(badge);
+            gsap.fromTo(badge, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' });
+          }
+        }
+      } catch(e) {}
+    }, (lastEnd + 0.5) * 1000);
+  }
+
   // Wire up buttons
   setTimeout(() => {
     const c = $('#reveal-continue');
-    if (c) c.addEventListener('click', () => $('#pack-overlay').classList.remove('active'));
+    if (c) c.addEventListener('click', () => {
+      spStopPreview();
+      $('#pack-overlay').classList.remove('active');
+    });
   }, 100);
 }
 
@@ -3842,6 +3845,9 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
 
 (async () => {
   spLoadFromStorage();
+  if (!spIsConnected() && localStorage.getItem('sp_refresh')) {
+    try { await spRefreshToken(); } catch(e) {}
+  }
   try { await spHandleCallback(); } catch(e) { console.warn('spHandleCallback:', e); }
   try {
     const ok = await sbInit();

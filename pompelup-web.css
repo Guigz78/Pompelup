@@ -2095,7 +2095,11 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   gap: 18px;
   padding: 20px 24px;
 }
-#screen-game { padding: 0; }
+#screen-game { padding: 0; overflow: hidden; }
+
+.game-grid { overflow: hidden; }
+
+.game-side, .game-center { height: 100%; min-height: 0; overflow: hidden; }
 
 .game-side { display: flex; flex-direction: column; gap: 14px; }
 .round-card {
@@ -2180,12 +2184,13 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 }
 
 /* GAME center */
-.game-center { display: flex; flex-direction: column; gap: 16px; position: relative; }
+.game-center { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .viz-card {
   flex: 1;
+  min-height: 0;
   background: linear-gradient(180deg, #1a1a2e 0%, #2a1a3e 100%);
   border-radius: 28px;
-  padding: 28px;
+  padding: 20px;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -2230,7 +2235,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   position: relative;
   z-index: 2;
 }
-.viz-circle { position: relative; width: 320px; height: 320px; }
+.viz-circle { position: relative; width: min(280px, 28vh); height: min(280px, 28vh); }
 .viz-circle .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12); }
 .viz-circle .ring.r2 { inset: 10px; }
 .viz-circle .ring.r3 { inset: 22px; }
@@ -2264,7 +2269,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .points-display .pd-label { font-size: 11px; letter-spacing: 0.18em; opacity: 0.7; text-transform: uppercase; font-weight: 800; }
 .points-display .pd-val {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 64px;
+  font-size: clamp(36px, 5.5vh, 64px);
   color: var(--yellow);
   line-height: 0.95;
   margin-top: 4px;
@@ -2308,13 +2313,13 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .joker-row-host {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 6px;
   padding: 0 4px;
 }
 .joker-pill {
   background: #fff;
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 7px 10px;
   display: flex; align-items: center; gap: 8px;
   box-shadow: var(--shadow-soft);
   font-weight: 700;
@@ -3472,7 +3477,9 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   background: rgba(0,0,0,0.06);
   color: var(--muted);
 }
-.reveal-card-big.rare .rcb-rar { background: var(--purple); color: #fff; }
+.reveal-card-big.rare .rcb-rar { background: var(--blue); color: #fff; }
+.reveal-card-big.epic { background: linear-gradient(180deg, #F5F3FF 0%, #EDE9FE 100%); }
+.reveal-card-big.epic .rcb-rar { background: linear-gradient(135deg, #A78BFA, #F472B6); color: #fff; }
 .reveal-card-big.legendary {
   background: linear-gradient(180deg, #FEF3C7 0%, #FDE68A 100%);
 }
@@ -3483,6 +3490,39 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .reveal-card-big.legendary {
   animation: legendaryGlow 2.5s ease-in-out infinite;
 }
+
+/* Rarity hover aura */
+.reveal-card-big { transition: transform 200ms, box-shadow 300ms; }
+.reveal-card-big:hover { transform: translateY(-10px) scale(1.04); }
+.reveal-card-big.common:hover {
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 30px rgba(156,163,175,0.5);
+}
+.reveal-card-big.rare:hover {
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 40px rgba(59,79,232,0.7), 0 0 80px rgba(59,79,232,0.3);
+}
+.reveal-card-big.epic:hover {
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 40px rgba(167,139,250,0.8), 0 0 80px rgba(244,114,182,0.4);
+}
+.reveal-card-big.legendary:hover {
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 60px rgba(251,191,36,1), 0 0 100px rgba(249,115,22,0.6) !important;
+  animation: none;
+}
+
+/* Rarity label on card */
+.rcb-rar-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  z-index: 3;
+}
+.reveal-card-big.common .rcb-rar-badge { background: rgba(0,0,0,0.25); color: #fff; }
+.reveal-card-big.rare .rcb-rar-badge { background: var(--blue); color: #fff; }
+.reveal-card-big.epic .rcb-rar-badge { background: linear-gradient(135deg, #A78BFA, #F472B6); color: #fff; }
+.reveal-card-big.legendary .rcb-rar-badge { background: linear-gradient(135deg, var(--yellow), var(--orange)); color: #fff; }
 @keyframes legendaryGlow {
   0%, 100% { box-shadow: 0 14px 50px rgba(0,0,0,0.4), 0 0 30px rgba(251,191,36,0.5); }
   50% { box-shadow: 0 14px 50px rgba(0,0,0,0.4), 0 0 80px rgba(251,191,36,1); }
@@ -3501,6 +3541,22 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 @keyframes cardShine {
   0%, 100% { transform: translateX(-100%); }
   50% { transform: translateX(100%); }
+}
+
+.rcb-music-playing {
+  position: absolute;
+  bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 18px;
+  z-index: 4;
+  animation: musicPulse 1s ease-in-out infinite;
+}
+@keyframes musicPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.15); }
 }
 
 .reveal-actions {
@@ -3528,7 +3584,11 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
     0 0 80px currentColor;
 }
 .rarity-flash.common { color: #fff; }
-.rarity-flash.rare { color: var(--purple); }
+.rarity-flash.rare { color: #3B4FE8; }
+.rarity-flash.epic {
+  color: var(--purple);
+  filter: drop-shadow(0 0 30px var(--purple));
+}
 .rarity-flash.legendary {
   color: var(--yellow);
   background: linear-gradient(180deg, #FBBF24 0%, #F97316 100%);
