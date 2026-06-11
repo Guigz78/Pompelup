@@ -3406,6 +3406,82 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   perspective: 1000px;
 }
 
+/* =============================================
+   POCHETTES — pack reveal sleeves
+   ============================================= */
+.pochette-wrap {
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pochette-sleeve {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 22px;
+  background: linear-gradient(150deg, #2e2e40 0%, #1a1a28 60%, #0f0f1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+  transition: box-shadow 0.35s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+/* Sheen */
+.pochette-sleeve::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 55%);
+  pointer-events: none;
+  border-radius: 22px;
+}
+/* Record groove lines texture */
+.pochette-sleeve::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 14px,
+    rgba(255,255,255,0.025) 14px,
+    rgba(255,255,255,0.025) 15px
+  );
+  pointer-events: none;
+}
+
+/* Aura bleeds from behind on hover */
+.pochette-wrap:hover .pochette-sleeve {
+  box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 55px 20px var(--aura-color);
+  transform: translateY(-6px);
+}
+
+.pochette-icon {
+  font-size: 54px;
+  opacity: 0.55;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+.pochette-tap {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  position: relative;
+  z-index: 1;
+}
+
+/* The vinyl card sits behind the sleeve */
+.pochette-wrap .reveal-card-big {
+  position: relative;
+  z-index: 1;
+}
+
 .reveal-card-big {
   width: 200px;
   background: #fff;
@@ -3491,20 +3567,20 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   animation: legendaryGlow 2.5s ease-in-out infinite;
 }
 
-/* Rarity hover aura */
-.reveal-card-big { transition: transform 200ms, box-shadow 300ms; }
-.reveal-card-big:hover { transform: translateY(-10px) scale(1.04); }
-.reveal-card-big.common:hover {
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 30px rgba(156,163,175,0.5);
+/* Rarity hover aura — only after the pochette is opened */
+.pochette-wrap.revealed .reveal-card-big { transition: transform 200ms, box-shadow 300ms; }
+.pochette-wrap.revealed .reveal-card-big:hover { transform: translateY(-8px) scale(1.03); }
+.pochette-wrap.revealed.common .reveal-card-big:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35), 0 0 30px rgba(156,163,175,0.5);
 }
-.reveal-card-big.rare:hover {
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 40px rgba(59,79,232,0.7), 0 0 80px rgba(59,79,232,0.3);
+.pochette-wrap.revealed.rare .reveal-card-big:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35), 0 0 40px rgba(59,79,232,0.7);
 }
-.reveal-card-big.epic:hover {
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 40px rgba(167,139,250,0.8), 0 0 80px rgba(244,114,182,0.4);
+.pochette-wrap.revealed.epic .reveal-card-big:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35), 0 0 40px rgba(167,139,250,0.8);
 }
-.reveal-card-big.legendary:hover {
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 60px rgba(251,191,36,1), 0 0 100px rgba(249,115,22,0.6) !important;
+.pochette-wrap.revealed.legendary .reveal-card-big:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35), 0 0 60px rgba(251,191,36,1) !important;
   animation: none;
 }
 

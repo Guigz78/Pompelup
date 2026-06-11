@@ -3077,8 +3077,6 @@ function showRarityFlash(rarity) {
   };
   flash.className = 'rarity-flash ' + rarity;
   flash.textContent = labels[rarity] || labels.common;
-  if (rarity === 'legendary') playLegendarySfx();
-  else if (rarity === 'epic') playEpicSfx();
   gsap.killTweensOf(flash);
   gsap.set(flash, { scale: 0, opacity: 0 });
 
@@ -3173,165 +3171,162 @@ function showRevealed() {
   const items = PACK_ITEMS;
 
   const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
-  const topItem = items.reduce((best, i) => (rarityOrder[i.rarity] || 0) > (rarityOrder[best?.rarity] || 0) ? i : best, items[0]);
+  const topItem = items.reduce((best, i) =>
+    (rarityOrder[i.rarity] || 0) > (rarityOrder[best?.rarity] || 0) ? i : best, items[0]);
   const rarityLabels = { common: 'COMMUN', rare: 'RARE', epic: 'ÉPIQUE', legendary: 'LÉGENDAIRE' };
+  const auraColors = {
+    common:    'rgba(156,163,175,0.5)',
+    rare:      'rgba(59,79,232,0.85)',
+    epic:      'rgba(167,139,250,0.9)',
+    legendary: 'rgba(251,191,36,0.95)'
+  };
+
+  const cardHTML = (item) => `
+    <div class="reveal-card-big ${item.rarity}" style="--rcb-color:${item.color}">
+      <span class="rcb-rar-badge">${rarityLabels[item.rarity] || item.rarity}</span>
+      ${item.rarity === 'legendary' || item.rarity === 'epic' || item.rarity === 'rare' ? `
+        <div class="rcb-beams"></div>
+        <div class="rcb-frame">
+          <span class="cn cn-tl"></span><span class="cn cn-tr"></span>
+          <span class="cn cn-bl"></span><span class="cn cn-br"></span>
+          <span class="ed ed-t"></span><span class="ed ed-r"></span>
+          <span class="ed ed-b"></span><span class="ed ed-l"></span>
+          ${item.rarity === 'legendary' ? '<span class="rcb-crown">👑</span>' : item.rarity === 'epic' ? '<span class="rcb-crown rcb-gem">💎</span>' : ''}
+        </div>
+        <div class="rcb-sparkles"></div>
+      ` : ''}
+      <div class="rcb-art"><div class="rcb-disk"></div></div>
+      <div class="rcb-info">
+        <div class="rcb-title">${escHtml(item.title)}</div>
+        <div class="rcb-artist">${escHtml(item.artist)}</div>
+      </div>
+    </div>`;
 
   grid.innerHTML = '<h3>NOUVEAUX VINYLES</h3>' +
-    `<div class="reveal-row">${items.map((i) => `
-      <div class="reveal-card-big ${i.rarity}" style="--rcb-color:${i.color}" data-title="${escHtml(i.title)}" data-artist="${escHtml(i.artist)}">
-        <span class="rcb-rar-badge">${rarityLabels[i.rarity] || i.rarity}</span>
-        ${i.rarity === 'legendary' || i.rarity === 'epic' || i.rarity === 'rare' ? `
-          <div class="rcb-beams"></div>
-          <div class="rcb-frame">
-            <span class="cn cn-tl"></span><span class="cn cn-tr"></span>
-            <span class="cn cn-bl"></span><span class="cn cn-br"></span>
-            <span class="ed ed-t"></span><span class="ed ed-r"></span>
-            <span class="ed ed-b"></span><span class="ed ed-l"></span>
-            ${i.rarity === 'legendary' ? '<span class="rcb-crown">👑</span>' : i.rarity === 'epic' ? '<span class="rcb-crown rcb-gem">💎</span>' : ''}
-          </div>
-          <div class="rcb-sparkles"></div>
-        ` : ''}
-        <div class="rcb-art"><div class="rcb-disk"></div></div>
-        <div class="rcb-info">
-          <div class="rcb-title">${escHtml(i.title)}</div>
-          <div class="rcb-artist">${escHtml(i.artist)}</div>
+    `<div class="reveal-row">${items.map((item) => `
+      <div class="pochette-wrap ${item.rarity}" style="--aura-color:${auraColors[item.rarity]}; --rcb-color:${item.color}">
+        <div class="pochette-sleeve">
+          <div class="pochette-icon">♪</div>
+          <div class="pochette-tap">Appuyer pour révéler</div>
         </div>
+        ${cardHTML(item)}
       </div>
     `).join('')}</div>
     <div class="reveal-actions">
       <button class="btn btn-ghost" id="reveal-share" style="color:#fff;background:rgba(255,255,255,0.15);">PARTAGER</button>
       <button class="btn btn-accent" id="reveal-continue">CONTINUER</button>
     </div>`;
+
   grid.classList.add('active');
 
+  // All cards start hidden behind their sleeves
+  $$('.pochette-wrap .reveal-card-big').forEach(c => gsap.set(c, { opacity: 0, y: 30, scale: 0.92 }));
+
   gsap.from('#reveal-grid h3', { y: -30, opacity: 0, duration: 0.6, ease: 'back.out(1.4)' });
-
-  const cards = $$('.reveal-card-big');
-  let lastEnd = 0;
-  cards.forEach((c, i) => {
-    const rarity = c.classList.contains('legendary') ? 'legendary'
-                 : c.classList.contains('epic') ? 'epic'
-                 : c.classList.contains('rare') ? 'rare' : 'common';
-    const delay = 0.4 + i * 0.5;
-
-    if (rarity === 'legendary' || rarity === 'epic' || rarity === 'rare') {
-      // Hide content first
-      const content = c.querySelectorAll('.rcb-art, .rcb-info');
-      const beams   = c.querySelector('.rcb-beams');
-      const frame   = c.querySelector('.rcb-frame');
-      const corners = c.querySelectorAll('.rcb-frame .cn');
-      const edges   = c.querySelectorAll('.rcb-frame .ed');
-      const crown   = c.querySelector('.rcb-crown');
-      gsap.set(content, { opacity: 0 });
-      gsap.set(beams,   { opacity: 0, scale: 0.4 });
-      gsap.set(corners, { opacity: 0, scale: 0.3 });
-      gsap.set(edges,   { scaleX: 0, scaleY: 0, opacity: 0 });
-      gsap.set(crown,   { opacity: 0, y: -30, scale: 0 });
-
-      const isLeg  = rarity === 'legendary';
-      const isEpic = rarity === 'epic';
-      const popScale    = isLeg ? 1.18 : isEpic ? 1.14 : 1.10;
-      const settleScale = isLeg ? 1.08 : isEpic ? 1.06 : 1.04;
-      const pushScale   = isLeg ? 0.92 : 0.96;
-      const pushOpacity = isLeg ? 0.82 : 0.82;
-
-      // Légendaire : les coins "volent" depuis l'extérieur (effet construction)
-      // + un flash doré qui éclate quand le cadre se verrouille.
-      let buildFlash = null;
-      if (isLeg) {
-        const offs = [[-46, -46], [46, -46], [-46, 46], [46, 46]];
-        corners.forEach((cn, k) => gsap.set(cn, { x: offs[k][0], y: offs[k][1], rotation: (k % 2 ? 60 : -60), scale: 0.3, opacity: 0 }));
-        buildFlash = document.createElement('div');
-        buildFlash.className = 'rcb-build-flash';
-        c.appendChild(buildFlash);
-        gsap.set(buildFlash, { opacity: 0, scale: 0.6 });
-      }
-
-      const tl = gsap.timeline({ delay });
-      // 1) Card pops in
-      tl.to(c, {
-        opacity: 1, rotateY: 0, y: 0, scale: popScale,
-        duration: 0.55, ease: 'back.out(2.2)',
-        onStart: () => {
-          playRevealChime(rarity, 0);
-          if (isLeg) legendaryScreenShake();
-          // Push neighbours back
-          cards.forEach(other => {
-            if (other !== c) gsap.to(other, { scale: pushScale, opacity: pushOpacity, duration: 0.4, ease: 'power2.out' });
-          });
-        }
-      });
-      // 2) Beams fade in & start spinning
-      tl.to(beams, { opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2');
-      // 3) Corners snap into place
-      tl.to(corners[0], { opacity: 1, scale: 1, x: 0, y: 0, rotation: 0, duration: 0.32, ease: 'back.out(2.4)' }, '+=0.05')
-        .to(corners[1], { opacity: 1, scale: 1, x: 0, y: 0, rotation: 0, duration: 0.32, ease: 'back.out(2.4)' }, '-=0.22')
-        .to(corners[2], { opacity: 1, scale: 1, x: 0, y: 0, rotation: 0, duration: 0.32, ease: 'back.out(2.4)' }, '-=0.22')
-        .to(corners[3], { opacity: 1, scale: 1, x: 0, y: 0, rotation: 0, duration: 0.32, ease: 'back.out(2.4)' }, '-=0.22');
-      // 4) Edges grow from corners
-      tl.to(edges[0], { scaleX: 1, opacity: 1, duration: 0.28, ease: 'power3.out' }, '-=0.1')
-        .to(edges[1], { scaleY: 1, opacity: 1, duration: 0.28, ease: 'power3.out' }, '-=0.28')
-        .to(edges[2], { scaleX: 1, opacity: 1, duration: 0.28, ease: 'power3.out' }, '-=0.28')
-        .to(edges[3], { scaleY: 1, opacity: 1, duration: 0.28, ease: 'power3.out' }, '-=0.28');
-      // 4b) LÉGENDAIRE : flash doré qui éclate quand le cadre se verrouille
-      if (isLeg && buildFlash) {
-        tl.to(buildFlash, { opacity: 1, scale: 1.15, duration: 0.18, ease: 'power2.out' }, '-=0.05')
-          .to(buildFlash, { opacity: 0, scale: 1.6, duration: 0.5, ease: 'power2.out' });
-      }
-      // 5) Crown / gem drops in
-      tl.to(crown, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(2.2)' }, '-=0.15');
-      // 6) Settle + fade content
-      tl.to(c, { scale: settleScale, duration: 0.45, ease: 'power3.out' }, '-=0.1');
-      tl.to(content, { opacity: 1, duration: 0.45, ease: 'power2.out' }, '-=0.4');
-      // 7) Sparkles
-      tl.call(() => startSparkles(c, rarity), null, '-=0.3');
-      // 8) Restore neighbours
-      tl.call(() => {
-        cards.forEach(other => {
-          if (other !== c) gsap.to(other, { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' });
-        });
-      }, null, '+=0.2');
-      lastEnd = Math.max(lastEnd, delay + 2.3);
-    } else {
-      gsap.to(c, {
-        opacity: 1, rotateY: 0, y: 0, scale: 1,
-        duration: 0.7, delay,
-        ease: 'back.out(1.5)',
-        onStart: () => playRevealChime(rarity, 0)
-      });
-      lastEnd = Math.max(lastEnd, delay + 1.1);
-    }
+  $$('.pochette-wrap').forEach((wrap, i) => {
+    gsap.from(wrap, { y: 80, opacity: 0, scale: 0.7, duration: 0.6, delay: 0.25 + i * 0.18, ease: 'back.out(1.8)' });
   });
 
-  // Show actions
-  gsap.to('.reveal-actions', { opacity: 1, y: 0, duration: 0.5, delay: lastEnd + 0.2 });
+  let revealedCount = 0;
 
-  // Auto-play preview of the top rarity card
-  if (topItem && (topItem.rarity === 'legendary' || topItem.rarity === 'epic' || topItem.rarity === 'rare')) {
-    setTimeout(async () => {
-      try {
-        const it = await itunesSearch(topItem.title, topItem.artist);
-        if (it?.previewUrl) {
-          spStopPreview();
-          spPlayPreview(it.previewUrl);
-          // Find the top card and show music indicator
-          const topCard = grid.querySelector(`.reveal-card-big.${topItem.rarity}`);
-          if (topCard) {
-            const badge = document.createElement('div');
-            badge.className = 'rcb-music-playing';
-            badge.innerHTML = '🎵';
-            topCard.querySelector('.rcb-art')?.appendChild(badge);
-            gsap.fromTo(badge, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' });
-          }
+  $$('.pochette-wrap').forEach((wrap) => {
+    const sleeve = wrap.querySelector('.pochette-sleeve');
+    const card   = wrap.querySelector('.reveal-card-big');
+    const rarity = wrap.classList.contains('legendary') ? 'legendary'
+                 : wrap.classList.contains('epic')      ? 'epic'
+                 : wrap.classList.contains('rare')      ? 'rare' : 'common';
+
+    function revealCard() {
+      wrap.removeEventListener('click', revealCard);
+      wrap.style.cursor = 'default';
+      wrap.classList.add('revealed');
+
+      // Sleeve flies up and away
+      gsap.to(sleeve, {
+        y: -280, opacity: 0, scale: 0.7,
+        rotation: (Math.random() - 0.5) * 45,
+        duration: 0.38, ease: 'power3.in',
+        onComplete: () => { sleeve.style.display = 'none'; }
+      });
+
+      // Vinyl pops out
+      gsap.to(card, {
+        opacity: 1, y: 0, scale: 1,
+        duration: 0.55, delay: 0.12, ease: 'back.out(2)',
+        onStart: () => playRevealChime(rarity, 0)
+      });
+
+      if (rarity === 'legendary' || rarity === 'epic' || rarity === 'rare') {
+        const content = card.querySelectorAll('.rcb-art, .rcb-info');
+        const beams   = card.querySelector('.rcb-beams');
+        const corners = card.querySelectorAll('.rcb-frame .cn');
+        const edges   = card.querySelectorAll('.rcb-frame .ed');
+        const crown   = card.querySelector('.rcb-crown');
+        gsap.set(content, { opacity: 0 });
+        gsap.set(beams,   { opacity: 0, scale: 0.4 });
+        gsap.set(corners, { opacity: 0, scale: 0.3 });
+        gsap.set(edges,   { scaleX: 0, scaleY: 0, opacity: 0 });
+        if (crown) gsap.set(crown, { opacity: 0, y: -30, scale: 0 });
+
+        const isLeg = rarity === 'legendary';
+        const isEpic = rarity === 'epic';
+        const settleScale = isLeg ? 1.08 : isEpic ? 1.06 : 1.04;
+
+        if (isLeg) {
+          const offs = [[-46,-46],[46,-46],[-46,46],[46,46]];
+          corners.forEach((cn, k) => gsap.set(cn, { x: offs[k][0], y: offs[k][1], rotation: k%2?60:-60, scale: 0.3, opacity: 0 }));
+          legendaryScreenShake();
         }
-      } catch(e) {}
-    }, (lastEnd + 0.5) * 1000);
-  }
 
-  // Wire up buttons
+        const tl = gsap.timeline({ delay: 0.5 });
+        tl.to(beams,   { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+          .to(corners[0], { opacity:1, scale:1, x:0, y:0, rotation:0, duration:0.3, ease:'back.out(2.4)' }, '+=0.04')
+          .to(corners[1], { opacity:1, scale:1, x:0, y:0, rotation:0, duration:0.3, ease:'back.out(2.4)' }, '-=0.2')
+          .to(corners[2], { opacity:1, scale:1, x:0, y:0, rotation:0, duration:0.3, ease:'back.out(2.4)' }, '-=0.2')
+          .to(corners[3], { opacity:1, scale:1, x:0, y:0, rotation:0, duration:0.3, ease:'back.out(2.4)' }, '-=0.2')
+          .to(edges[0], { scaleX:1, opacity:1, duration:0.25, ease:'power3.out' }, '-=0.08')
+          .to(edges[1], { scaleY:1, opacity:1, duration:0.25, ease:'power3.out' }, '-=0.25')
+          .to(edges[2], { scaleX:1, opacity:1, duration:0.25, ease:'power3.out' }, '-=0.25')
+          .to(edges[3], { scaleY:1, opacity:1, duration:0.25, ease:'power3.out' }, '-=0.25');
+        if (crown) tl.to(crown, { opacity:1, y:0, scale:1, duration:0.38, ease:'back.out(2.2)' }, '-=0.1');
+        tl.to(card, { scale: settleScale, duration:0.4, ease:'power3.out' }, '-=0.08');
+        tl.to(content, { opacity:1, duration:0.4, ease:'power2.out' }, '-=0.35');
+        tl.call(() => startSparkles(card, rarity), null, '-=0.25');
+      }
+
+      revealedCount++;
+      if (revealedCount === items.length) {
+        gsap.to('.reveal-actions', { opacity: 1, duration: 0.5, delay: 0.9 });
+        // Auto-play preview of the top rarity card
+        if (topItem && rarityOrder[topItem.rarity] >= 2) {
+          setTimeout(async () => {
+            try {
+              const it = await itunesSearch(topItem.title, topItem.artist);
+              if (it?.previewUrl) {
+                spStopPreview();
+                spPlayPreview(it.previewUrl);
+                const topCard = grid.querySelector(`.pochette-wrap.${topItem.rarity} .reveal-card-big`);
+                if (topCard) {
+                  const badge = document.createElement('div');
+                  badge.className = 'rcb-music-playing';
+                  badge.innerHTML = '🎵';
+                  topCard.querySelector('.rcb-art')?.appendChild(badge);
+                  gsap.fromTo(badge, { scale:0, opacity:0 }, { scale:1, opacity:1, duration:0.4, ease:'back.out(2)' });
+                }
+              }
+            } catch(e) {}
+          }, 1200);
+        }
+      }
+    }
+
+    wrap.addEventListener('click', revealCard);
+  });
+
+  // Wire up continue
   setTimeout(() => {
-    const c = $('#reveal-continue');
-    if (c) c.addEventListener('click', () => {
+    const btn = $('#reveal-continue');
+    if (btn) btn.addEventListener('click', () => {
       spStopPreview();
       $('#pack-overlay').classList.remove('active');
     });
