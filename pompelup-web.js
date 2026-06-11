@@ -3177,6 +3177,31 @@ function packBurst(topRarity) {
 
 const VINYL_PREVIEW_CACHE = {};
 
+function setDiskFast(disk) {
+  gsap.killTweensOf(disk);
+  if (!disk._gsapOwned) {
+    const m = new DOMMatrix(getComputedStyle(disk).transform);
+    const angle = Math.atan2(m.b, m.a) * (180 / Math.PI);
+    disk.style.animation = 'none';
+    gsap.set(disk, { rotation: angle });
+    disk._gsapOwned = true;
+  }
+  const cur = gsap.getProperty(disk, 'rotation');
+  gsap.to(disk, { rotation: cur + 36000, duration: 150, ease: 'none', overwrite: true });
+}
+
+function setDiskSlow(disk) {
+  const cur = gsap.getProperty(disk, 'rotation');
+  gsap.killTweensOf(disk);
+  gsap.to(disk, {
+    rotation: cur + 720, duration: 2, ease: 'power3.out',
+    onComplete: () => {
+      const final = gsap.getProperty(disk, 'rotation');
+      gsap.to(disk, { rotation: final + 36000, duration: 600, ease: 'none' });
+    }
+  });
+}
+
 async function playVinylHoverPreview(wrap) {
   if (!wrap.classList.contains('revealed')) return;
   const title  = wrap.querySelector('.rcb-title')?.textContent?.trim();
@@ -3196,7 +3221,8 @@ async function playVinylHoverPreview(wrap) {
   if (!wrap.matches(':hover')) return;
   spStopPreview();
   spPlayPreview(cached.previewUrl);
-  wrap.classList.add('playing');
+  const disk = wrap.querySelector('.rcb-disk');
+  if (disk) setDiskFast(disk);
   if (!wrap.querySelector('.rcb-music-playing')) {
     const badge = document.createElement('div');
     badge.className = 'rcb-music-playing';
@@ -3208,7 +3234,8 @@ async function playVinylHoverPreview(wrap) {
 
 function stopVinylHoverPreview(wrap) {
   spStopPreview();
-  wrap.classList.remove('playing');
+  const disk = wrap.querySelector('.rcb-disk');
+  if (disk) setDiskSlow(disk);
   const badge = wrap.querySelector('.rcb-music-playing');
   if (badge) gsap.to(badge, { scale:0, opacity:0, duration:0.2, onComplete: () => badge.remove() });
 }
