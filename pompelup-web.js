@@ -3968,6 +3968,11 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
 });
 
 (async () => {
+  // Clean up leftover # from Supabase OAuth redirect
+  if (window.location.hash === '' || window.location.hash === '#') {
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+
   spLoadFromStorage();
   if (!spIsConnected() && localStorage.getItem('sp_refresh')) {
     try { await spRefreshToken(); } catch(e) {}

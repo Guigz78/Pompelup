@@ -90,14 +90,16 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .sidebar.hidden { display: none; }
 
 .sb-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: 0.01em;
   line-height: 1;
   color: var(--text);
   display: flex; align-items: baseline;
   padding: 8px 12px 0;
   margin-bottom: 22px;
+  text-shadow: 1px 1px 0 #1a1a1a, 2px 2px 0 #1a1a1a, 3px 3px 0 rgba(0,0,0,0.18);
 }
 .sb-logo .b-accent { color: var(--orange); }
 .sb-logo .b-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-left: 4px; align-self: center; }
@@ -648,12 +650,14 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
 
 .home-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 100px;
-  line-height: 0.82;
-  letter-spacing: -0.01em;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 96px;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
   color: var(--text);
   margin: 14px 0 12px;
+  text-shadow: 3px 3px 0 #1a1a1a, 5px 5px 0 #1a1a1a, 7px 7px 0 rgba(0,0,0,0.15);
 }
 .home-title .accent { color: var(--orange); }
 .home-title em {
@@ -1642,7 +1646,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   width: 100%;
   max-width: 100%;
 }
-#screen-lobby { padding: 0; display: flex; flex-direction: column; }
+#screen-lobby { padding: 0; }
 
 .panel {
   background: rgba(255, 255, 255, 0.65);
