@@ -3489,9 +3489,6 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   padding: 0;
   overflow: hidden;
   box-shadow: 0 14px 50px rgba(0,0,0,0.4);
-  opacity: 0;
-  transform: rotateY(180deg) translateY(60px) scale(0.7);
-  transform-style: preserve-3d;
   position: relative;
   cursor: pointer;
 }
