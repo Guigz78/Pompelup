@@ -99,12 +99,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   display: flex; align-items: baseline;
   padding: 8px 12px 0;
   margin-bottom: 22px;
-  text-shadow:
-    1px 1px 0 #1a1a1a,
-    2px 2px 0 #1a1a1a,
-    3px 3px 0 #1a1a1a,
-    4px 4px 0 #1a1a1a,
-    5px 5px 0 rgba(0,0,0,0.18);
+  text-shadow: 2px 3px 0 rgba(0,0,0,0.5);
 }
 .sb-logo .b-accent { color: var(--orange); }
 .sb-logo .b-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-left: 4px; align-self: center; }
@@ -662,13 +657,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   letter-spacing: 0.01em;
   color: var(--text);
   margin: 14px 0 12px;
-  text-shadow:
-    2px 2px 0 #1a1a1a,
-    4px 4px 0 #1a1a1a,
-    6px 6px 0 #1a1a1a,
-    8px 8px 0 #1a1a1a,
-    10px 10px 0 #1a1a1a,
-    12px 12px 0 rgba(0,0,0,0.18);
+  text-shadow: 5px 6px 0 rgba(0,0,0,0.55);
 }
 .home-title .accent { color: var(--orange); }
 .home-title em {
