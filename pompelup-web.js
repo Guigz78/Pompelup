@@ -1316,7 +1316,7 @@ async function spConnect() {
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
     response_type: 'code',
-    redirect_uri: window.location.origin + window.location.pathname,
+    redirect_uri: window.location.origin,
     scope: SPOTIFY_SCOPES,
     code_challenge_method: 'S256',
     code_challenge: challenge,
@@ -1338,7 +1338,7 @@ async function spHandleCallback() {
       client_id: SPOTIFY_CLIENT_ID,
       grant_type: 'authorization_code',
       code,
-      redirect_uri: window.location.origin + window.location.pathname,
+      redirect_uri: window.location.origin,
       code_verifier: verifier
     })
   });
