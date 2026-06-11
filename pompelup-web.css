@@ -2314,6 +2314,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 
 .joker-row-host {
   display: grid;
+  margin-bottom: 8px;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 0 4px;
