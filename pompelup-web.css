@@ -401,7 +401,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 /* ===== Screens ===== */
 .content-area {
   position: absolute;
-  top: 64px; left: 240px; right: 260px; bottom: 0;
+  top: 64px; left: 240px; right: 0; bottom: 0;
   z-index: 5;
 }
 .content-area.fullscreen { left: 0; top: 0; right: 0; }
