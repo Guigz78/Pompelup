@@ -239,3 +239,4 @@ function sbLeaveRoom() {
 function sbRoomPlayers() { return Object.values(_roomPlayers); }
 function sbIsHost() { return _isHost; }
 function sbHasRoom() { return !!_roomChannel; }
+function sbSetEventHandler(fn) { _onRoomEvent = fn; }

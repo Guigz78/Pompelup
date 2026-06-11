@@ -2262,7 +2262,47 @@ async function startGame() {
     ? `✓ ${n} / ${STATE.game.total} previews prêtes`
     : '🎛️ Mode synthèse audio');
 
+  // In multiplayer, override the room event handler for in-game events
+  if (STATE._multiPlayers) {
+    sbSetEventHandler((event, data) => {
+      if (event === 'game') {
+        if (data.type === 'score') {
+          // Another player found the answer
+          if (data.name !== STATE.player.name) {
+            STATE.scores[data.name] = data.pts;
+            STATE.totals[data.name] = (STATE.totals[data.name] || 0) + data.pts;
+            STATE.game.perRound.foundBy++;
+            pushGameChat('system', `${data.name} a trouvé ! +${data.pts} pts`);
+            updatePlayersRail();
+          }
+          if (sbIsHost()) checkAllFound();
+        }
+        if (data.type === 'round_end' && !sbIsHost()) {
+          // Apply authoritative scores from host then end round locally
+          if (data.scores) Object.assign(STATE.scores, data.scores);
+          if (data.totals) Object.assign(STATE.totals, data.totals);
+          endRound(true); // true = from broadcast, skip re-broadcast
+        }
+        if (data.type === 'round_start' && !sbIsHost()) {
+          startRound();
+        }
+        if (data.type === 'game_end' && !sbIsHost()) {
+          endGame();
+        }
+      }
+    });
+  }
+
   startRound();
+}
+
+function checkAllFound() {
+  if (!sbIsHost() || STATE.game._allFoundCalled) return;
+  const players = STATE._multiPlayers || [];
+  if (players.length > 0 && players.every(p => STATE.scores[p.name] != null)) {
+    STATE.game._allFoundCalled = true;
+    setTimeout(() => endRound(false), 1200);
+  }
 }
 
 function pushGameChat(kind, content, name, seed) { _pushMsg('g-chat', kind, content, name, seed, 12); }
@@ -2297,6 +2337,7 @@ function startRound() {
   STATE.game.found = false;
   STATE.game.jokers = {};
   STATE.game.doubleNext = false;
+  STATE.game._allFoundCalled = false;
   STATE.scores = {};
   const allInGame = STATE._multiPlayers || [{ name: STATE.player.name }, ...STATE.bots];
   allInGame.forEach(p => { STATE.scores[p.name] = null; });
@@ -2342,7 +2383,7 @@ function startRound() {
       STATE.game.timerWarned = true;
       presenterSay('timer', 'excited', 2000);
     }
-    if (t <= 0) { clearInterval(gameTimer); endRound(); }
+    if (t <= 0) { clearInterval(gameTimer); if (!STATE._multiPlayers || sbIsHost()) endRound(false); }
   }, 100);
 
   clearBotTimers();
@@ -2453,7 +2494,13 @@ if (gForm) gForm.addEventListener('submit', (e) => {
     pushGameChat('system', `${STATE.player.name} a trouvé ! +${pts} pts`);
     updatePlayersRail();
     presenterSay('correct', 'excited', 2500);
-    setTimeout(endRound, 2400);
+    if (STATE._multiPlayers) {
+      sbBroadcast('game', { type: 'score', name: STATE.player.name, pts });
+      if (sbIsHost()) checkAllFound();
+      // non-host waits for host's round_end broadcast
+    } else {
+      setTimeout(endRound, 2400);
+    }
   } else if (result.partial) {
     card.classList.add('partial');
     $('#g-hint').textContent = '🔥 Tu brûles…';
@@ -2622,7 +2669,7 @@ function spawnConfetti() {
   }
 }
 
-function endRound() {
+function endRound(fromBroadcast = false) {
   clearInterval(gameTimer);
   clearBotTimers();
   stopSongLoop();
@@ -2654,10 +2701,27 @@ function endRound() {
   gsap.from('.re-artist', { y: 20, opacity: 0, duration: 0.4, delay: 0.4 });
   gsap.from('.re-stat', { scale: 0, opacity: 0, stagger: 0.1, duration: 0.4, ease: 'back.out(1.6)', delay: 0.5 });
 
-  setTimeout(() => {
-    if (STATE.game.round >= STATE.game.total) endGame();
-    else startRound();
-  }, 3200);
+  if (STATE._multiPlayers) {
+    if (sbIsHost() && !fromBroadcast) {
+      // Broadcast final state to all clients
+      sbBroadcast('game', { type: 'round_end', scores: STATE.scores, totals: STATE.totals });
+      setTimeout(() => {
+        if (STATE.game.round >= STATE.game.total) {
+          sbBroadcast('game', { type: 'game_end' });
+          endGame();
+        } else {
+          sbBroadcast('game', { type: 'round_start' });
+          startRound();
+        }
+      }, 3200);
+    }
+    // Non-host: just shows overlay, host drives the next round
+  } else {
+    setTimeout(() => {
+      if (STATE.game.round >= STATE.game.total) endGame();
+      else startRound();
+    }, 3200);
+  }
 }
 
 function endGame() {
@@ -3989,4 +4053,36 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
     const ok = await sbInit();
     if (ok) { applyProfileToState(); hideAuth(); }
   } catch(e) { console.warn('sbInit:', e); }
+})();
+
+// ===== SIDEBAR USER MENU =====
+(function setupSidebarMenu() {
+  const chevron = $('#sb-chevron');
+  const menu    = $('#sb-user-menu');
+  if (!chevron || !menu) return;
+
+  function openMenu() {
+    menu.classList.add('open');
+    chevron.classList.add('open');
+    gsap.fromTo(menu, { y: -8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.2, ease: 'power2.out' });
+  }
+  function closeMenu() {
+    menu.classList.remove('open');
+    chevron.classList.remove('open');
+  }
+
+  chevron.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.contains('open') ? closeMenu() : openMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && e.target !== chevron) closeMenu();
+  });
+
+  $('#sb-signout')?.addEventListener('click', async () => {
+    closeMenu();
+    try { await sbSignOut(); } catch(e) {}
+    window.location.reload();
+  });
 })();

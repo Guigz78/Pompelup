@@ -21,13 +21,20 @@
     <aside class="sidebar" id="sidebar">
       <div class="sb-logo">Pompe<span class="b-accent">lup</span><div class="b-dot"></div></div>
 
-      <div class="sb-user" data-nav="skins" title="Personnalise ton profil et ton lobby">
+      <div class="sb-user" id="sb-user">
         <div class="sb-avatar"><img id="sb-avatar" alt=""></div>
         <div style="flex:1; min-width: 0;">
           <div class="sb-name" id="sb-name">Guigz</div>
           <div class="sb-lvl">Nv. 12 · 847 / 2400 XP</div>
           <div class="sb-xp"><div class="fill"></div></div>
         </div>
+        <button class="sb-chevron" id="sb-chevron" title="Options">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="sb-user-menu" id="sb-user-menu">
+        <button class="sb-menu-item" data-nav="skins">⚙️ Options du profil</button>
+        <button class="sb-menu-item sb-menu-signout" id="sb-signout">🚪 Déconnexion</button>
       </div>
 
       <div class="sb-section-title">Jeu</div>
