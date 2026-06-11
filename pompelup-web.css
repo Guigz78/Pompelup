@@ -3556,7 +3556,6 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   position: relative;
   box-shadow: 0 8px 22px rgba(0,0,0,0.5);
   overflow: hidden;
-  animation: spinSlow 6s linear infinite;
 }
 .reveal-card-big .rcb-disk-art {
   position: absolute; inset: 18%;

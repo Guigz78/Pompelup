@@ -3179,13 +3179,6 @@ const VINYL_PREVIEW_CACHE = {};
 
 function setDiskFast(disk) {
   gsap.killTweensOf(disk);
-  if (!disk._gsapOwned) {
-    const m = new DOMMatrix(getComputedStyle(disk).transform);
-    const angle = Math.atan2(m.b, m.a) * (180 / Math.PI);
-    disk.style.animation = 'none';
-    gsap.set(disk, { rotation: angle });
-    disk._gsapOwned = true;
-  }
   const cur = gsap.getProperty(disk, 'rotation');
   gsap.to(disk, { rotation: cur + 36000, duration: 150, ease: 'none', overwrite: true });
 }
@@ -3193,13 +3186,7 @@ function setDiskFast(disk) {
 function setDiskSlow(disk) {
   const cur = gsap.getProperty(disk, 'rotation');
   gsap.killTweensOf(disk);
-  gsap.to(disk, {
-    rotation: cur + 720, duration: 2, ease: 'power3.out',
-    onComplete: () => {
-      const final = gsap.getProperty(disk, 'rotation');
-      gsap.to(disk, { rotation: final + 36000, duration: 600, ease: 'none' });
-    }
-  });
+  gsap.to(disk, { rotation: cur + 720, duration: 2, ease: 'power3.out' });
 }
 
 async function playVinylHoverPreview(wrap) {
