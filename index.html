@@ -518,32 +518,16 @@
       </section>
 
       <!-- ============== HISTORY ============== -->
-      <section id="screen-history" class="screen">
-        <div class="history-stats">
-          <div class="hstat-card orange">
-            <div class="hslabel">Parties jouées</div>
-            <div class="hsval">142</div>
-            <div class="hsemoji">🎮</div>
-          </div>
-          <div class="hstat-card green">
-            <div class="hslabel">Victoires</div>
-            <div class="hsval">68</div>
-            <div class="hsemoji">🏆</div>
-          </div>
-          <div class="hstat-card blue">
-            <div class="hslabel">Taux de réussite</div>
-            <div class="hsval">72%</div>
-            <div class="hsemoji">🎯</div>
-          </div>
-          <div class="hstat-card">
-            <div class="hslabel">Streak actuel</div>
-            <div class="hsval" style="color: var(--orange);">7 🔥</div>
-            <div class="hsemoji">⚡</div>
-          </div>
+      <section id="screen-history" class="screen hist-screen">
+        <div class="hist-genre-chips" id="hist-genre-chips">
+          <div class="chip active" data-hist-genre="all">Tous</div>
+          <div class="chip" data-hist-genre="Pop">🎤 Pop</div>
+          <div class="chip" data-hist-genre="Rock">🔥 Rock</div>
+          <div class="chip" data-hist-genre="Hip-Hop">🎙 Rap</div>
+          <div class="chip" data-hist-genre="Dance">💃 Dance</div>
+          <div class="chip" data-hist-genre="Pop Française">🎷 Chanson</div>
         </div>
-
-        <div class="section-bar"><h2>DERNIÈRES PARTIES</h2></div>
-        <div class="history-list" id="history-list"></div>
+        <div class="artist-path" id="artist-path"></div>
       </section>
 
       <!-- ============== COLLECTION ============== -->
@@ -1427,6 +1411,14 @@
 
     <button class="btn btn-accent btn-xl solo-play-btn" id="solo-play-btn">JOUER !</button>
   </div>
+</div>
+
+<div class="artist-overlay" id="artist-overlay" style="display:none">
+  <div class="artist-sheet" id="artist-sheet"></div>
+</div>
+
+<div class="step-overlay" id="step-overlay" style="display:none">
+  <div class="step-inner" id="step-inner"></div>
 </div>
 
 <div class="quit-modal" id="quit-modal" style="display:none;">

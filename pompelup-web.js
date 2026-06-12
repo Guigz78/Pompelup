@@ -1523,24 +1523,432 @@ function initFriends() {
   gsap.from('.add-friend-card', { x: 30, opacity: 0, duration: 0.5, delay: 0.2 });
 }
 
-// ===== HISTORY =====
+// ===== ARTIST DISCOVERY =====
+
+const ARTIST_PATHS = [
+  {
+    id: 'michael-jackson', name: 'Michael Jackson', emoji: '🕺',
+    color: '#3B4FE8', genre: 'Pop', origin: 'Gary, Indiana 🇺🇸', active: '1964 – 2009',
+    bio: 'Le Roi de la Pop. Plus de 400 millions d\'albums vendus, une voix et un moonwalk uniques au monde.',
+    requiredXP: 0,
+    steps: [
+      { type: 'listen', songId: 's2',  label: 'Son tube de 1982 — l\'un des plus joués de l\'histoire' },
+      { type: 'fact',   text: 'Thriller (1982) est l\'album le plus vendu de l\'histoire avec plus de 70 millions d\'exemplaires vendus.', emoji: '🏆' },
+      { type: 'listen', songId: 's31', label: 'Tiré du film Moonwalker (1988)' },
+      { type: 'mcq',    question: 'Quel album de MJ s\'est vendu à plus de 30 millions d\'exemplaires en 1987 ?', opts: ['Dangerous', 'Bad', 'Off the Wall', 'Invincible'], correct: 1 },
+    ]
+  },
+  {
+    id: 'queen', name: 'Queen', emoji: '👑',
+    color: '#FBBF24', genre: 'Rock', origin: 'Londres 🇬🇧', active: '1970 – présent',
+    bio: 'Freddie Mercury, Brian May, Roger Taylor et John Deacon — le rock au format opéra, grandeur nature.',
+    requiredXP: 0,
+    steps: [
+      { type: 'listen', songId: 's3',  label: 'Leur chef-d\'œuvre opéra-rock (1975)' },
+      { type: 'fact',   text: 'Bohemian Rhapsody était si atypique (6 min) que les radios refusaient de la diffuser. Elle devint n°1 au Royaume-Uni pendant 9 semaines.', emoji: '🎭' },
+      { type: 'listen', songId: 's68', label: 'L\'hymne des stades (1977)' },
+      { type: 'mcq',    question: 'Quel film biographique sur Queen est sorti en 2018 ?', opts: ['Rocketman', 'Bohemian Rhapsody', 'Stardust', 'Yesterday'], correct: 1 },
+    ]
+  },
+  {
+    id: 'daft-punk', name: 'Daft Punk', emoji: '🤖',
+    color: '#F97316', genre: 'Dance', origin: 'Paris 🇫🇷', active: '1993 – 2021',
+    bio: 'Thomas Bangalter & Guy-Manuel de Homem-Christo. Casques d\'or et d\'argent, électro révolutionnaire.',
+    requiredXP: 0,
+    steps: [
+      { type: 'listen', songId: 's11', label: 'Feat. Pharrell Williams (2013)' },
+      { type: 'fact',   text: 'Random Access Memories (2013) a remporté 5 Grammy Awards dont Album de l\'année. Il a relancé la musique disco à l\'ère moderne.', emoji: '🏅' },
+      { type: 'listen', songId: 's91', label: 'Tiré de Discovery (2001)' },
+      { type: 'mcq',    question: 'En quelle année Daft Punk s\'est-il officiellement séparé ?', opts: ['2019', '2020', '2021', '2022'], correct: 2 },
+      { type: 'listen', songId: 's92', label: 'Leur premier grand hit (1997)' },
+    ]
+  },
+  {
+    id: 'nirvana', name: 'Nirvana', emoji: '🤟',
+    color: '#374151', genre: 'Rock', origin: 'Aberdeen, WA 🇺🇸', active: '1987 – 1994',
+    bio: 'Kurt Cobain, Krist Novoselic, Dave Grohl. Le grunge qui a changé la face du rock pour toujours.',
+    requiredXP: 80,
+    steps: [
+      { type: 'listen', songId: 's1',  label: 'L\'hymne du grunge (1991)' },
+      { type: 'fact',   text: 'Nevermind (1991) a dépassé Dangerous de Michael Jackson dans les charts américains, symbolisant le passage du pouvoir au grunge.', emoji: '💥' },
+      { type: 'listen', songId: 's54', label: 'Second single de Nevermind (1991)' },
+      { type: 'mcq',    question: 'Quel batteur de Nirvana est devenu leader des Foo Fighters ?', opts: ['Pat Smear', 'Chad Channing', 'Dave Grohl', 'Aaron Burckhard'], correct: 2 },
+    ]
+  },
+  {
+    id: 'dua-lipa', name: 'Dua Lipa', emoji: '💫',
+    color: '#8B5CF6', genre: 'Pop', origin: 'Londres 🇬🇧', active: '2015 – présent',
+    bio: 'La reine de la pop disco britannique. Future Nostalgia a redéfini le son pop des années 2020.',
+    requiredXP: 80,
+    steps: [
+      { type: 'listen', songId: 's129', label: 'Retour aux années 80 (2019)' },
+      { type: 'fact',   text: 'Future Nostalgia (2020) a été entièrement conçu et enregistré avant le COVID. Il a ensuite accompagné le monde entier pendant le confinement.', emoji: '🕺' },
+      { type: 'listen', songId: 's21',  label: 'Levitation Station (2020)' },
+      { type: 'mcq',    question: 'De quelle nationalité est le père de Dua Lipa ?', opts: ['Albanaise', 'Serbe', 'Turque', 'Grecque'], correct: 0 },
+    ]
+  },
+  {
+    id: 'drake', name: 'Drake', emoji: '🦉',
+    color: '#22C55E', genre: 'Hip-Hop', origin: 'Toronto 🇨🇦', active: '2006 – présent',
+    bio: 'Aubrey Drake Graham — l\'artiste le plus streamé de Spotify pendant 7 années consécutives.',
+    requiredXP: 120,
+    steps: [
+      { type: 'listen', songId: 's81', label: 'Clip culte à l\'escalator (2015)' },
+      { type: 'fact',   text: 'En 2016, Drake a eu simultanément 9 chansons dans le Top 10 du Billboard Hot 100, battant le record de The Beatles (14 en 1964 mais pas 9 simultanément).', emoji: '📊' },
+      { type: 'listen', songId: 's83', label: 'God\'s Plan (2018)' },
+      { type: 'mcq',    question: 'Dans quelle série télévisée Drake a-t-il joué avant sa carrière musicale ?', opts: ['The Wire', 'Degrassi', 'Euphoria', 'Power'], correct: 1 },
+    ]
+  },
+  {
+    id: 'edith-piaf', name: 'Édith Piaf', emoji: '🌹',
+    color: '#EF4444', genre: 'Pop Française', origin: 'Paris 🇫🇷', active: '1935 – 1963',
+    bio: 'La Môme. La voix de la France. Son héritage transcende les générations et les frontières.',
+    requiredXP: 120,
+    steps: [
+      { type: 'listen', songId: 's155', label: 'Son testament musical (1960)' },
+      { type: 'fact',   text: '"Piaf" signifie "moineau" en argot parisien. Édith a été découverte à 20 ans en chantant dans la rue par Louis Leplée, gérant d\'un cabaret parisien.', emoji: '🐦' },
+      { type: 'listen', songId: 's156', label: 'Composée en 1946, version 1947' },
+      { type: 'mcq',    question: 'Qui a composé "Non, Je Ne Regrette Rien" pour Édith Piaf ?', opts: ['Charles Aznavour', 'Gilbert Bécaud', 'Charles Dumont', 'Jacques Brel'], correct: 2 },
+    ]
+  },
+  {
+    id: 'taylor-swift', name: 'Taylor Swift', emoji: '🌟',
+    color: '#F472B6', genre: 'Pop', origin: 'West Reading, PA 🇺🇸', active: '2004 – présent',
+    bio: 'La plus grande artiste de sa génération. Elle possède les masters re-enregistrés de ses 10 albums.',
+    requiredXP: 200,
+    steps: [
+      { type: 'listen', songId: 's114', label: 'Album 1989 — nouvelle ère pop (2014)' },
+      { type: 'fact',   text: 'The Eras Tour (2023) a généré plus de 1 milliard de dollars, devenant la tournée la plus rentable de l\'histoire du monde entier.', emoji: '💰' },
+      { type: 'listen', songId: 's42',  label: 'Midnights — son aveu le plus personnel (2022)' },
+      { type: 'mcq',    question: 'Combien Taylor Swift a-t-elle remporté de Grammy Awards Album de l\'année ?', opts: ['2', '3', '4', '5'], correct: 2 },
+    ]
+  }
+];
+
+let HIST_STATE = { filter: 'all', activeArtist: null, activeStep: 0, stepSong: null };
+
+function getHistProgress() {
+  try { return JSON.parse(localStorage.getItem('pompe_hist_progress') || '{}'); } catch(e) { return {}; }
+}
+function saveHistProgress(p) {
+  try { localStorage.setItem('pompe_hist_progress', JSON.stringify(p)); } catch(e) {}
+}
+
+function histArtistCompleted(id) {
+  const p = getHistProgress();
+  const art = ARTIST_PATHS.find(a => a.id === id);
+  return art && (p[id]?.steps?.length || 0) >= art.steps.length;
+}
+
+function histCompletedCount() {
+  return ARTIST_PATHS.filter(a => histArtistCompleted(a.id)).length;
+}
+
+function histTotalXPEarned() {
+  const p = getHistProgress();
+  return Object.values(p).reduce((sum, v) => sum + (v.steps?.length || 0) * 20, 0);
+}
+
 function initHistory() {
-  const list = $('#history-list');
-  list.innerHTML = HISTORY.map(h => {
-    const placeClass = h.place === 1 ? 'first' : h.place === 2 ? 'second' : h.place === 3 ? 'third' : '';
-    return `<div class="history-row">
-      <div class="place ${placeClass}">#${h.place}</div>
-      <div class="h-mode">${h.mode}<div class="h-meta">5 manches</div></div>
-      <div class="h-players">
-        ${h.players.map(p => `<img src="${avatarUrl(p)}" alt="">`).join('')}
+  renderArtistPath();
+  $$('#hist-genre-chips .chip').forEach(c => {
+    c.onclick = () => {
+      $$('#hist-genre-chips .chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      HIST_STATE.filter = c.dataset.histGenre;
+      renderArtistPath();
+    };
+  });
+  gsap.from('.artist-path', { opacity: 0, y: 20, duration: 0.4 });
+}
+
+function renderArtistPath() {
+  const path = $('#artist-path');
+  if (!path) return;
+  const progress = getHistProgress();
+  const xpEarned = histTotalXPEarned();
+  const artists = HIST_STATE.filter === 'all'
+    ? ARTIST_PATHS
+    : ARTIST_PATHS.filter(a => a.genre === HIST_STATE.filter);
+
+  path.innerHTML = artists.map((art, i) => {
+    const artProg = progress[art.id] || { steps: [] };
+    const done = artProg.steps.length;
+    const total = art.steps.length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const locked = art.requiredXP > 0 && xpEarned < art.requiredXP;
+    const completed = done >= total;
+    const side = i % 2 === 0 ? 'ap-left' : 'ap-right';
+
+    const dots = art.steps.map((_, si) => {
+      const isDone = si < done;
+      const isCurrent = si === done && !completed;
+      return `<div class="ap-dot ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}"></div>`;
+    }).join('');
+
+    return `<div class="ap-node ${side} ${locked ? 'locked' : ''} ${completed ? 'completed' : ''}" data-artist-id="${art.id}">
+      ${locked ? '<div class="ap-lock">🔒</div>' : ''}
+      <div class="ap-vinyl" style="background: ${art.color}20; border-color: ${art.color}40">
+        <div class="ap-vinyl-inner" style="background: ${art.color}">
+          <span class="ap-emoji">${art.emoji}</span>
+        </div>
+        ${completed ? '<div class="ap-complete-badge">✓</div>' : ''}
       </div>
-      <div class="h-pts">${h.pts.toLocaleString('fr')} pts</div>
-      <div class="h-date">${h.when}</div>
+      <div class="ap-info">
+        <div class="ap-name">${art.name}</div>
+        <div class="ap-genre-tag" style="color: ${art.color}">${art.genre}</div>
+        <div class="ap-dots">${dots}</div>
+        ${locked
+          ? `<div class="ap-locked-msg">${art.requiredXP} XP requis</div>`
+          : `<div class="ap-prog-bar"><div class="ap-prog-fill" style="width:${pct}%; background:${art.color}"></div></div>`
+        }
+      </div>
     </div>`;
   }).join('');
 
-  gsap.from('.hstat-card', { y: 30, opacity: 0, stagger: 0.08, duration: 0.4, ease: 'back.out(1.3)' });
-  gsap.from('.history-row', { x: -20, opacity: 0, stagger: 0.05, duration: 0.35, delay: 0.4 });
+  path.querySelectorAll('.ap-node:not(.locked)').forEach(node => {
+    node.addEventListener('click', () => openArtistDetail(node.dataset.artistId));
+  });
+
+  gsap.from('.ap-node', { y: 30, opacity: 0, stagger: 0.06, duration: 0.35, ease: 'back.out(1.2)' });
+}
+
+function openArtistDetail(id) {
+  const art = ARTIST_PATHS.find(a => a.id === id);
+  if (!art) return;
+  HIST_STATE.activeArtist = id;
+  const progress = getHistProgress();
+  const artProg = progress[id] || { steps: [] };
+  const done = artProg.steps.length;
+  const completed = done >= art.steps.length;
+
+  const stepIcons = { listen: '🎧', fact: '💡', mcq: '❓' };
+  const stepsHtml = art.steps.map((step, i) => {
+    const isDone = i < done;
+    const isCurrent = i === done && !completed;
+    const isLocked = i > done;
+    return `<div class="as-step ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''} ${isLocked ? 'locked' : ''}">
+      <div class="as-step-icon">${stepIcons[step.type] || '⭐'}</div>
+      <div class="as-step-label">${isDone ? '✓' : isCurrent ? 'Now' : (i + 1)}</div>
+    </div>`;
+  }).join('');
+
+  const sheet = $('#artist-sheet');
+  sheet.innerHTML = `
+    <div class="as-header">
+      <div class="as-vinyl-big" style="background:${art.color}">
+        <span>${art.emoji}</span>
+      </div>
+      <div class="as-title-block">
+        <div class="as-name">${art.name}</div>
+        <div class="as-meta">${art.genre} · ${art.active}</div>
+        <div class="as-origin">${art.origin}</div>
+      </div>
+      <button class="as-close" id="as-close">✕</button>
+    </div>
+    <p class="as-bio">${art.bio}</p>
+    <div class="as-steps-row">${stepsHtml}</div>
+    <div class="as-progress-text">${done}/${art.steps.length} étapes · ${done * 20} XP gagnés</div>
+    <button class="btn btn-accent btn-xl as-cta" id="as-cta">
+      ${completed ? '🏆 TERMINÉ' : done === 0 ? '▶ COMMENCER' : '▶ CONTINUER'}
+    </button>
+  `;
+
+  const overlay = $('#artist-overlay');
+  overlay.style.display = 'flex';
+  gsap.fromTo('#artist-sheet', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'back.out(1.4)' });
+
+  $('#as-close').onclick = closeArtistDetail;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeArtistDetail(); }, { once: true });
+
+  if (!completed) {
+    $('#as-cta').onclick = () => {
+      closeArtistDetail();
+      setTimeout(() => startArtistStep(id, done), 200);
+    };
+  }
+}
+
+function closeArtistDetail() {
+  gsap.to('#artist-sheet', { y: 40, opacity: 0, duration: 0.22, ease: 'power2.in',
+    onComplete: () => { $('#artist-overlay').style.display = 'none'; }
+  });
+}
+
+async function startArtistStep(artistId, stepIndex) {
+  const art = ARTIST_PATHS.find(a => a.id === artistId);
+  if (!art || stepIndex >= art.steps.length) return;
+  const step = art.steps[stepIndex];
+  HIST_STATE.activeArtist = artistId;
+  HIST_STATE.activeStep = stepIndex;
+
+  const overlay = $('#step-overlay');
+  overlay.style.display = 'flex';
+  gsap.fromTo('#step-inner', { opacity: 0, scale: 0.97 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' });
+
+  const pct = Math.round(stepIndex / art.steps.length * 100);
+  const header = `
+    <div class="step-header">
+      <button class="step-close" id="step-close">✕</button>
+      <div class="step-prog-track"><div class="step-prog-fill" style="width:${pct}%; background:${art.color}"></div></div>
+      <div class="step-counter">${stepIndex + 1}/${art.steps.length}</div>
+    </div>
+  `;
+
+  const inner = $('#step-inner');
+  if (step.type === 'fact') {
+    inner.innerHTML = header + `
+      <div class="step-body step-fact">
+        <div class="step-fact-emoji">${step.emoji}</div>
+        <div class="step-fact-title">Le savais-tu ?</div>
+        <div class="step-fact-text">${step.text}</div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-accent btn-xl step-next-btn" id="step-next">SUIVANT →</button>
+      </div>
+    `;
+    $('#step-close').onclick = () => exitStep();
+    $('#step-next').onclick = () => completeStep(artistId, stepIndex);
+
+  } else if (step.type === 'mcq') {
+    inner.innerHTML = header + `
+      <div class="step-body step-mcq">
+        <div class="step-mcq-q">${step.question}</div>
+        <div class="step-mcq-opts">
+          ${step.opts.map((o, i) => `<button class="step-opt" data-i="${i}">${o}</button>`).join('')}
+        </div>
+      </div>
+      <div class="step-footer" id="step-footer"></div>
+    `;
+    $('#step-close').onclick = () => exitStep();
+    $$('.step-opt').forEach(btn => {
+      btn.onclick = () => {
+        const chosen = parseInt(btn.dataset.i);
+        $$('.step-opt').forEach(b => b.disabled = true);
+        if (chosen === step.correct) {
+          btn.classList.add('correct');
+          $('#step-footer').innerHTML = '<button class="btn btn-accent btn-xl" id="step-next">SUIVANT →</button>';
+          $('#step-next').onclick = () => completeStep(artistId, stepIndex);
+        } else {
+          btn.classList.add('wrong');
+          $$('.step-opt')[step.correct].classList.add('correct');
+          $('#step-footer').innerHTML = '<button class="btn btn-ghost btn-xl" id="step-next">CONTINUER</button>';
+          $('#step-next').onclick = () => completeStep(artistId, stepIndex);
+        }
+        gsap.from(btn, { scale: 0.95, duration: 0.3, ease: 'back.out(2)' });
+      };
+    });
+
+  } else if (step.type === 'listen') {
+    const song = SONGS.find(s => s.id === step.songId);
+    inner.innerHTML = header + `
+      <div class="step-body step-listen">
+        <div class="step-listen-label">${step.label}</div>
+        <div class="step-vinyl-anim" id="step-vinyl" style="background:${art.color}">
+          <span>${song?.emoji || '🎵'}</span>
+          <div class="step-vinyl-ring"></div>
+        </div>
+        <div class="step-listen-hint">🎧 Écoute bien…</div>
+        <form class="step-listen-form" id="step-listen-form">
+          <input class="step-listen-input" id="step-listen-input" placeholder="Titre de la chanson…" autocomplete="off">
+          <button type="submit" class="btn btn-accent step-listen-submit">→</button>
+        </form>
+        <div class="step-listen-feedback" id="step-listen-feedback"></div>
+      </div>
+      <div class="step-footer" id="step-footer"></div>
+    `;
+    $('#step-close').onclick = () => { spStopPreview(); exitStep(); };
+
+    // Load and play preview
+    if (song) {
+      HIST_STATE.stepSong = song;
+      loadGamePreviews([song]).then(([enriched]) => {
+        HIST_STATE.stepSong = enriched;
+        if (enriched.previewUrl) spPlayPreview(enriched.previewUrl);
+        const hint = $('#step-listen-hint');
+        if (hint) hint.textContent = enriched.previewUrl ? '🎧 Écoute et trouve le titre !' : '🎛️ Synthèse audio active';
+      });
+    }
+
+    let listenSolved = false;
+    $('#step-listen-form').onsubmit = (e) => {
+      e.preventDefault();
+      if (listenSolved) return;
+      const val = $('#step-listen-input').value.trim();
+      if (!val || !HIST_STATE.stepSong) return;
+      const result = checkAnswer(val, HIST_STATE.stepSong);
+      const fb = $('#step-listen-feedback');
+      if (result.correct) {
+        listenSolved = true;
+        spStopPreview();
+        fb.textContent = `✓ ${HIST_STATE.stepSong.title} — ${HIST_STATE.stepSong.artist}`;
+        fb.className = 'step-listen-feedback correct';
+        $('#step-listen-input').disabled = true;
+        gsap.from(fb, { y: -10, opacity: 0, duration: 0.4 });
+        $('#step-footer').innerHTML = '<button class="btn btn-accent btn-xl" id="step-next">SUIVANT →</button>';
+        $('#step-next').onclick = () => completeStep(artistId, stepIndex);
+      } else if (result.partial) {
+        fb.textContent = '🔥 Tu brûles !';
+        fb.className = 'step-listen-feedback partial';
+        gsap.fromTo('#step-listen-input', { x: -5 }, { x: 0, duration: 0.3, ease: 'elastic.out(1,0.3)' });
+      } else {
+        fb.textContent = '❌ Pas ça…';
+        fb.className = 'step-listen-feedback wrong';
+        gsap.fromTo('#step-listen-input', { x: -6 }, { x: 0, duration: 0.4, keyframes: [{ x: -6 }, { x: 6 }, { x: -4 }, { x: 0 }] });
+      }
+      setTimeout(() => {
+        if (fb.className.includes('wrong') || fb.className.includes('partial')) {
+          fb.textContent = '';
+          $('#step-listen-input').value = '';
+        }
+      }, 1400);
+    };
+  }
+}
+
+function completeStep(artistId, stepIndex) {
+  spStopPreview();
+  const progress = getHistProgress();
+  if (!progress[artistId]) progress[artistId] = { steps: [] };
+  if (!progress[artistId].steps.includes(stepIndex)) {
+    progress[artistId].steps.push(stepIndex);
+    // Award XP
+    STATE.player.xp = Math.min(2400, STATE.player.xp + 20);
+    refreshSidebar();
+  }
+  saveHistProgress(progress);
+
+  const art = ARTIST_PATHS.find(a => a.id === artistId);
+  const nextStep = stepIndex + 1;
+
+  if (nextStep < art.steps.length) {
+    gsap.to('#step-inner', { opacity: 0, x: -30, duration: 0.2, onComplete: () => startArtistStep(artistId, nextStep) });
+  } else {
+    // All steps done — show completion
+    const inner = $('#step-inner');
+    inner.innerHTML = `
+      <div class="step-body step-complete">
+        <div class="step-complete-emoji">${art.emoji}</div>
+        <div class="step-complete-title">BRAVO !</div>
+        <div class="step-complete-sub">${art.name} débloqué !</div>
+        <div class="step-complete-xp">+${art.steps.length * 20} XP gagnés</div>
+      </div>
+      <div class="step-footer">
+        <button class="btn btn-accent btn-xl" id="step-finish">TERMINER</button>
+      </div>
+    `;
+    spawnConfetti();
+    gsap.fromTo('.step-complete-emoji', { scale: 0, rotation: -180 }, { scale: 1, rotation: 0, duration: 0.7, ease: 'back.out(2)' });
+    $('#step-finish').onclick = () => exitStep();
+  }
+}
+
+function exitStep() {
+  spStopPreview();
+  gsap.to('#step-inner', { opacity: 0, scale: 0.97, duration: 0.2, onComplete: () => {
+    $('#step-overlay').style.display = 'none';
+    renderArtistPath();
+  }});
 }
 
 // ===== PRESENTERS (MC SKINS) =====
