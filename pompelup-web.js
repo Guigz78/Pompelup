@@ -1671,46 +1671,37 @@ function renderArtistPath() {
     ? ARTIST_PATHS
     : ARTIST_PATHS.filter(a => a.genre === HIST_STATE.filter);
 
-  path.innerHTML = artists.map((art, i) => {
+  let html = '';
+  artists.forEach((art, i) => {
     const artProg = progress[art.id] || { steps: [] };
     const done = artProg.steps.length;
     const total = art.steps.length;
-    const pct = total ? Math.round(done / total * 100) : 0;
     const locked = art.requiredXP > 0 && xpEarned < art.requiredXP;
     const completed = done >= total;
     const side = i % 2 === 0 ? 'ap-left' : 'ap-right';
+    const starCount = completed ? 3 : done >= Math.ceil(total * 2 / 3) ? 2 : done > 0 ? 1 : 0;
+    const stars = [0,1,2].map(s => `<span class="ap-star${s < starCount ? ' filled' : ''}">★</span>`).join('');
 
-    const dots = art.steps.map((_, si) => {
-      const isDone = si < done;
-      const isCurrent = si === done && !completed;
-      return `<div class="ap-dot ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}"></div>`;
-    }).join('');
-
-    return `<div class="ap-node ${side} ${locked ? 'locked' : ''} ${completed ? 'completed' : ''}" data-artist-id="${art.id}">
-      ${locked ? '<div class="ap-lock">🔒</div>' : ''}
-      <div class="ap-vinyl" style="background: ${art.color}20; border-color: ${art.color}40">
-        <div class="ap-vinyl-inner" style="background: ${art.color}">
-          <span class="ap-emoji">${art.emoji}</span>
-        </div>
-        ${completed ? '<div class="ap-complete-badge">✓</div>' : ''}
+    html += `<div class="ap-node ${side}${locked ? ' locked' : ''}${completed ? ' completed' : ''}" data-artist-id="${art.id}">
+      <div class="ap-bubble" style="background:${locked ? '#9CA3AF' : art.color};box-shadow:0 6px 0 ${locked ? '#6B728099' : art.color + '99'}">
+        <span class="ap-emoji">${locked ? '🔒' : art.emoji}</span>
+        ${completed ? '<div class="ap-check">✓</div>' : ''}
       </div>
-      <div class="ap-info">
-        <div class="ap-name">${art.name}</div>
-        <div class="ap-genre-tag" style="color: ${art.color}">${art.genre}</div>
-        <div class="ap-dots">${dots}</div>
-        ${locked
-          ? `<div class="ap-locked-msg">${art.requiredXP} XP requis</div>`
-          : `<div class="ap-prog-bar"><div class="ap-prog-fill" style="width:${pct}%; background:${art.color}"></div></div>`
-        }
+      <div class="ap-caption">
+        <span class="ap-name">${art.name}</span>
+        <div class="ap-stars">${stars}</div>
       </div>
     </div>`;
-  }).join('');
+    if (i < artists.length - 1) html += '<div class="ap-connector"><span></span><span></span><span></span></div>';
+  });
+
+  path.innerHTML = html;
 
   path.querySelectorAll('.ap-node:not(.locked)').forEach(node => {
     node.addEventListener('click', () => openArtistDetail(node.dataset.artistId));
   });
 
-  gsap.from('.ap-node', { y: 30, opacity: 0, stagger: 0.06, duration: 0.35, ease: 'back.out(1.2)' });
+  gsap.from('.ap-node', { y: 30, opacity: 0, stagger: 0.08, duration: 0.4, ease: 'back.out(1.2)' });
 }
 
 function openArtistDetail(id) {

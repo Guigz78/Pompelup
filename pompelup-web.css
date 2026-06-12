@@ -1432,79 +1432,60 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 }
 
 /* ============ HISTOIRE / ARTIST DISCOVERY ============ */
-.hist-screen { padding: 8px 16px 80px; }
-.hist-genre-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.hist-screen { padding: 0 0 80px; }
+.hist-genre-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 12px 20px 14px;
+  position: sticky; top: 0; background: var(--bg, #FFFAF3); z-index: 5;
+}
 
 .artist-path {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 0; padding-bottom: 40px;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 8px 0 40px;
 }
 
+/* Duolingo-style circular node */
 .ap-node {
-  position: relative;
-  display: flex; align-items: center; gap: 14px;
-  width: 100%; max-width: 340px;
-  background: #fff;
-  border-radius: 20px;
-  padding: 14px 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  margin-bottom: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 108px; text-align: center; cursor: pointer;
+  user-select: none;
 }
-.ap-node:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
-.ap-node.locked { opacity: 0.5; cursor: default; filter: grayscale(0.6); }
-.ap-node.completed { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 2px var(--orange); }
+.ap-node.ap-left  { align-self: flex-start; margin-left: 14%; }
+.ap-node.ap-right { align-self: flex-end;   margin-right: 14%; }
+.ap-node.locked   { cursor: not-allowed; }
 
-/* Zigzag connector line between nodes */
-.artist-path::before { display: none; }
-.ap-node + .ap-node { margin-top: 10px; }
-.ap-left { margin-right: auto; margin-left: 0; }
-.ap-right { margin-left: auto; margin-right: 0; }
+.ap-bubble {
+  width: 84px; height: 84px; border-radius: 50%;
+  display: grid; place-items: center; position: relative;
+  transition: transform 0.12s;
+}
+.ap-node:not(.locked):hover .ap-bubble  { transform: translateY(-3px); }
+.ap-node:not(.locked):active .ap-bubble { transform: translateY(5px); box-shadow: none !important; }
 
-.ap-vinyl {
-  width: 64px; height: 64px; flex-shrink: 0;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-.ap-vinyl-inner {
-  width: 52px; height: 52px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-.ap-emoji { font-size: 26px; line-height: 1; }
-.ap-complete-badge {
-  position: absolute; top: -4px; right: -4px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--orange); color: #fff;
-  font-size: 11px; font-weight: 900;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid #FFFAF3;
-}
-.ap-lock {
-  position: absolute; inset: 0; border-radius: 20px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.5);
-  font-size: 22px; z-index: 2;
-  pointer-events: none;
+.ap-emoji { font-size: 38px; line-height: 1; }
+
+.ap-check {
+  position: absolute; bottom: 0; right: -4px;
+  width: 26px; height: 26px; background: #22C55E;
+  border-radius: 50%; border: 3px solid #fff;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 900; color: #fff;
 }
 
-.ap-info { flex: 1; min-width: 0; }
-.ap-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.02em; line-height: 1; }
-.ap-genre-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; opacity: 0.85; margin: 2px 0 8px; }
-.ap-dots { display: flex; gap: 5px; margin-bottom: 6px; }
-.ap-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: rgba(0,0,0,0.1);
-  transition: background 0.2s;
+.ap-caption { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ap-name { font-size: 11px; font-weight: 800; line-height: 1.2; }
+.ap-node.locked .ap-name { color: var(--muted); }
+
+.ap-stars { display: flex; gap: 1px; }
+.ap-star { font-size: 15px; color: #D1D5DB; }
+.ap-star.filled { color: #FBBF24; }
+
+/* Dots connector between nodes */
+.ap-connector {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 3px 0;
 }
-.ap-dot.done { background: var(--orange); }
-.ap-dot.current { background: var(--orange); box-shadow: 0 0 0 2px rgba(249,115,22,0.3); }
-.ap-prog-bar { height: 4px; background: rgba(0,0,0,0.08); border-radius: 999px; overflow: hidden; }
-.ap-prog-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
-.ap-locked-msg { font-size: 10px; font-weight: 700; color: var(--muted); }
+.ap-connector span { width: 6px; height: 6px; border-radius: 50%; background: #D1D5DB; display: block; }
 
 /* Artist detail sheet */
 .artist-overlay {
