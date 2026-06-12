@@ -111,7 +111,10 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   display: flex; align-items: center; gap: 10px;
   box-shadow: var(--shadow-soft);
   margin-bottom: 4px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
 }
+.sb-user:hover { transform: scale(1.02); background: #f8f8f8; }
 .sb-signout-btn {
   background: none; border: none;
   color: var(--muted); cursor: pointer;

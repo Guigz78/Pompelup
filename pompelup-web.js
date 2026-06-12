@@ -5093,6 +5093,11 @@ document.getElementById('auth-apple-btn')?.addEventListener('click', async () =>
   } catch(e) { console.warn('sbInit:', e); }
 })();
 
+$('#sb-user')?.addEventListener('click', (e) => {
+  if (e.target.closest('#sb-signout')) return;
+  navigateTo('skins');
+});
+
 $('#sb-signout')?.addEventListener('click', async () => {
   if (sbGetProfile()) {
     try { await sbSignOut(); } catch(e) {}

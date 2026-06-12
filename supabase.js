@@ -186,7 +186,15 @@ function _setupChannel(code) {
     .on('broadcast', { event: 'chat' },  ({ payload }) => { _onRoomEvent?.('chat',  payload); })
     .on('broadcast', { event: 'sound' }, ({ payload }) => { _onRoomEvent?.('sound', payload); })
     .on('broadcast', { event: 'sync' },  ({ payload }) => { _onRoomEvent?.('sync',  payload); })
-    .on('broadcast', { event: 'game' },  ({ payload }) => { _onRoomEvent?.('game',  payload); });
+    .on('broadcast', { event: 'game' },  ({ payload }) => { _onRoomEvent?.('game',  payload); })
+    .on('broadcast', { event: 'presence_req' }, () => {
+      if (_isHost) {
+        _roomChannel.send({
+          type: 'broadcast', event: 'presence',
+          payload: { players: Object.values(_roomPlayers) }
+        });
+      }
+    });
 }
 
 function sbCreateRoom(code, onEvent) {
@@ -213,6 +221,12 @@ function sbJoinRoom(code, onEvent) {
       _roomPlayers[me.id] = me;
       await _roomChannel.send({ type: 'broadcast', event: 'join', payload: { p: me } });
       onEvent('ready', null);
+      // If we still only see ourselves after 1.5s, request a fresh presence from the host
+      setTimeout(() => {
+        if (_roomChannel && Object.keys(_roomPlayers).length < 2) {
+          _roomChannel.send({ type: 'broadcast', event: 'presence_req', payload: {} });
+        }
+      }, 1500);
     }
   });
 }
