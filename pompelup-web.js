@@ -785,7 +785,7 @@ const SONGS = [
   { id: 's752', title: 'Le monde ou rien', artist: 'Jul', year: 2016, genre: 'Rap Français', emoji: '🌍', bpm: 138, color: '#374151' },
   { id: 's753', title: 'Bande Organisée', artist: 'Jul', year: 2020, genre: 'Rap Français', emoji: '🎤', bpm: 92, color: '#374151' },
   { id: 's754', title: 'Wesh Alors', artist: 'Alonzo', year: 2019, genre: 'Rap Français', emoji: '🎤', bpm: 88, color: '#374151' },
-  { id: 's755', title: 'Mama', artist: 'Heuss l'Enfoiré', year: 2020, genre: 'Rap Français', emoji: '❤️', bpm: 90, color: '#374151' },
+  { id: 's755', title: 'Mama', artist: "Heuss l'Enfoiré", year: 2020, genre: 'Rap Français', emoji: '❤️', bpm: 90, color: '#374151' },
   { id: 's756', title: 'Fais péter les keufs', artist: 'Akhenaton', year: 1995, genre: 'Rap Français', emoji: '✊', bpm: 90, color: '#374151' },
   { id: 's757', title: 'Un aller pour Alger', artist: 'IAM', year: 1993, genre: 'Rap Français', emoji: '🌍', bpm: 100, color: '#8B5CF6' },
   { id: 's758', title: 'L\'Empire du Côté Obscur', artist: 'IAM', year: 1997, genre: 'Rap Français', emoji: '🌑', bpm: 90, color: '#374151' },
