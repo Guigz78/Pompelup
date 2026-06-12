@@ -1671,37 +1671,60 @@ function renderArtistPath() {
     ? ARTIST_PATHS
     : ARTIST_PATHS.filter(a => a.genre === HIST_STATE.filter);
 
-  let html = '';
-  artists.forEach((art, i) => {
+  const renderCard = (art) => {
     const artProg = progress[art.id] || { steps: [] };
     const done = artProg.steps.length;
     const total = art.steps.length;
     const locked = art.requiredXP > 0 && xpEarned < art.requiredXP;
     const completed = done >= total;
-    const side = i % 2 === 0 ? 'ap-left' : 'ap-right';
+    const pct = total ? Math.round(done / total * 100) : 0;
     const starCount = completed ? 3 : done >= Math.ceil(total * 2 / 3) ? 2 : done > 0 ? 1 : 0;
     const stars = [0,1,2].map(s => `<span class="ap-star${s < starCount ? ' filled' : ''}">★</span>`).join('');
-
-    html += `<div class="ap-node ${side}${locked ? ' locked' : ''}${completed ? ' completed' : ''}" data-artist-id="${art.id}">
-      <div class="ap-bubble" style="background:${locked ? '#9CA3AF' : art.color};box-shadow:0 6px 0 ${locked ? '#6B728099' : art.color + '99'}">
-        <span class="ap-emoji">${locked ? '🔒' : art.emoji}</span>
-        ${completed ? '<div class="ap-check">✓</div>' : ''}
+    const btnLabel = completed ? '✓ Terminé' : done === 0 ? '▶ Commencer' : `▶ Continuer · ${done}/${total}`;
+    return `<div class="ap-card${locked ? ' locked' : ''}${completed ? ' completed' : ''}" data-artist-id="${art.id}">
+      <div class="ap-card-header" style="background:${locked ? '#9CA3AF' : art.color}">
+        <span class="ap-card-emoji">${locked ? '🔒' : art.emoji}</span>
+        ${completed ? '<div class="ap-card-badge">✓</div>' : ''}
+        ${locked ? `<div class="ap-card-xp">${art.requiredXP} XP requis</div>` : ''}
       </div>
-      <div class="ap-caption">
-        <span class="ap-name">${art.name}</span>
-        <div class="ap-stars">${stars}</div>
+      <div class="ap-card-body">
+        <div class="ap-card-title">${art.name}</div>
+        <div class="ap-card-meta">${art.genre} · ${art.active}</div>
+        <div class="ap-card-origin">${art.origin}</div>
+        <p class="ap-card-bio">${art.bio}</p>
+        ${locked
+          ? `<div class="ap-card-locked">🔒 Gagne ${art.requiredXP} XP pour débloquer</div>`
+          : `<div class="ap-card-footer">
+               <div class="ap-stars">${stars}</div>
+               <span class="ap-card-prog">${done}/${total} étapes</span>
+             </div>
+             <div class="ap-prog-bar"><div class="ap-prog-fill" style="width:${pct}%;background:${art.color}"></div></div>
+             <button class="ap-card-btn${completed ? ' done' : ''}">${btnLabel}</button>`
+        }
       </div>
     </div>`;
-    if (i < artists.length - 1) html += '<div class="ap-connector"><span></span><span></span><span></span></div>';
-  });
+  };
 
+  const unlocked = artists.filter(a => !(a.requiredXP > 0 && xpEarned < a.requiredXP));
+  const locked   = artists.filter(a =>   a.requiredXP > 0 && xpEarned < a.requiredXP);
+
+  let html = unlocked.map(renderCard).join('');
+  if (locked.length) {
+    html += `<div class="ap-section-title">🔒 À débloquer</div>`;
+    html += locked.map(renderCard).join('');
+  }
   path.innerHTML = html;
 
-  path.querySelectorAll('.ap-node:not(.locked)').forEach(node => {
-    node.addEventListener('click', () => openArtistDetail(node.dataset.artistId));
+  path.querySelectorAll('.ap-card:not(.locked) .ap-card-btn:not(.done)').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.closest('.ap-card').dataset.artistId;
+      const done = (getHistProgress()[id]?.steps?.length) || 0;
+      startArtistStep(id, done);
+    });
   });
 
-  gsap.from('.ap-node', { y: 30, opacity: 0, stagger: 0.08, duration: 0.4, ease: 'back.out(1.2)' });
+  gsap.from('.ap-card', { y: 20, opacity: 0, stagger: 0.05, duration: 0.35, ease: 'back.out(1.1)' });
 }
 
 function openArtistDetail(id) {
