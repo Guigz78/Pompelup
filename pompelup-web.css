@@ -1583,7 +1583,10 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .vinyl-card:hover { transform: translateY(-3px); }
 .vinyl-card .v-art {
   aspect-ratio: 1;
-  background: #1a1a1a;
+  background-color: #1a1a1a;
+  background-image: linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)), var(--art, none);
+  background-size: cover;
+  background-position: center;
   position: relative;
   display: grid; place-items: center;
   overflow: hidden;
@@ -1592,7 +1595,7 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .vinyl-card .v-art .v-disk {
   width: 70%; aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle at center, #2a2a2a 0 22%, #0a0a0a 22% 60%, #1a1a1a 60% 64%, #0a0a0a 64%);
+  background: transparent;
   position: relative;
   animation: spin 15s linear infinite;
   animation-play-state: paused;
@@ -1601,8 +1604,8 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .vinyl-card .v-art .v-disk::after {
   content: ""; position: absolute; inset: 36%;
   border-radius: 50%;
-  background: var(--label);
-  border: 3px solid #1a1a1a;
+  background: radial-gradient(circle, #080808 0 10%, transparent 10% 14%, var(--label, #F97316) 14% 100%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.5);
 }
 .vinyl-card .v-info {
   padding: 10px 12px;
@@ -5119,110 +5122,91 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   box-shadow: 0 22px 40px -16px rgba(245,158,11,0.4), 0 0 0 1px rgba(251,191,36,0.35), 0 0 32px -6px rgba(251,191,36,0.6);
 }
 
-/* Art / sleeve */
+/* Art / sleeve — album art fills entire area */
 .vinyl-card .v-art {
   aspect-ratio: 1;
   position: relative;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(circle at 28% 20%, rgba(255,255,255,0.06), transparent 55%),
-    linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  /* Dark fallback; art layer via --art CSS var set in JS */
+  background-color: #09090b;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+    var(--art, none);
+  background-size: cover;
+  background-position: center;
 }
-.vinyl-card.v-rare .v-art {
-  background:
-    radial-gradient(circle at 28% 20%, rgba(147,197,253,0.18), transparent 55%),
-    linear-gradient(135deg, #1e3a8a 0%, #0c1635 100%);
-}
-.vinyl-card.v-legendary .v-art {
-  background:
-    radial-gradient(circle at 28% 20%, rgba(252,211,77,0.28), transparent 55%),
-    radial-gradient(circle at 75% 80%, rgba(244,114,182,0.12), transparent 60%),
-    linear-gradient(135deg, #78350f 0%, #1c0e02 100%);
-}
+.vinyl-card.v-rare .v-art   { background-color: #0c1635; }
+.vinyl-card.v-legendary .v-art { background-color: #1c0e02; }
 
-/* Subtle inner sleeve frame */
+/* Subtle rounded border inside */
 .vinyl-card .v-art::after {
   content: "";
   position: absolute;
-  inset: 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07);
   pointer-events: none;
+  z-index: 3;
 }
 
-/* The vinyl disk itself — more realistic */
+/* The vinyl disk — transparent outer ring, only center label visible */
 .vinyl-card .v-art .v-disk {
   width: 78%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background:
-    /* edge highlight */
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.08), transparent 35%),
-    /* center label */
-    radial-gradient(circle, var(--label, #F97316) 0 16%, transparent 16% 17%),
-    /* dark vinyl */
-    radial-gradient(circle, #1a1a1a 0 100%);
+  background: transparent;
   position: relative;
-  animation: spinSlow 6s linear infinite;
+  z-index: 1;
+  animation: spinSlow 8s linear infinite;
   animation-play-state: paused;
-  box-shadow:
-    0 6px 14px -4px rgba(0,0,0,0.6),
-    inset 0 0 0 1px rgba(255,255,255,0.06),
-    inset 0 0 22px rgba(0,0,0,0.35);
+  box-shadow: none;
   transition: transform 220ms cubic-bezier(.22,.61,.36,1);
 }
 .vinyl-card:hover .v-art .v-disk {
   animation-play-state: running;
-  transform: translateX(8%) scale(1.02);
+  transform: scale(1.03);
 }
 
-/* Grooves on the disk */
+/* Ultra-subtle groove rings — barely visible on top of the art */
 .vinyl-card .v-art .v-disk::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background:
-    repeating-radial-gradient(
-      circle,
-      transparent 0 2.2px,
-      rgba(255,255,255,0.045) 2.2px 2.6px,
-      transparent 2.6px 3.6px
-    );
-  mask: radial-gradient(circle, transparent 17%, #000 17.5% 95%, transparent 95%);
-  -webkit-mask: radial-gradient(circle, transparent 17%, #000 17.5% 95%, transparent 95%);
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 2.8px,
+    rgba(255,255,255,0.025) 2.8px 3.2px,
+    transparent 3.2px 4.4px
+  );
+  mask: radial-gradient(circle, transparent 19%, #000 19.5% 92%, transparent 92%);
+  -webkit-mask: radial-gradient(circle, transparent 19%, #000 19.5% 92%, transparent 92%);
   pointer-events: none;
 }
 
-/* Center label with a small spindle hole */
+/* Center label — prominent, larger, colorful */
 .vinyl-card .v-art .v-disk::after {
   content: "";
   position: absolute;
   top: 50%; left: 50%;
-  width: 32%; height: 32%;
+  width: 36%; height: 36%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
-    radial-gradient(circle, #1a1a1a 0 6%, transparent 6.5% 18%, var(--label) 18.5% 100%);
+    /* spindle hole */
+    radial-gradient(circle, #080808 0 7%, rgba(0,0,0,0) 7.5% 10%,
+    /* inner dark ring */
+    rgba(0,0,0,0.6) 10% 14%, rgba(0,0,0,0) 14% 17%,
+    /* label color fill */
+    var(--label, #F97316) 17% 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(0,0,0,0.5),
-    inset 0 2px 6px rgba(255,255,255,0.15),
-    inset 0 -3px 6px rgba(0,0,0,0.3);
-}
-
-/* Album art overlay on the center label */
-.v-disk-art {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 31%; height: 31%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  object-fit: cover;
+    0 0 0 1.5px rgba(0,0,0,0.55),
+    0 4px 14px -2px rgba(0,0,0,0.65),
+    inset 0 1px 5px rgba(255,255,255,0.22),
+    inset 0 -2px 5px rgba(0,0,0,0.35);
   z-index: 2;
-  pointer-events: none;
-  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.45);
 }
 
 /* Hover: peek the sleeve — a card edge appearing right of the disk */

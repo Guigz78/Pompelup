@@ -2272,9 +2272,8 @@ function renderCollectionGrid() {
       ${v.isNew && !v.locked ? '<div class="v-new">NEW</div>' : ''}
       ${!v.locked && v.rarity !== 'common' ? `<div class="v-rar ${v.rarity}">${v.rarity === 'legendary' ? '👑 LÉG' : '💎 RARE'}</div>` : ''}
       ${v.locked ? '<div class="v-lock">🔒</div>' : ''}
-      <div class="v-art">
+      <div class="v-art" ${!v.locked && SP_ART_CACHE[`${v.title}|||${v.artist}`] ? `style="--art: url('${escHtml(SP_ART_CACHE[`${v.title}|||${v.artist}`])}')"` : ''}>
         <div class="v-disk" style="--label: ${v.label}">
-          ${!v.locked && SP_ART_CACHE[`${v.title}|||${v.artist}`] ? `<img class="v-disk-art" src="${escHtml(SP_ART_CACHE[`${v.title}|||${v.artist}`])}" alt="">` : ''}
         </div>
         ${!v.locked && v.rarity === 'legendary' ? '<div class="v-shine"></div>' : ''}
       </div>
