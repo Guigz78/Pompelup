@@ -784,6 +784,8 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   padding: 28px 28px 24px;
   width: 380px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   box-shadow: 0 24px 60px rgba(0,0,0,0.28);
 }
 .solo-sheet-header {

@@ -1278,8 +1278,8 @@ function launchSolo() {
   STATE.totals = {};
   STATE.totals[STATE.player.name] = 0;
   STATE.bots.forEach(b => { STATE.totals[b.name] = 0; });
-  const songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
-  STATE.game.songs = songs;
+  const genres = getSelectedGenres('#solo-cats');
+  STATE.game.songs = pickSongs(STATE.game.total, genres);
   setTimeout(() => navigateTo('game'), 260);
 }
 
@@ -2744,9 +2744,24 @@ document.addEventListener('click', (e) => {
   window.addEventListener('mouseup', () => { drag = false; });
 })();
 
+function getSelectedGenres(containerSel) {
+  const genres = new Set();
+  $$(`${containerSel} .chip.active[data-genres]`).forEach(c => {
+    c.dataset.genres.split('|').forEach(g => genres.add(g.trim()));
+  });
+  return [...genres];
+}
+
+function pickSongs(total, genres) {
+  const pool = genres.length ? SONGS.filter(s => genres.includes(s.genre)) : SONGS;
+  const src = pool.length >= total ? pool : SONGS;
+  return [...src].sort(() => Math.random() - 0.5).slice(0, total);
+}
+
 $('#start-game-btn').addEventListener('click', async () => {
   if (!sbIsHost()) return;
-  const songs = [...SONGS].sort(() => Math.random() - 0.5).slice(0, STATE.game.total);
+  const genres = getSelectedGenres('#cats');
+  const songs = pickSongs(STATE.game.total, genres);
   STATE.game.songs = songs;
   await sbBroadcast('game', { type: 'start', songs, total: STATE.game.total });
   pushChatMsg('system', 'La partie commence !');
