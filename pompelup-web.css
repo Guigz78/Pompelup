@@ -1433,101 +1433,132 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 
 /* ============ HISTOIRE / ARTIST DISCOVERY ============ */
 .hist-screen { padding: 0 0 80px; }
-.hist-genre-chips {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 12px 20px 14px;
-  position: sticky; top: 0; background: var(--bg, #FFFAF3); z-index: 5;
+
+/* Journey hero */
+.hist-journey {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  padding: 22px 24px 20px;
+}
+.hj-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; letter-spacing: 0.06em;
+  margin-bottom: 6px; opacity: 0.9;
+}
+.hj-stats {
+  font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.hj-stats strong { color: #FBBF24; }
+.hj-sep { opacity: 0.35; }
+.hj-bar { height: 7px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
+.hj-bar-fill { height: 100%; background: linear-gradient(90deg, #FBBF24, #F97316); border-radius: 999px; transition: width 0.6s; }
+
+/* Chapters */
+.artist-path { display: flex; flex-direction: column; }
+
+.hist-chapter { display: flex; flex-direction: column; }
+
+.hist-ch-header {
+  padding: 22px 24px 18px;
+}
+.hist-ch-num {
+  font-size: 10px; font-weight: 900; letter-spacing: 0.18em;
+  text-transform: uppercase; color: rgba(255,255,255,0.65); margin-bottom: 3px;
+}
+.hist-ch-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; letter-spacing: 0.03em; color: #fff; line-height: 1; margin-bottom: 4px;
+}
+.hist-ch-sub { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 600; margin-bottom: 12px; }
+.hist-ch-prog-badge {
+  display: inline-block; font-size: 11px; font-weight: 800;
+  color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.2);
+  padding: 4px 12px; border-radius: 999px;
 }
 
-.artist-path {
+.hist-ch-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-  padding: 8px 20px 40px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 14px 16px 20px;
+  background: var(--bg, #FFFAF3);
 }
 
-/* Section divider inside grid */
-.ap-section-title {
-  grid-column: 1 / -1;
-  font-size: 11px; font-weight: 900; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--muted);
-  display: flex; align-items: center; gap: 10px;
-  padding: 4px 0;
+/* Locked chapter teaser */
+.hist-chapter.locked { opacity: 0.75; }
+.hist-ch-lock {
+  padding: 20px 24px 18px;
 }
-.ap-section-title::after {
-  content: ''; flex: 1; height: 1px; background: #E5E7EB;
+.hist-ch-lock-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.hist-ch-lock-ico { font-size: 28px; flex-shrink: 0; margin-top: 4px; }
+.hist-ch-preview-names { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.ch-preview-name {
+  font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  background: rgba(0,0,0,0.2);
+  padding: 3px 10px; border-radius: 999px;
 }
+.hist-ch-lock-row { display: flex; align-items: center; gap: 10px; }
+.hist-ch-lock-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.15); border-radius: 999px; overflow: hidden; }
+.hist-ch-lock-fill { height: 100%; background: rgba(255,255,255,0.5); border-radius: 999px; transition: width 0.4s; }
+.hist-ch-lock-row span { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 800; white-space: nowrap; }
 
 /* Artist card */
 .ap-card {
-  background: #fff; border-radius: 20px;
+  background: #fff; border-radius: 18px;
   overflow: hidden; cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
   transition: transform 0.15s, box-shadow 0.15s;
   display: flex; flex-direction: column;
 }
-.ap-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.12); }
+.ap-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.13); }
 .ap-card:active { transform: translateY(1px); }
-.ap-card.locked { cursor: default; }
-.ap-card.completed { box-shadow: 0 4px 14px rgba(34,197,94,0.15), 0 0 0 2px #22C55E40; }
+.ap-card.completed { outline: 2px solid #22C55E40; }
 
 .ap-card-header {
-  height: 100px;
+  height: 90px;
   display: flex; align-items: center; justify-content: center;
   position: relative; flex-shrink: 0;
 }
-.ap-card-emoji { font-size: 48px; line-height: 1; }
+.ap-card-emoji { font-size: 44px; line-height: 1; }
 .ap-card-badge {
-  position: absolute; top: 10px; right: 10px;
-  width: 30px; height: 30px; background: #22C55E;
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px; background: #22C55E;
   border-radius: 50%; border: 3px solid #fff;
   display: grid; place-items: center;
-  font-size: 13px; font-weight: 900; color: #fff;
-}
-.ap-card-xp {
-  position: absolute; bottom: 8px;
-  background: rgba(0,0,0,0.3); color: #fff;
-  font-size: 10px; font-weight: 800;
-  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 900; color: #fff;
 }
 
-.ap-card-body { padding: 14px 16px 16px; flex: 1; display: flex; flex-direction: column; }
+.ap-card-body { padding: 12px 14px 14px; flex: 1; display: flex; flex-direction: column; }
 .ap-card-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px; letter-spacing: 0.02em; line-height: 1; margin-bottom: 2px;
+  font-size: 20px; letter-spacing: 0.02em; line-height: 1; margin-bottom: 1px;
 }
-.ap-card-meta { font-size: 11px; font-weight: 700; color: var(--muted); }
-.ap-card-origin { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.ap-card-meta { font-size: 10px; font-weight: 700; color: var(--muted); }
+.ap-card-origin { font-size: 10px; color: var(--muted); margin-bottom: 7px; }
 .ap-card-bio {
-  font-size: 13px; color: #374151; line-height: 1.5; flex: 1;
-  margin-bottom: 12px;
+  font-size: 12px; color: #4B5563; line-height: 1.5; flex: 1; margin-bottom: 10px;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-/* Progress */
-.ap-card-footer { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ap-card-footer { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .ap-stars { display: flex; gap: 1px; }
-.ap-star { font-size: 15px; color: #D1D5DB; }
+.ap-star { font-size: 14px; color: #D1D5DB; }
 .ap-star.filled { color: #FBBF24; }
-.ap-card-prog { font-size: 11px; font-weight: 800; color: var(--muted); }
-.ap-prog-bar { height: 5px; background: #E5E7EB; border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
+.ap-card-prog { font-size: 10px; font-weight: 800; color: var(--muted); }
+.ap-prog-bar { height: 4px; background: #E5E7EB; border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
 .ap-prog-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
 
 .ap-card-btn {
-  width: 100%; padding: 11px;
+  width: 100%; padding: 10px;
   background: var(--orange); color: #fff;
-  border: none; border-radius: 12px;
-  font-size: 13px; font-weight: 800; cursor: pointer;
+  border: none; border-radius: 10px;
+  font-size: 12px; font-weight: 800; cursor: pointer;
   letter-spacing: 0.04em; transition: background 0.15s, transform 0.1s;
 }
 .ap-card-btn:hover { background: #ea6c0a; }
 .ap-card-btn:active { transform: scale(0.97); }
 .ap-card-btn.done { background: #E5E7EB; color: var(--muted); cursor: default; }
-
-/* Locked section */
-.ap-card-locked { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; padding: 6px 0 2px; }
-.ap-card.locked .ap-card-header { filter: grayscale(0.5); }
-.ap-card.locked .ap-card-body { opacity: 0.6; }
 
 /* Artist detail sheet */
 .artist-overlay {

@@ -1625,7 +1625,34 @@ const ARTIST_PATHS = [
   }
 ];
 
-let HIST_STATE = { filter: 'all', activeArtist: null, activeStep: 0, stepSong: null };
+const CHAPTERS = [
+  {
+    id: 'ch1', num: 1,
+    title: 'Les Légendes', emoji: '👑',
+    subtitle: 'Les artistes qui ont tout changé',
+    gradient: 'linear-gradient(135deg,#F97316,#FBBF24)',
+    minXP: 0,
+    artists: ['michael-jackson', 'queen', 'edith-piaf']
+  },
+  {
+    id: 'ch2', num: 2,
+    title: 'Les Révolutions', emoji: '⚡',
+    subtitle: 'Quand la musique a tout réinventé',
+    gradient: 'linear-gradient(135deg,#3B4FE8,#6366F1)',
+    minXP: 60,
+    artists: ['nirvana', 'daft-punk', 'drake']
+  },
+  {
+    id: 'ch3', num: 3,
+    title: "L'Ère Moderne", emoji: '🌟',
+    subtitle: "Les superstars qui définissent aujourd'hui",
+    gradient: 'linear-gradient(135deg,#EC4899,#8B5CF6)',
+    minXP: 160,
+    artists: ['dua-lipa', 'taylor-swift']
+  }
+];
+
+let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 function getHistProgress() {
   try { return JSON.parse(localStorage.getItem('pompe_hist_progress') || '{}'); } catch(e) { return {}; }
@@ -1650,16 +1677,28 @@ function histTotalXPEarned() {
 }
 
 function initHistory() {
+  renderHistJourney();
   renderArtistPath();
-  $$('#hist-genre-chips .chip').forEach(c => {
-    c.onclick = () => {
-      $$('#hist-genre-chips .chip').forEach(x => x.classList.remove('active'));
-      c.classList.add('active');
-      HIST_STATE.filter = c.dataset.histGenre;
-      renderArtistPath();
-    };
-  });
-  gsap.from('.artist-path', { opacity: 0, y: 20, duration: 0.4 });
+  gsap.from('#hist-journey', { opacity: 0, y: -16, duration: 0.4 });
+}
+
+function renderHistJourney() {
+  const el = $('#hist-journey');
+  if (!el) return;
+  const xp = histTotalXPEarned();
+  const completed = histCompletedCount();
+  const total = ARTIST_PATHS.length;
+  const maxXP = total * 4 * 20;
+  const pct = Math.min(100, Math.round(xp / maxXP * 100));
+  el.innerHTML = `
+    <div class="hj-title">🎵 Ton Voyage Musical</div>
+    <div class="hj-stats">
+      <span><strong>${xp}</strong> XP gagnés</span>
+      <span class="hj-sep">·</span>
+      <span><strong>${completed}</strong> / <strong>${total}</strong> artistes</span>
+    </div>
+    <div class="hj-bar"><div class="hj-bar-fill" style="width:${pct}%"></div></div>
+  `;
 }
 
 function renderArtistPath() {
@@ -1667,64 +1706,84 @@ function renderArtistPath() {
   if (!path) return;
   const progress = getHistProgress();
   const xpEarned = histTotalXPEarned();
-  const artists = HIST_STATE.filter === 'all'
-    ? ARTIST_PATHS
-    : ARTIST_PATHS.filter(a => a.genre === HIST_STATE.filter);
 
   const renderCard = (art) => {
     const artProg = progress[art.id] || { steps: [] };
     const done = artProg.steps.length;
     const total = art.steps.length;
-    const locked = art.requiredXP > 0 && xpEarned < art.requiredXP;
     const completed = done >= total;
     const pct = total ? Math.round(done / total * 100) : 0;
     const starCount = completed ? 3 : done >= Math.ceil(total * 2 / 3) ? 2 : done > 0 ? 1 : 0;
     const stars = [0,1,2].map(s => `<span class="ap-star${s < starCount ? ' filled' : ''}">★</span>`).join('');
     const btnLabel = completed ? '✓ Terminé' : done === 0 ? '▶ Commencer' : `▶ Continuer · ${done}/${total}`;
-    return `<div class="ap-card${locked ? ' locked' : ''}${completed ? ' completed' : ''}" data-artist-id="${art.id}">
-      <div class="ap-card-header" style="background:${locked ? '#9CA3AF' : art.color}">
-        <span class="ap-card-emoji">${locked ? '🔒' : art.emoji}</span>
+    return `<div class="ap-card${completed ? ' completed' : ''}" data-artist-id="${art.id}">
+      <div class="ap-card-header" style="background:${art.color}">
+        <span class="ap-card-emoji">${art.emoji}</span>
         ${completed ? '<div class="ap-card-badge">✓</div>' : ''}
-        ${locked ? `<div class="ap-card-xp">${art.requiredXP} XP requis</div>` : ''}
       </div>
       <div class="ap-card-body">
         <div class="ap-card-title">${art.name}</div>
         <div class="ap-card-meta">${art.genre} · ${art.active}</div>
         <div class="ap-card-origin">${art.origin}</div>
         <p class="ap-card-bio">${art.bio}</p>
-        ${locked
-          ? `<div class="ap-card-locked">🔒 Gagne ${art.requiredXP} XP pour débloquer</div>`
-          : `<div class="ap-card-footer">
-               <div class="ap-stars">${stars}</div>
-               <span class="ap-card-prog">${done}/${total} étapes</span>
-             </div>
-             <div class="ap-prog-bar"><div class="ap-prog-fill" style="width:${pct}%;background:${art.color}"></div></div>
-             <button class="ap-card-btn${completed ? ' done' : ''}">${btnLabel}</button>`
-        }
+        <div class="ap-card-footer">
+          <div class="ap-stars">${stars}</div>
+          <span class="ap-card-prog">${done}/${total} étapes</span>
+        </div>
+        <div class="ap-prog-bar"><div class="ap-prog-fill" style="width:${pct}%;background:${art.color}"></div></div>
+        <button class="ap-card-btn${completed ? ' done' : ''}">${btnLabel}</button>
       </div>
     </div>`;
   };
 
-  const unlocked = artists.filter(a => !(a.requiredXP > 0 && xpEarned < a.requiredXP));
-  const locked   = artists.filter(a =>   a.requiredXP > 0 && xpEarned < a.requiredXP);
+  path.innerHTML = CHAPTERS.map(ch => {
+    const chArtists = ARTIST_PATHS.filter(a => ch.artists.includes(a.id));
+    const chLocked = xpEarned < ch.minXP;
+    const chDone = chArtists.filter(a => histArtistCompleted(a.id)).length;
 
-  let html = unlocked.map(renderCard).join('');
-  if (locked.length) {
-    html += `<div class="ap-section-title">🔒 À débloquer</div>`;
-    html += locked.map(renderCard).join('');
-  }
-  path.innerHTML = html;
+    if (chLocked) {
+      const pct = Math.min(100, Math.round(xpEarned / ch.minXP * 100));
+      const preview = chArtists.map(a => `<span class="ch-preview-name">${a.emoji} ${a.name}</span>`).join('');
+      return `<div class="hist-chapter locked">
+        <div class="hist-ch-lock" style="background:${ch.gradient}">
+          <div class="hist-ch-lock-top">
+            <div>
+              <div class="hist-ch-num">Chapitre ${ch.num}</div>
+              <div class="hist-ch-title">${ch.title} ${ch.emoji}</div>
+              <div class="hist-ch-sub">${ch.subtitle}</div>
+            </div>
+            <div class="hist-ch-lock-ico">🔒</div>
+          </div>
+          <div class="hist-ch-preview-names">${preview}</div>
+          <div class="hist-ch-lock-row">
+            <div class="hist-ch-lock-bar"><div class="hist-ch-lock-fill" style="width:${pct}%"></div></div>
+            <span>${xpEarned} / ${ch.minXP} XP</span>
+          </div>
+        </div>
+      </div>`;
+    }
 
-  path.querySelectorAll('.ap-card:not(.locked) .ap-card-btn:not(.done)').forEach(btn => {
+    return `<div class="hist-chapter">
+      <div class="hist-ch-header" style="background:${ch.gradient}">
+        <div class="hist-ch-num">Chapitre ${ch.num}</div>
+        <div class="hist-ch-title">${ch.title} ${ch.emoji}</div>
+        <div class="hist-ch-sub">${ch.subtitle}</div>
+        <div class="hist-ch-prog-badge">${chDone}/${chArtists.length} artistes</div>
+      </div>
+      <div class="hist-ch-cards">${chArtists.map(renderCard).join('')}</div>
+    </div>`;
+  }).join('');
+
+  path.querySelectorAll('.ap-card-btn:not(.done)').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const id = btn.closest('.ap-card').dataset.artistId;
-      const done = (getHistProgress()[id]?.steps?.length) || 0;
-      startArtistStep(id, done);
+      const d = (getHistProgress()[id]?.steps?.length) || 0;
+      startArtistStep(id, d);
     });
   });
 
-  gsap.from('.ap-card', { y: 20, opacity: 0, stagger: 0.05, duration: 0.35, ease: 'back.out(1.1)' });
+  gsap.from('.hist-chapter', { y: 24, opacity: 0, stagger: 0.1, duration: 0.4, ease: 'back.out(1.1)' });
 }
 
 function openArtistDetail(id) {
