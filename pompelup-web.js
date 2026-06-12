@@ -3,10 +3,10 @@
    ============================================ */
 
 const STATE = {
-  player: { name: 'Guigz', avatar: 'guigz-vibe', level: 12, xp: 847, tokens: 142 },
+  player: { name: 'Invité', avatar: 'guest-wave', level: 1, xp: 0, tokens: 100 },
   packsAvailable: 1,
   presenter: 'dj-funky',
-  room: { code: 'K9XQ4P', mode: 'classic', rounds: 5, duration: 30 },
+  room: { code: '------', mode: 'classic', rounds: 5, duration: 30 },
   animDensity: 'normal',
   bots: [
     { name: 'Cath',  seed: 'cath-vibe',   color: '#3B4FE8', level: 18, host: false, accuracy: 0.7, delay: 0.45 },
@@ -20,7 +20,7 @@ const STATE = {
     perRound: { points: 0, xp: 0, foundBy: 0 },
     history: []
   },
-  totals: { Guigz: 0, Cath: 0, Jules: 0, 'Léa': 0 },
+  totals: {},
   scores: {}
 };
 
@@ -1090,7 +1090,7 @@ const HISTORY = [
 ];
 
 const PAGE_INFO = {
-  home:       { title: 'ACCUEIL',     sub: 'Yo Guigz — prêt à lancer une partie ?' },
+  home:       { title: 'ACCUEIL',     sub: 'Prêt à jouer ? Lance une partie !' },
   quests:     { title: 'QUÊTES',      sub: '6 quêtes actives · 1 récompense à récupérer' },
   pass:       { title: 'GROOVY PASS', sub: 'Saison 03 · Boogie Woogie' },
   friends:    { title: 'AMIS',        sub: '7 amis · 3 en ligne · 2 demandes en attente' },

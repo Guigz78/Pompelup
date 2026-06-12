@@ -1677,9 +1677,11 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   .copy-link-btn { font-size: 10px; }
   .copy-link-btn .copy-icon { padding: 5px 9px; font-size: 10px; }
 }
-.lobby-grid > .panel:first-child { grid-row: 1; grid-column: 1; }
-.lobby-grid > .lobby-center { grid-row: 1; grid-column: 2; }
-.lobby-grid > .panel.chat-panel { grid-row: 1; grid-column: 3; }
+@media (min-width: 681px) {
+  .lobby-grid > .panel:first-child { grid-row: 1; grid-column: 1; }
+  .lobby-grid > .lobby-center { grid-row: 1; grid-column: 2; }
+  .lobby-grid > .panel.chat-panel { grid-row: 1; grid-column: 3; }
+}
 .lobby-launch-bar {
   grid-column: 1 / -1;
   grid-row: 2;
