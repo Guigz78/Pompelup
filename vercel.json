@@ -1,7 +1,6 @@
 {
-  "routes": [
-    { "src": "/songs", "dest": "/songs.html" },
-    { "src": "/songs.html", "dest": "/songs.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/songs", "destination": "/songs.html" },
+    { "source": "/((?!.*\\.).+)", "destination": "/index.html" }
   ]
 }
