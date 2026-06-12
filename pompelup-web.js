@@ -2403,9 +2403,9 @@ function initCollection() {
   $$('[data-close], .vm-backdrop', $('#vinyl-modal')).forEach(el => el.onclick = closeVinylModal);
   $('#vm-equip').onclick = () => { shopToast('✓ Mis en avant sur ton profil', 'good'); closeVinylModal(); };
   $('#vm-share').onclick = () => { shopToast('Lien copié 🔗', 'good'); };
-  gsap.from('.col-hero > *', { y: -20, opacity: 0, stagger: 0.1, duration: 0.5 });
-  gsap.from('.col-chip', { y: -10, opacity: 0, stagger: 0.04, duration: 0.3, delay: 0.15 });
-  gsap.from('.col-tools > *', { y: -10, opacity: 0, stagger: 0.06, duration: 0.3, delay: 0.2 });
+  gsap.from('.col-hero > *', { y: -20, opacity: 0, stagger: 0.1, duration: 0.5, overwrite: 'auto' });
+  gsap.from('.col-chip', { y: -10, opacity: 0, stagger: 0.04, duration: 0.3, delay: 0.15, overwrite: 'auto' });
+  gsap.from('.col-tools > *', { y: -10, opacity: 0, stagger: 0.06, duration: 0.3, delay: 0.2, overwrite: 'auto' });
 }
 
 // ===== SPOTIFY =====
