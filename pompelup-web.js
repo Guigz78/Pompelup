@@ -1778,12 +1778,84 @@ function renderArtistPath() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const id = btn.closest('.ap-card').dataset.artistId;
-      const d = (getHistProgress()[id]?.steps?.length) || 0;
-      startArtistStep(id, d);
+      openArtistPath(id);
     });
   });
 
   gsap.from('.hist-chapter', { y: 24, opacity: 0, stagger: 0.1, duration: 0.4, ease: 'back.out(1.1)' });
+}
+
+function openArtistPath(id) {
+  const art = ARTIST_PATHS.find(a => a.id === id);
+  if (!art) return;
+  HIST_STATE.activeArtist = id;
+  const overlay = $('#apo-overlay');
+  overlay.style.display = 'flex';
+  renderArtistStepPath(id);
+  gsap.fromTo('#apo-inner', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: 'back.out(1.4)' });
+}
+
+function closeArtistPath() {
+  gsap.to('#apo-inner', { opacity: 0, y: 20, duration: 0.22, ease: 'power2.in', onComplete: () => {
+    $('#apo-overlay').style.display = 'none';
+  }});
+}
+
+function renderArtistStepPath(id) {
+  const art = ARTIST_PATHS.find(a => a.id === id);
+  if (!art) return;
+  const artProg = (getHistProgress()[id]) || { steps: [] };
+  const done = artProg.steps.length;
+  const completed = done >= art.steps.length;
+  const stepIcons  = { listen: '🎧', fact: '💡', mcq: '❓' };
+  const stepLabels = { listen: 'Écouter', fact: 'Anecdote', mcq: 'Quiz' };
+
+  const stepsHtml = art.steps.map((step, i) => {
+    const isDone    = i < done;
+    const isCurrent = i === done && !completed;
+    const isLocked  = i > done;
+    const side = i % 2 === 0 ? 'apo-left' : 'apo-right';
+    const cStyle = (isDone || isCurrent)
+      ? `background:${art.color};box-shadow:0 5px 0 ${art.color}99`
+      : 'background:#E5E7EB;box-shadow:0 5px 0 #D1D5DB99';
+    return `<div class="apo-step ${side}${isDone ? ' done' : ''}${isCurrent ? ' current' : ''}${isLocked ? ' locked' : ''}"${!isLocked ? ` data-step="${i}"` : ''}>
+        <div class="apo-step-circle" style="${cStyle}">${isDone ? '✓' : stepIcons[step.type]}</div>
+        <div class="apo-step-label">${stepLabels[step.type]}</div>
+      </div>
+      ${i < art.steps.length - 1 ? '<div class="apo-dots"><span></span><span></span><span></span></div>' : ''}`;
+  }).join('');
+
+  const inner = $('#apo-inner');
+  inner.innerHTML = `
+    <div class="apo-header" style="background:${art.color}">
+      <button class="apo-back" id="apo-back">←</button>
+      <div class="apo-artist-emoji">${art.emoji}</div>
+      <div class="apo-artist-name">${art.name}</div>
+      <div class="apo-artist-sub">${art.genre} · ${art.active}</div>
+    </div>
+    <div class="apo-body">
+      <div class="apo-path">
+        ${stepsHtml}
+        <div class="apo-dots"><span></span><span></span><span></span></div>
+        <div class="apo-trophy${completed ? ' unlocked' : ''}">
+          <div class="apo-trophy-icon">${completed ? '🎤' : '🔒'}</div>
+          <div class="apo-trophy-title">MICRO D'OR</div>
+          <div class="apo-trophy-sub">${completed ? art.name + ' maîtrisé !' : done + '/' + art.steps.length + ' étapes'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  $('#apo-back').onclick = () => closeArtistPath();
+  inner.querySelectorAll('.apo-step:not(.locked)').forEach(node => {
+    node.addEventListener('click', () => {
+      const si = parseInt(node.dataset.step);
+      closeArtistPath();
+      setTimeout(() => startArtistStep(id, si), 250);
+    });
+  });
+  if (completed) gsap.fromTo('.apo-trophy', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' });
+  else gsap.from('.apo-step', { y: 20, opacity: 0, stagger: 0.08, duration: 0.35, ease: 'back.out(1.2)' });
 }
 
 function openArtistDetail(id) {
@@ -1880,7 +1952,7 @@ async function startArtistStep(artistId, stepIndex) {
         <button class="btn btn-accent btn-xl step-next-btn" id="step-next">SUIVANT →</button>
       </div>
     `;
-    $('#step-close').onclick = () => exitStep();
+    $('#step-close').onclick = () => exitStep(true);
     $('#step-next').onclick = () => completeStep(artistId, stepIndex);
 
   } else if (step.type === 'mcq') {
@@ -1893,7 +1965,7 @@ async function startArtistStep(artistId, stepIndex) {
       </div>
       <div class="step-footer" id="step-footer"></div>
     `;
-    $('#step-close').onclick = () => exitStep();
+    $('#step-close').onclick = () => exitStep(true);
     $$('.step-opt').forEach(btn => {
       btn.onclick = () => {
         const chosen = parseInt(btn.dataset.i);
@@ -1997,30 +2069,35 @@ function completeStep(artistId, stepIndex) {
   if (nextStep < art.steps.length) {
     gsap.to('#step-inner', { opacity: 0, x: -30, duration: 0.2, onComplete: () => startArtistStep(artistId, nextStep) });
   } else {
-    // All steps done — show completion
+    // All steps done — micro d'or
     const inner = $('#step-inner');
     inner.innerHTML = `
       <div class="step-body step-complete">
-        <div class="step-complete-emoji">${art.emoji}</div>
-        <div class="step-complete-title">BRAVO !</div>
-        <div class="step-complete-sub">${art.name} débloqué !</div>
+        <div class="step-complete-emoji">🎤</div>
+        <div class="step-complete-title">MICRO D'OR !</div>
+        <div class="step-complete-sub">${art.name} maîtrisé !</div>
         <div class="step-complete-xp">+${art.steps.length * 20} XP gagnés</div>
       </div>
       <div class="step-footer">
-        <button class="btn btn-accent btn-xl" id="step-finish">TERMINER</button>
+        <button class="btn btn-accent btn-xl" id="step-finish">VOIR MA RÉCOMPENSE</button>
       </div>
     `;
     spawnConfetti();
     gsap.fromTo('.step-complete-emoji', { scale: 0, rotation: -180 }, { scale: 1, rotation: 0, duration: 0.7, ease: 'back.out(2)' });
-    $('#step-finish').onclick = () => exitStep();
+    $('#step-finish').onclick = () => exitStep(true);
   }
 }
 
-function exitStep() {
+function exitStep(goToPath = false) {
   spStopPreview();
   gsap.to('#step-inner', { opacity: 0, scale: 0.97, duration: 0.2, onComplete: () => {
     $('#step-overlay').style.display = 'none';
-    renderArtistPath();
+    if (goToPath && HIST_STATE.activeArtist) {
+      openArtistPath(HIST_STATE.activeArtist);
+    } else {
+      renderArtistPath();
+      renderHistJourney();
+    }
   }});
 }
 
