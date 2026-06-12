@@ -2605,6 +2605,7 @@ function initLobby() {
     if (event === 'chat') pushChatMsg('msg', data.content, data.name, data.avatar);
     if (event === 'sound') {
       if (data.soundUrl) previewSfx(data.soundUrl);
+      else if (data.soundKind) playSoundFx(data.soundKind);
       spawnLobbyEmote(data.emoji || '🎵');
       pushChatMsg('system', `${data.name} a joué un son 🔊`);
     }
@@ -2615,6 +2616,7 @@ function initLobby() {
     if (event === 'game' && data.type === 'start') {
       STATE.game.songs = data.songs;
       STATE.game.total = data.total;
+      STATE.room.mode = data.mode || 'classic';
       pushChatMsg('system', 'La partie commence !');
       setTimeout(() => navigateTo('game'), 400);
     }
@@ -2666,7 +2668,7 @@ function renderLobbyPlayers(players) {
       node.className = 'lp-card' + (p.isHost ? ' host' : '') + (isMe ? ' you' : '');
       node.innerHTML = `
         <div class="lp-bubble"><img src="${avatarUrl(p.avatar)}" alt=""></div>
-        <div class="lp-name">${p.isHost ? '<span>👑</span>' : ''}${p.name}${isMe ? ' <span style="opacity:0.6">(toi)</span>' : ''}<span class="lvl">${p.level}</span></div>
+        <div class="lp-name">${p.isHost ? '<span>👑</span>' : ''}<span class="lp-name-text">${p.name}${isMe ? ' <span style="opacity:0.6">(toi)</span>' : ''}</span><span class="lvl">${p.level}</span></div>
         <div class="ready-tick">✓</div>
       `;
     } else {
@@ -2763,7 +2765,7 @@ $('#start-game-btn').addEventListener('click', async () => {
   const genres = getSelectedGenres('#cats');
   const songs = pickSongs(STATE.game.total, genres);
   STATE.game.songs = songs;
-  await sbBroadcast('game', { type: 'start', songs, total: STATE.game.total });
+  await sbBroadcast('game', { type: 'start', songs, total: STATE.game.total, mode: STATE.room.mode || 'classic' });
   pushChatMsg('system', 'La partie commence !');
   setTimeout(() => navigateTo('game'), 400);
 });
@@ -2972,7 +2974,7 @@ document.addEventListener('click', (e) => {
         rect.top - cRect.top);
     }
     pushChatMsg('system', `${STATE.player.name} a joué un son 🔊`);
-    if (sbHasRoom()) sbBroadcast('sound', { soundUrl: sound.dataset.soundUrl, emoji: sound.querySelector('.pad-emoji')?.textContent, name: STATE.player.name });
+    if (sbHasRoom()) sbBroadcast('sound', { soundUrl: sound.dataset.soundUrl || null, soundKind: sound.dataset.sound || null, emoji: sound.querySelector('.pad-emoji')?.textContent, name: STATE.player.name });
   }
   const emote = e.target.closest('.sb-pad-emote');
   if (emote) {
@@ -3297,6 +3299,7 @@ async function startGame() {
             pushGameChat('system', `${data.name} a trouvé ! +${data.pts} pts`);
             updatePlayersRail();
           }
+          if (data.rush) STATE.game.time = Math.min(STATE.game.time, 5);
           if (sbIsHost()) checkAllFound();
         }
         if (data.type === 'round_end' && !sbIsHost()) {
@@ -3354,7 +3357,9 @@ function startRound() {
   const songPool = STATE.game.songs || SONGS;
   const song = songPool[(STATE.game.round - 1) % songPool.length];
   STATE.game.currentSong = song;
-  STATE.game.time = STATE.game.maxTime = 30;
+  const modeTime = STATE.room.mode === 'rush' ? 15 : STATE.room.mode === 'stem' ? 24 : (STATE.room.duration || 30);
+  STATE.game.time = STATE.game.maxTime = modeTime;
+  if (STATE.room.mode === 'stem') STATE.game.stemPhase = 0;
   STATE.game.pointsAvail = 1000;
   STATE.game.found = false;
   STATE.game.jokers = {};
@@ -3405,6 +3410,14 @@ function startRound() {
       STATE.game.timerWarned = true;
       presenterSay('timer', 'excited', 2000);
     }
+    if (STATE.room.mode === 'stem' && !STATE.game.found) {
+      const elapsed = STATE.game.maxTime - t;
+      const targetPhase = elapsed < 8 ? 0 : elapsed < 16 ? 1 : 2;
+      if (targetPhase > (STATE.game.stemPhase || 0)) {
+        STATE.game.stemPhase = targetPhase;
+        advanceStemPhase(targetPhase, STATE.game.currentSong);
+      }
+    }
     if (t <= 0) { clearInterval(gameTimer); if (!STATE._multiPlayers || sbIsHost()) endRound(false); }
   }, 100);
 
@@ -3433,6 +3446,22 @@ function startRound() {
       pushGameChat('msg', msgs[Math.floor(Math.random() * msgs.length)], b.name, b.seed);
     }, 3000 + i * 5000 + Math.random() * 2000);
     botTimers.push(t);
+  }
+}
+
+function advanceStemPhase(phase, song) {
+  const hintEl = $('#g-hint');
+  if (hintEl && !STATE.game.found) {
+    if (phase === 1) {
+      const artistHint = song.artist.split(' ').map(w => w[0] + '…').join(' ');
+      hintEl.textContent = `🎤 Artiste : ${artistHint}`;
+    } else if (phase === 2) {
+      hintEl.textContent = `📅 ${Math.floor(song.year / 10) * 10}s · 🎵 ${song.genre}`;
+    }
+    gsap.fromTo('#g-hint', { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 });
+  }
+  if (song.previewUrl && _spAudio) {
+    try { _spAudio.currentTime = phase * 10; } catch(e) {}
   }
 }
 
@@ -3516,12 +3545,13 @@ if (gForm) gForm.addEventListener('submit', (e) => {
     pushGameChat('system', `${STATE.player.name} a trouvé ! +${pts} pts`);
     updatePlayersRail();
     presenterSay('correct', 'excited', 2500);
+    if (STATE.room.mode === 'rush') STATE.game.time = Math.min(STATE.game.time, 5);
     if (STATE._multiPlayers) {
-      sbBroadcast('game', { type: 'score', name: STATE.player.name, pts });
+      sbBroadcast('game', { type: 'score', name: STATE.player.name, pts, rush: STATE.room.mode === 'rush' });
       if (sbIsHost()) checkAllFound();
       // non-host waits for host's round_end broadcast
     } else {
-      setTimeout(endRound, 2400);
+      setTimeout(endRound, STATE.room.mode === 'rush' ? 5000 : 2400);
     }
   } else if (result.partial) {
     card.classList.add('partial');

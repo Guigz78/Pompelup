@@ -1849,11 +1849,9 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
 .players-stage {
   position: relative;
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 10px;
   padding: 6px 0 10px;
   margin-bottom: 10px;
 }
@@ -1862,32 +1860,40 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   position: relative;
   display: flex; flex-direction: column;
   align-items: center;
-  width: 88px;
   cursor: pointer;
   z-index: 2;
+  min-width: 0;
 }
 .lp-card .lp-bubble {
-  width: 68px; height: 68px;
+  width: 62px; height: 62px;
   border-radius: 50%;
   background: #fff;
   overflow: hidden;
   border: 4px solid #fff;
   box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 0 0 5px transparent;
   position: relative;
+  flex-shrink: 0;
 }
 .lp-card .lp-bubble img { width: 100%; height: 100%; display: block; }
 .lp-card.host .lp-bubble { box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 0 0 5px var(--yellow); }
 .lp-card.you .lp-bubble { box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 0 0 5px var(--orange); }
 .lp-card .lp-name {
-  margin-top: 10px;
+  margin-top: 8px;
   background: #fff;
-  padding: 5px 11px;
+  padding: 4px 8px;
   border-radius: 999px;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 11px;
   box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.lp-card .lp-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 .lp-card .lp-name .lvl {
   background: var(--yellow);
@@ -1922,6 +1928,11 @@ input { font: inherit; outline: none; border: none; background: none; color: inh
   background: rgba(0,0,0,0.06);
   color: var(--soft);
   box-shadow: none;
+}
+@media (max-width: 420px) {
+  .players-stage { grid-template-columns: repeat(4, 1fr); gap: 10px 6px; }
+  .lp-card .lp-bubble { width: 48px; height: 48px; }
+  .lp-card .lp-name { font-size: 9px; padding: 3px 6px; }
 }
 
 /* ============== SOUNDBOARD ============== */
