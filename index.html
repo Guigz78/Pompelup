@@ -2,1433 +2,300 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pompelup — Web</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="pompelup-web.css">
-<link rel="stylesheet" href="pompelup-mobile.css">
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFF4EA">
+<meta name="description" content="Pompelup — le blind test musical. Devine les titres, gagne des boosters et collectionne des vinyles.">
+<title>Pompelup — Blind test</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pompelup">
+<link rel="preload" href="fonts/bebas-neue.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="quiz.css">
 </head>
 <body>
-<div class="scale-wrap">
-  <div class="stage" id="stage">
-    <canvas class="notes-canvas" id="notes-canvas"></canvas>
+<div class="app" id="app">
 
-    <!-- ============== SIDEBAR ============== -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sb-logo">Pompe<span class="b-accent">lup</span><div class="b-dot"></div></div>
-
-      <div class="sb-user" id="sb-user">
-        <div class="sb-avatar"><img id="sb-avatar" alt=""></div>
-        <div style="flex:1; min-width: 0;">
-          <div class="sb-name" id="sb-name">Invité</div>
-          <div class="sb-lvl">Invité</div>
-          <div class="sb-xp"><div class="fill"></div></div>
-        </div>
-        <button class="sb-signout-btn" id="sb-signout" title="Déconnexion">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  <!-- ================= ACCUEIL ================= -->
+  <section class="screen is-active" id="screen-home" aria-label="Accueil">
+    <header class="home-head">
+      <div class="logo" aria-label="Pompelup">Pompe<span>lup</span><i></i></div>
+      <div class="chips">
+        <button class="chip chip-streak" id="home-streak" type="button" aria-label="Série de jours joués">
+          <span class="chip-ico" aria-hidden="true">🔥</span><b id="home-streak-n">0</b>
         </button>
-      </div>
-
-      <div class="sb-section-title">Jeu</div>
-      <nav class="sb-nav">
-        <button class="sb-item active" data-nav="home">
-          <span class="ico">🏠</span>
-          <span class="sb-label">Accueil</span>
-        </button>
-        <button class="sb-item" data-nav="quests">
-          <span class="ico">⚔️</span>
-          <span class="sb-label">Quêtes</span>
-          <span class="sb-badge">3</span>
-        </button>
-        <button class="sb-item" data-nav="pass">
-          <span class="ico">🎫</span>
-          <span class="sb-label">Pass de combat</span>
-          <span class="sb-badge">17</span>
-        </button>
-      </nav>
-
-      <div class="sb-section-title">Toi</div>
-      <nav class="sb-nav">
-        <button class="sb-item" data-nav="friends">
-          <span class="ico">👥</span>
-          <span class="sb-label">Amis</span>
-          <span class="sb-dot" title="2 en ligne"></span>
-        </button>
-        <button class="sb-item" data-nav="history">
-          <span class="ico">📜</span>
-          <span class="sb-label">Histoire</span>
-        </button>
-        <button class="sb-item" data-nav="collection">
-          <span class="ico">💿</span>
-          <span class="sb-label">Collection</span>
-          <span class="sb-badge" style="background: var(--text);">34</span>
-        </button>
-      </nav>
-
-      <div class="sb-bottom">
-        <div class="sb-pack-cta" id="sb-pack-cta">
-          <div class="gicon">🎁</div>
-          <div>
-            <div class="ptxt" id="sb-pack-label">PACK DISPONIBLE · 1</div>
-            <div class="pdesc">3 vinyles · Mystère</div>
-          </div>
-          <div class="pulse"></div>
-        </div>
-        <div class="sb-tokens-card" data-nav="shop" title="Ouvrir la boutique">
-          <div class="ticon">🎤</div>
-          <div>
-            <div class="tlbl">Jetons</div>
-            <div class="tval" id="sb-tokens">142</div>
-          </div>
-          <div class="plus">+</div>
+        <div class="chip chip-level" aria-label="Niveau">
+          <span class="lvl-badge" id="home-level">1</span>
+          <span class="gauge"><span id="home-level-fill"></span></span>
         </div>
       </div>
-    </aside>
+    </header>
 
-    <!-- ============== TOPBAR ============== -->
-    <div class="topbar" id="topbar">
+    <section class="bcard" id="booster-card" aria-label="Boosters de vinyles">
+      <div class="bcard-art" aria-hidden="true">
+        <div class="mini-pack mp-3"></div>
+        <div class="mini-pack mp-2"></div>
+        <div class="mini-pack mp-1"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span><span class="mp-name">Booster</span></div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-kicker">Boosters de vinyles</div>
+        <div class="bcard-title" id="bcard-title">1 booster à ouvrir</div>
+        <div class="bcard-gauge">
+          <span class="gauge"><span id="bcard-gauge-fill"></span></span>
+          <small id="bcard-gauge-txt">0/6 bonnes réponses</small>
+        </div>
+        <button class="bcard-btn" id="btn-open-booster" type="button">Ouvrir</button>
+      </div>
+      <span class="bcard-badge" id="bcard-badge" aria-hidden="true">1</span>
+    </section>
+
+    <div class="bento">
+      <button class="daily-card" id="daily-card" type="button">
+        <span class="daily-tag">Défi du jour</span>
+        <span class="daily-title" id="daily-title">Chanson mystère</span>
+        <span class="daily-sub" id="daily-sub">3 essais · +150 XP · +1 🎁</span>
+        <span class="daily-cta" id="daily-cta">Jouer →</span>
+        <span class="daily-disc" aria-hidden="true"></span>
+      </button>
+      <button class="coll-card" id="coll-card" type="button">
+        <span class="coll-tag">Collection</span>
+        <span class="coll-num"><b id="coll-card-n">0</b><small id="coll-card-total">/1000</small></span>
+        <span class="coll-fan" id="coll-fan" aria-hidden="true"></span>
+        <span class="coll-cta">Voir mes vinyles →</span>
+      </button>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Catégorie</div>
+      <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
+    </div>
+
+    <div class="block two-col">
       <div>
-        <div class="tb-page-title" id="tb-title">ACCUEIL</div>
-        <div class="tb-page-sub" id="tb-sub">Prêt à jouer ? Lance une partie !</div>
-      </div>
-      <div class="tb-spacer"></div>
-      <div class="room-badge" id="tb-room" style="display: none;">
-        <span style="opacity:0.7; font-size: 11px; letter-spacing: 0.12em;">SALON</span>
-        <span class="rcode">K9XQ4P</span>
-      </div>
-      <div class="tb-search" id="tb-search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-5-5"/></svg>
-        <input placeholder="Cherche un titre, un pote, un pack..." id="tb-search-input" autocomplete="off" />
-        <kbd>⌘K</kbd>
-        <div class="tb-dropdown" id="tb-dropdown">
-          <div class="tbd-section">
-            <div class="tbd-head">Récents</div>
-            <button class="tbd-item" data-search-action="goto" data-nav="collection">
-              <span class="tbd-ico">💿</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Bohemian Rhapsody</span>
-                <span class="tbd-sub">Queen · ouvert hier</span>
-              </span>
-              <span class="tbd-kbd">↵</span>
-            </button>
-            <button class="tbd-item" data-search-action="goto" data-nav="friends">
-              <span class="tbd-ico">👥</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Marco</span>
-                <span class="tbd-sub">Profil ami · 3 amis communs</span>
-              </span>
-              <span class="tbd-kbd">↵</span>
-            </button>
-            <button class="tbd-item" data-search-action="goto" data-nav="shop">
-              <span class="tbd-ico">🎁</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Pack Légendes</span>
-                <span class="tbd-sub">Boutique · −40 %</span>
-              </span>
-              <span class="tbd-kbd">↵</span>
-            </button>
-          </div>
-
-          <div class="tbd-section">
-            <div class="tbd-head">Suggestions</div>
-            <button class="tbd-item" data-search-action="goto" data-nav="collection">
-              <span class="tbd-ico tbd-ico-orange">🔥</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Top morceaux de la semaine</span>
-                <span class="tbd-sub">12 vinyles tendance</span>
-              </span>
-            </button>
-            <button class="tbd-item" data-search-action="goto" data-nav="quests">
-              <span class="tbd-ico tbd-ico-purple">⚔️</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Quêtes du jour</span>
-                <span class="tbd-sub">3 actives · 1 récompense</span>
-              </span>
-            </button>
-            <button class="tbd-item" data-search-action="goto" data-nav="lobby">
-              <span class="tbd-ico tbd-ico-green">🎤</span>
-              <span class="tbd-body">
-                <span class="tbd-title">Lancer une partie rapide</span>
-                <span class="tbd-sub">Classic · 5 manches</span>
-              </span>
-            </button>
-          </div>
-
-          <div class="tbd-section">
-            <div class="tbd-head">Catégories</div>
-            <div class="tbd-chips">
-              <button class="tbd-chip" data-search-action="goto" data-nav="collection">💿 Vinyles</button>
-              <button class="tbd-chip" data-search-action="goto" data-nav="friends">👥 Amis</button>
-              <button class="tbd-chip" data-search-action="goto" data-nav="shop">🛒 Boutique</button>
-              <button class="tbd-chip" data-search-action="goto" data-nav="skins">🎭 Skins</button>
-              <button class="tbd-chip" data-search-action="goto" data-nav="history">📜 Histoire</button>
-              <button class="tbd-chip" data-search-action="goto" data-nav="pass">🎫 Pass</button>
-            </div>
-          </div>
-
-          <div class="tbd-foot">
-            <span><kbd>↑</kbd><kbd>↓</kbd> Naviguer</span>
-            <span><kbd>↵</kbd> Ouvrir</span>
-            <span><kbd>esc</kbd> Fermer</span>
-          </div>
+        <div class="block-label">Mode</div>
+        <div class="seg" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
+          <button type="button" role="radio" data-mode="choice" aria-checked="true">4 choix</button>
+          <button type="button" role="radio" data-mode="type" aria-checked="false">Saisie <small>×1,5</small></button>
         </div>
       </div>
-      <div class="tb-actions">
-        <button class="tb-icon-btn" title="Notifications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
-          <span class="notif-dot"></span>
-        </button>
-        <button class="tb-icon-btn" title="Boutique" data-nav="shop">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg>
-        </button>
+      <div>
+        <div class="block-label">Manches</div>
+        <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
+          <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
+          <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
+          <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
+        </div>
       </div>
     </div>
 
-
-    <!-- ============== CONTENT AREA ============== -->
-    <div class="content-area" id="content-area">
-
-      <!-- ============== HOME ============== -->
-      <section id="screen-home" class="screen active">
-        <!-- Hero with create/join -->
-        <div class="home-hero-row">
-          <div class="home-left">
-            <div class="home-eyebrow"><span class="dot"></span> 2 487 joueurs en ligne</div>
-            <h1 class="home-title">POMPE<span class="accent">LUP</span></h1>
-            <p class="home-desc">Le blind test entre potes. Devine, collectionne des vinyles, deviens la légende de tes soirées.</p>
-
-            <div class="home-cta-grid">
-              <div class="home-cta-card primary" data-action="create-room">
-                <div class="ac-body">
-                  <div class="ac-icon">🎤</div>
-                  <div class="ac-title">CRÉER UN SALON</div>
-                  <div class="ac-sub">Invite tes potes, choisis le mode</div>
-                </div>
-                <div class="ac-foot">
-                  <span>Tape pour lancer</span>
-                  <span>→</span>
-                </div>
-              </div>
-              <div class="home-cta-card" data-action="join-room">
-                <div class="ac-body">
-                  <div class="ac-icon">🎟️</div>
-                  <div class="ac-title">REJOINDRE</div>
-                  <div class="ac-sub">T'as un code de salon ?</div>
-                </div>
-                <input class="ac-foot ac-join-input" placeholder="CODE" maxlength="6" id="join-code-input" style="text-align: center; background: rgba(0,0,0,0.05); cursor: text;">
-              </div>
-              <div class="home-cta-card solo" data-action="play-solo">
-                <div class="ac-body" style="display:flex; align-items:center; gap:14px;">
-                  <div class="ac-icon">🎮</div>
-                  <div>
-                    <div class="ac-title">JOUER SOLO</div>
-                    <div class="ac-sub">Entraîne-toi, bats les bots, grimpe en XP</div>
-                  </div>
-                </div>
-                <div class="ac-foot">
-                  <span>Tous les modes disponibles</span>
-                  <span>→</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="home-right">
-            <div class="vinyl-display">
-              <div class="cute-tag tag-1"><span>🎵</span> Devine</div>
-              <div class="cute-tag tag-3"><span>💿</span> Collectionne</div>
-              <div class="cute-tag tag-2"><span>👑</span> Domine</div>
-              <div class="disc d2"></div>
-              <div class="disc d3"></div>
-              <div class="disc d4"></div>
-              <div class="disc d1"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Categories with illustrations -->
-        <div class="section-bar first">
-          <h2>CATÉGORIES POPULAIRES</h2>
-          <span class="seemore" data-nav="collection" style="cursor:pointer;">Tout voir →</span>
-        </div>
-        <div class="cat-row">
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FCE7F3, #FBCFE8);" data-action="create-room">
-            <div class="cat-tag hot">HOT</div>
-            <div class="cat-illu"><img src="assets/illu-pop.png" alt="Pop"></div>
-            <div>
-              <div class="cat-name">POP</div>
-              <div class="cat-sub">128 titres · 2010+</div>
-            </div>
-          </div>
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #DBEAFE, #BFDBFE);" data-action="create-room">
-            <div class="cat-tag">98%</div>
-            <div class="cat-illu"><img src="assets/illu-dance.svg" alt="Dance"></div>
-            <div>
-              <div class="cat-name">DANCE</div>
-              <div class="cat-sub">94 titres · électro</div>
-            </div>
-          </div>
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FEF3C7, #FDE68A);" data-action="create-room">
-            <div class="cat-tag">JAZZY</div>
-            <div class="cat-illu"><img src="assets/illu-jazz.svg" alt="Jazz"></div>
-            <div>
-              <div class="cat-name">JAZZ</div>
-              <div class="cat-sub">76 titres · classiques</div>
-            </div>
-          </div>
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #DCFCE7, #BBF7D0);" data-action="create-room">
-            <div class="cat-tag new">NEW</div>
-            <div class="cat-illu"><img src="assets/illu-monde.svg" alt="Monde"></div>
-            <div>
-              <div class="cat-name">MONDE</div>
-              <div class="cat-sub">152 titres · world</div>
-            </div>
-          </div>
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #1F2937, #374151); color:#fff;" data-action="create-room">
-            <div class="cat-tag" style="background: rgba(255,255,255,0.2); color:#fff;">GOLD</div>
-            <div class="cat-illu"><img src="assets/illu-rap.svg" alt="Rap"></div>
-            <div>
-              <div class="cat-name">RAP</div>
-              <div class="cat-sub" style="color: rgba(255,255,255,0.7);">112 titres · FR/US</div>
-            </div>
-          </div>
-          <div class="cat-illu-card" style="background: linear-gradient(160deg, #FED7AA, #FDBA74);" data-action="create-room">
-            <div class="cat-tag">FIRE</div>
-            <div class="cat-illu"><img src="assets/illu-rock.svg" alt="Rock"></div>
-            <div>
-              <div class="cat-name">ROCK</div>
-              <div class="cat-sub">98 titres · 70s-2020</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Activity strip -->
-        <div class="section-bar">
-          <h2>POUR TOI</h2>
-          <span class="seemore" data-nav="quests" style="cursor:pointer;">Tout voir →</span>
-        </div>
-        <div class="activity-strip">
-          <div class="act-card quest-mini" data-nav="quests">
-            <div class="ac-eyebrow">QUÊTE DU JOUR</div>
-            <h3>Trouve 5 titres en moins de 5 secondes</h3>
-            <div class="quest-row">
-              <div class="qicon">⚡</div>
-              <div class="qbody">
-                <div class="qtxt">3 / 5 — bientôt fini</div>
-                <div class="qbar"><div class="fill" style="width:60%"></div></div>
-              </div>
-              <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--yellow);">+50 🎤</div>
-            </div>
-          </div>
-          <div class="act-card" data-nav="friends">
-            <div class="ac-eyebrow">3 AMIS EN LIGNE</div>
-            <h3>Invite-les à jouer</h3>
-            <div class="friends-stack">
-              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=cath-vibe&radius=50" alt="">
-              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=jules-fresh&radius=50" alt="">
-              <img src="https://api.dicebear.com/9.x/big-smile/svg?seed=lea-sunset&radius=50" alt="">
-              <div class="more-friends">+4</div>
-            </div>
-          </div>
-          <div class="act-card pack-mini" data-nav="collection">
-            <div class="ac-eyebrow">COLLECTION</div>
-            <h3>34 / 180 vinyles</h3>
-            <div style="height: 10px; background: rgba(0,0,0,0.15); border-radius: 999px; overflow: hidden; margin-top: 10px;">
-              <div style="width: 19%; height: 100%; background: #fff; border-radius: 999px;"></div>
-            </div>
-            <div style="font-size: 11px; font-weight: 800; margin-top: 6px; opacity: 0.7;">3 LÉGENDAIRES · 8 RARES</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============== QUESTS ============== -->
-      <section id="screen-quests" class="screen">
-        <div class="quest-tabs">
-          <button class="active">Du jour</button>
-          <button>De la semaine</button>
-          <button>Saison</button>
-        </div>
-
-        <div class="quest-grid">
-          <div class="quest-card featured">
-            <div class="qbig-icon">🔥</div>
-            <div class="qmeta">
-              <div class="qtitle">FRENZY DU VENDREDI</div>
-              <div class="qdesc">Gagne 3 parties Classic d'affilée aujourd'hui. Bonus week-end activé.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 66%"></div></div>
-                <div class="qprog-text">2/3</div>
-              </div>
-              <div class="qreward">
-                <span class="qreward-chip">🎁 Pack rare</span>
-                <span class="qreward-chip">+200 XP</span>
-                <span class="qreward-chip">+50 🎤</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="quest-card">
-            <div class="qbig-icon">⚡</div>
-            <div class="qmeta">
-              <div class="qtitle">FUSÉE</div>
-              <div class="qdesc">Trouve 5 titres en moins de 5 secondes.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 60%"></div></div>
-                <div class="qprog-text">3/5</div>
-              </div>
-              <div class="qreward"><span class="qreward-chip">+50 🎤</span><span class="qreward-chip">+100 XP</span></div>
-            </div>
-          </div>
-
-          <div class="quest-card completed">
-            <div class="qbig-icon">🎯</div>
-            <div class="qmeta">
-              <div class="qtitle">SANS FAUTE</div>
-              <div class="qdesc">Termine une partie avec 100% de bonnes réponses.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 100%"></div></div>
-                <div class="qprog-text">1/1</div>
-              </div>
-              <div class="qreward"><span class="qreward-chip">+30 🎤</span></div>
-            </div>
-          </div>
-
-          <div class="quest-card">
-            <div class="qbig-icon">🎤</div>
-            <div class="qmeta">
-              <div class="qtitle">VOIX D'OR</div>
-              <div class="qdesc">Trouve 15 artistes différents dans une seule partie.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 53%"></div></div>
-                <div class="qprog-text">8/15</div>
-              </div>
-              <div class="qreward"><span class="qreward-chip">+80 🎤</span><span class="qreward-chip">Émote rare</span></div>
-            </div>
-          </div>
-
-          <div class="quest-card">
-            <div class="qbig-icon">👯</div>
-            <div class="qmeta">
-              <div class="qtitle">EN ÉQUIPE</div>
-              <div class="qdesc">Joue 2 parties avec au moins 4 amis dans le salon.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 50%"></div></div>
-                <div class="qprog-text">1/2</div>
-              </div>
-              <div class="qreward"><span class="qreward-chip">+40 🎤</span><span class="qreward-chip">+150 XP</span></div>
-            </div>
-          </div>
-
-          <div class="quest-card">
-            <div class="qbig-icon">🌍</div>
-            <div class="qmeta">
-              <div class="qtitle">EXPLORATEUR</div>
-              <div class="qdesc">Joue dans 3 catégories différentes aujourd'hui.</div>
-              <div class="qprogress">
-                <div class="qpbar"><div class="fill" style="width: 33%"></div></div>
-                <div class="qprog-text">1/3</div>
-              </div>
-              <div class="qreward"><span class="qreward-chip">+25 🎤</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============== PASS ============== -->
-      <section id="screen-pass" class="screen">
-        <div class="pass-hero">
-          <div>
-            <div class="ph-eyebrow">SAISON 03 · GROOVY PASS</div>
-            <div class="ph-title">BOOGIE<br>WOOGIE</div>
-            <div class="ph-sub">Se termine dans 21 jours · 03 mois</div>
-            <div class="ph-bar"><div class="fill"></div></div>
-            <div style="display:flex; justify-content: space-between; max-width: 480px; margin-top: 6px; font-size: 11px; font-weight: 800; opacity: 0.7;">
-              <span>1 240 / 2 000 XP</span>
-              <span>PROCHAIN PALIER →</span>
-            </div>
-          </div>
-          <div class="ph-tier">
-            <div class="lbl">Palier</div>
-            <div class="val">17</div>
-          </div>
-        </div>
-
-        <div class="pass-row-label">Gratuit · Premium 👑</div>
-        <div class="pass-track" id="pass-track"></div>
-
-        <div style="background: linear-gradient(135deg, var(--yellow), var(--orange)); color: var(--text); border-radius: 18px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; margin-top: 16px;">
-          <div style="font-size: 36px;">👑</div>
-          <div style="flex: 1;">
-            <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1; letter-spacing: 0.02em;">DÉBLOQUE LE PASS PREMIUM</div>
-            <div style="font-size: 12px; font-weight: 700; opacity: 0.8; margin-top: 2px;">+ 30 récompenses exclusives — skins, packs rares, émotes</div>
-          </div>
-          <button class="btn btn-dark">3,99€</button>
-        </div>
-      </section>
-
-      <!-- ============== FRIENDS ============== -->
-      <section id="screen-friends" class="screen">
-        <div class="friends-grid">
-          <div>
-            <div class="requests-count" style="margin-bottom: 14px;">
-              <span style="font-size: 18px;">📨</span>
-              <div>
-                <div>2 demandes d'ami en attente</div>
-                <div style="font-size: 11px; font-weight: 600; opacity: 0.85;">Tape pour les voir</div>
-              </div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;"><path d="M9 18l6-6-6-6"/></svg>
-            </div>
-
-            <div class="friends-list" id="friends-list"></div>
-          </div>
-
-          <div class="add-friend-card">
-            <h3>AJOUTER UN AMI</h3>
-            <div class="you-code">
-              <div>
-                <div class="yc-lbl">Ton code ami</div>
-                <div class="yc-val">Guigz#4821</div>
-              </div>
-              <button class="copy-btn">COPIER</button>
-            </div>
-            <div>
-              <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;">
-                AJOUTER PAR CODE
-              </div>
-              <div class="add-input">
-                <input placeholder="Pseudo#XXXX">
-                <button>AJOUTER</button>
-              </div>
-            </div>
-            <div style="border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 14px;">
-              <div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">
-                Ou partage ce lien
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-soft); padding: 10px 14px; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.06em; font-size: 16px;">
-                pompelup.app/add/<b style="color: var(--orange);">Guigz#4821</b>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============== HISTORY ============== -->
-      <section id="screen-history" class="screen hist-screen">
-        <div class="hist-journey" id="hist-journey"></div>
-        <div class="artist-path" id="artist-path"></div>
-      </section>
-
-      <!-- ============== COLLECTION ============== -->
-      <section id="screen-collection" class="screen">
-        <div class="col-hero">
-          <div class="ch-featured" id="ch-featured">
-            <div class="ch-tag">DERNIÈRE LÉGENDAIRE</div>
-            <div class="ch-stage">
-              <div class="ch-disk" id="ch-disk"></div>
-              <div class="ch-shine"></div>
-            </div>
-            <div class="ch-meta">
-              <div class="ch-eyebrow" id="ch-meta-year">1975 · ROCK</div>
-              <h2 class="ch-title" id="ch-meta-title">BOHEMIAN<br>RHAPSODY</h2>
-              <div class="ch-artist" id="ch-meta-artist">Queen</div>
-              <div class="ch-stats">
-                <div class="ch-stat"><div class="l">Joué</div><div class="v" id="ch-meta-plays">52×</div></div>
-                <div class="ch-stat"><div class="l">Rareté</div><div class="v">👑 LÉG</div></div>
-                <div class="ch-stat"><div class="l">Note</div><div class="v">★★★★★</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="ch-kpis">
-            <div class="kpi-ring">
-              <svg viewBox="0 0 100 100" class="ring-svg">
-                <circle cx="50" cy="50" r="42" class="ring-bg" />
-                <circle cx="50" cy="50" r="42" class="ring-fg" id="ring-fg" />
-              </svg>
-              <div class="ring-center">
-                <div class="ring-num" id="ring-num">19%</div>
-                <div class="ring-lbl">Collection</div>
-              </div>
-            </div>
-            <div class="kpi-stack">
-              <div class="kpi-row kpi-common"><span class="kpi-dot"></span><span class="kpi-lbl">Communs</span><b id="kpi-common">22</b></div>
-              <div class="kpi-row kpi-rare"><span class="kpi-dot"></span><span class="kpi-lbl">Rares</span><b id="kpi-rare">8</b></div>
-              <div class="kpi-row kpi-legendary"><span class="kpi-dot"></span><span class="kpi-lbl">Légendaires</span><b id="kpi-legendary">3</b></div>
-              <div class="kpi-row kpi-locked"><span class="kpi-dot"></span><span class="kpi-lbl">À débloquer</span><b id="kpi-locked">146</b></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="collection-header">
-          <div class="collection-chips" id="col-chips">
-            <button class="col-chip active" data-filter="all">Tous <span class="count" id="cnt-all">24</span></button>
-            <button class="col-chip" data-filter="common">Communs <span class="count" id="cnt-common">8</span></button>
-            <button class="col-chip" data-filter="rare">Rares <span class="count" id="cnt-rare">7</span></button>
-            <button class="col-chip" data-filter="legendary">Légendaires <span class="count" id="cnt-legendary">5</span></button>
-            <button class="col-chip" data-filter="owned">Possédés <span class="count" id="cnt-owned">16</span></button>
-            <button class="col-chip" data-filter="locked">Verrouillés <span class="count" id="cnt-locked">8</span></button>
-          </div>
-          <div class="col-tools">
-            <div class="col-search">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-5-5"/></svg>
-              <input type="text" id="col-search" placeholder="Cherche un titre, un artiste…">
-            </div>
-            <div class="col-sort">
-              <label>Trier</label>
-              <select id="col-sort">
-                <option value="recent">Récents</option>
-                <option value="rarity">Rareté</option>
-                <option value="alpha">A → Z</option>
-                <option value="year">Année</option>
-                <option value="plays">Plus joués</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="collection-grid" id="collection-grid"></div>
-        <div class="col-empty" id="col-empty" style="display:none;">
-          <div class="ce-emoji">💿</div>
-          <div class="ce-title">Aucun vinyle trouvé</div>
-          <div class="ce-sub">Essaie un autre filtre ou un autre mot-clé.</div>
-        </div>
-      </section>
-
-      <!-- Vinyl detail modal -->
-      <div class="vinyl-modal" id="vinyl-modal">
-        <div class="vm-backdrop"></div>
-        <div class="vm-card" id="vm-card">
-          <button class="vm-close" data-close>×</button>
-          <div class="vm-left">
-            <div class="vm-stage">
-              <div class="vm-rays" id="vm-rays"></div>
-              <div class="vm-disk" id="vm-disk"></div>
-            </div>
-          </div>
-          <div class="vm-right">
-            <div class="vm-rarity" id="vm-rarity">LÉGENDAIRE</div>
-            <h2 class="vm-title" id="vm-title">Bohemian Rhapsody</h2>
-            <div class="vm-artist" id="vm-artist">Queen</div>
-            <div class="vm-meta">
-              <div class="vm-row"><span class="l">Année</span><span class="v" id="vm-year">1975</span></div>
-              <div class="vm-row"><span class="l">Genre</span><span class="v" id="vm-genre">Rock</span></div>
-              <div class="vm-row"><span class="l">Joué</span><span class="v" id="vm-plays">52 fois</span></div>
-              <div class="vm-row"><span class="l">Obtenu</span><span class="v" id="vm-obtained">Pack quotidien · 12 mai</span></div>
-            </div>
-
-            <div class="vm-listen">
-              <div class="vm-listen-label">ÉCOUTER SUR</div>
-              <div class="vm-listen-row">
-                <a class="vm-stream vm-spotify" id="vm-spotify" target="_blank" rel="noopener">
-                  <span class="vs-ico">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.42-1.021.6-1.561.3z"/></svg>
-                  </span>
-                  <span class="vs-body">
-                    <span class="vs-name">Spotify</span>
-                    <span class="vs-desc">Écouter le morceau</span>
-                  </span>
-                  <span class="vs-arrow">→</span>
-                </a>
-                <a class="vm-stream vm-apple" id="vm-apple" target="_blank" rel="noopener">
-                  <span class="vs-ico">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-                  </span>
-                  <span class="vs-body">
-                    <span class="vs-name">Apple Music</span>
-                    <span class="vs-desc">Lecture sur Apple</span>
-                  </span>
-                  <span class="vs-arrow">→</span>
-                </a>
-                <a class="vm-stream vm-deezer" id="vm-deezer" target="_blank" rel="noopener">
-                  <span class="vs-ico">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="17" y="4" width="6" height="3"/><rect x="17" y="8.4" width="6" height="3"/><rect x="9" y="8.4" width="6" height="3"/><rect x="1" y="8.4" width="6" height="3"/><rect x="17" y="12.8" width="6" height="3"/><rect x="9" y="12.8" width="6" height="3"/><rect x="1" y="12.8" width="6" height="3"/><rect x="17" y="17.2" width="6" height="3"/><rect x="9" y="17.2" width="6" height="3"/><rect x="1" y="17.2" width="6" height="3"/></svg>
-                  </span>
-                  <span class="vs-body">
-                    <span class="vs-name">Deezer</span>
-                    <span class="vs-desc">Streamer sur Deezer</span>
-                  </span>
-                  <span class="vs-arrow">→</span>
-                </a>
-              </div>
-            </div>
-
-            <div class="vm-actions">
-              <button class="btn btn-ghost btn-block" id="vm-share">PARTAGER</button>
-              <button class="btn btn-accent btn-block" id="vm-equip">METTRE EN AVANT</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============== SHOP ============== -->
-      <section id="screen-shop" class="screen">
-        <div class="shop-top">
-          <div class="shop-balance">
-            <div class="sb-eyebrow">TON SOLDE</div>
-            <div class="sb-amount">
-              <span class="sb-mic">🎤</span>
-              <span class="sb-val" id="shop-balance">142</span>
-            </div>
-            <div class="sb-foot">Mics — la monnaie du studio</div>
-            <button class="btn btn-accent btn-sm" data-shop-jump="recharge">+ RECHARGER</button>
-          </div>
-
-          <div class="shop-featured" data-shop-buy="pack-legendes">
-            <div class="sf-tag">À LA UNE · −40%</div>
-            <div class="sf-disk"><div class="sf-disk-inner"></div></div>
-            <div class="sf-body">
-              <div class="sf-eyebrow">PACK LÉGENDES</div>
-              <h2 class="sf-title">3 LÉGENDAIRES<br>GARANTIS</h2>
-              <p class="sf-desc">Un trio de drops épiques. Wooooooh, confettis, gros sons. Tout y est.</p>
-              <div class="sf-price">
-                <span class="old">600 🎤</span>
-                <span class="new">360 🎤</span>
-              </div>
-              <button class="btn btn-light btn-lg sf-cta">ACHETER MAINTENANT</button>
-            </div>
-            <div class="sf-confetti">
-              <span>🎉</span><span>✨</span><span>👑</span><span>🎤</span><span>💜</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="shop-chips" id="shop-chips">
-          <button class="shop-chip active" data-cat="all">⭐ Tout</button>
-          <button class="shop-chip" data-cat="packs">🎁 Packs</button>
-          <button class="shop-chip" data-cat="skins">🎭 Skins MC</button>
-          <button class="shop-chip" data-cat="themes">🏠 Thèmes & Stickers</button>
-          <button class="shop-chip" data-cat="boosters">⚡ Boosters</button>
-          <button class="shop-chip" data-cat="recharge">💰 Recharger</button>
-        </div>
-
-        <div id="shop-grid" class="shop-grid"></div>
-      </section>
-
-      <!-- ============== SKINS / LOBBY PERSO ============== -->
-      <section id="screen-skins" class="screen">
-        <div class="skins-tabs">
-          <button class="stab active" data-stab="me"><span class="stab-ico">👤</span><span>MOI</span></button>
-          <button class="stab" data-stab="mc"><span class="stab-ico">🎤</span><span>MES SKINS</span></button>
-          <button class="stab" data-stab="lobby"><span class="stab-ico">🏠</span><span>MON LOBBY</span></button>
-          <button class="stab" data-stab="sound"><span class="stab-ico">🔊</span><span>SONS</span></button>
-        </div>
-
-        <div class="stab-panel active" data-stab-panel="me">
-          <div class="me-hero">
-            <div class="me-avatar-stage">
-              <div class="me-avatar-glow"></div>
-              <div class="me-avatar" id="me-avatar-preview">
-                <img id="me-avatar-img" alt="" />
-              </div>
-              <div class="me-level">Nv. <b id="me-lvl">12</b></div>
-            </div>
-            <div class="me-form">
-              <div class="r-eyebrow">PROFIL JOUEUR</div>
-              <label class="me-field">
-                <span class="me-label">Pseudo</span>
-                <div class="me-input-wrap">
-                  <input id="me-name-input" type="text" maxlength="20" placeholder="Ton pseudo" />
-                  <span class="me-counter"><span id="me-name-count">5</span>/20</span>
-                </div>
-              </label>
-              <div class="me-stats-row">
-                <div class="me-stat"><div class="l">XP</div><div class="v" id="me-xp">847</div></div>
-                <div class="me-stat"><div class="l">Vinyles</div><div class="v">16</div></div>
-                <div class="me-stat"><div class="l">Parties</div><div class="v">142</div></div>
-                <div class="me-stat"><div class="l">Victoires</div><div class="v">38</div></div>
-              </div>
-              <div class="me-actions">
-                <button class="btn btn-ghost btn-sm" id="me-reset">Annuler</button>
-                <button class="btn btn-accent btn-sm" id="me-save">Enregistrer</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-bar">
-            <h2>AVATAR</h2>
-            <span class="seemore">Choisis ton style ou génère du random</span>
-          </div>
-          <div class="avatar-grid" id="avatar-grid"></div>
-          <div class="avatar-tools">
-            <input id="me-photo-input" type="file" accept="image/*" hidden />
-            <button class="btn btn-accent btn-sm" id="me-upload">📷 Importer une photo</button>
-            <button class="btn btn-ghost btn-sm" id="me-random">🎲 Random</button>
-          </div>
-
-          <div class="section-bar" style="margin-top: 20px;">
-            <h2>SPOTIFY</h2>
-            <span class="seemore">Previews 30s en jeu</span>
-          </div>
-          <div class="sp-connect-card">
-            <div class="sp-logo">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            </div>
-            <div class="sp-info">
-              <div class="sp-title">Connexion Spotify</div>
-              <div class="sp-status" id="sp-status">Connecte ton compte pour les previews 30s en jeu</div>
-            </div>
-            <button class="btn btn-accent btn-sm" id="sp-connect-btn">Connecter Spotify</button>
-          </div>
-        </div>
-
-        <div class="stab-panel" data-stab-panel="mc">
-          <div class="skins-hero">
-            <div class="skins-stage">
-              <div class="skins-preview" id="skins-preview"></div>
-            </div>
-            <div class="skins-meta">
-              <div class="r-eyebrow">PRÉSENTATEUR ACTIF</div>
-              <h2 class="skins-name" id="skins-name">DJ FUNKY</h2>
-              <p class="skins-quote">"<span id="skins-quote">Yo la teamz, on lance ça en douceur ?</span>"</p>
-              <div class="skins-tags" id="skins-tags"></div>
-              <div class="skins-stat-row">
-                <div class="skins-stat">
-                  <div class="ss-lbl">RÉACTIONS</div>
-                  <div class="ss-val">+12</div>
-                </div>
-                <div class="skins-stat">
-                  <div class="ss-lbl">CITATIONS</div>
-                  <div class="ss-val">38</div>
-                </div>
-                <div class="skins-stat">
-                  <div class="ss-lbl">RARETÉ</div>
-                  <div class="ss-val" id="skins-rarity">Rare</div>
-                </div>
-              </div>
-              <button class="btn btn-accent btn-lg" id="skin-equip-btn" style="margin-top: 18px;">ÉQUIPÉ ✓</button>
-            </div>
-          </div>
-
-          <div class="section-bar"><h2>TOUS LES MC</h2><span class="seemore">Filtrer ▾</span></div>
-          <div class="skins-grid" id="skins-grid"></div>
-        </div>
-
-        <div class="stab-panel" data-stab-panel="lobby">
-          <div class="lobby-perso-hero" id="lobby-perso-hero">
-            <div class="lpp-preview" id="lpp-preview">
-              <div class="lpp-mock">
-                <div class="lpp-title" id="lpp-title">SALON DE GUIGZ</div>
-                <div class="lpp-subtitle">4 joueurs · prêts à jouer</div>
-                <div class="lpp-avatars">
-                  <span></span><span></span><span></span><span></span>
-                </div>
-              </div>
-              <div class="lpp-sticker" id="lpp-sticker">🎉</div>
-            </div>
-            <div class="lpp-meta">
-              <div class="r-eyebrow">MON LOBBY</div>
-              <h2 class="skins-name" id="lpp-name">PÊCHE CHAUDE</h2>
-              <p class="skins-quote">"<span id="lpp-tagline">L'ambiance par défaut, chaleureuse et accueillante.</span>"</p>
-              <div style="display:flex; gap:10px; font-size:11px; font-weight:800; letter-spacing:0.08em; color: rgba(255,255,255,0.7); margin-bottom: 14px;">
-                <span>🎨 6 THÈMES</span>
-                <span>•</span>
-                <span>🔔 5 JINGLES</span>
-                <span>•</span>
-                <span>✨ 8 STICKERS</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-bar"><h2>THÈME DU SALON</h2></div>
-          <div class="theme-grid" id="theme-grid"></div>
-
-          <div class="section-bar"><h2>STICKER D'AMBIANCE</h2><span class="seemore">L'emoji qui flotte dans ton salon</span></div>
-          <div class="sticker-grid" id="sticker-grid"></div>
-
-          <div class="section-bar"><h2>JINGLE D'ACCUEIL</h2><span class="seemore">Joué quand un joueur rejoint</span></div>
-          <div class="jingle-grid" id="jingle-grid"></div>
-
-          <div class="section-bar"><h2>SONS CUSTOM</h2><span class="seemore">Tes sons perso dans le soundboard</span></div>
-          <div id="custom-sounds-wrap">
-            <input type="file" id="cs-file-input" accept="audio/*" hidden>
-            <div class="cs-actions">
-              <button class="btn btn-ghost btn-sm" id="cs-import-btn">📁 Importer un son</button>
-              <a href="https://www.myinstants.com/fr/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm cs-mi-link">🔊 MyInstants ↗</a>
-            </div>
-            <div id="cs-library" class="cs-library"></div>
-          </div>
-        </div>
-
-        <div class="stab-panel" data-stab-panel="sound">
-          <div class="sound-hero">
-            <div class="sh-illu">
-              <div class="sh-disk"></div>
-              <div class="sh-wave w1"></div>
-              <div class="sh-wave w2"></div>
-              <div class="sh-wave w3"></div>
-              <div class="sh-emoji">📣</div>
-            </div>
-            <div class="sh-meta">
-              <div class="r-eyebrow">AMBIANCE SONORE</div>
-              <h2 class="skins-name">TON SOUND</h2>
-              <p class="skins-quote">"<span>Choisis les voix qui célèbrent tes drops de pack. Légendaire, c'est jamais discret.</span>"</p>
-              <div class="sh-toggle-row">
-                <label class="sh-toggle">
-                  <input type="checkbox" id="snd-master" checked>
-                  <span class="sh-slider"></span>
-                  <span class="sh-tlbl">Effets sonores</span>
-                </label>
-                <div class="sh-volume">
-                  <span>🔉</span>
-                  <input type="range" id="snd-volume" min="0" max="100" value="90">
-                  <span class="sh-vol-val" id="snd-vol-val">90</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-bar">
-            <h2>SON LÉGENDAIRE</h2>
-            <span class="seemore">Joué à l'ouverture d'un vinyle légendaire 👑</span>
-          </div>
-          <div class="sound-grid" id="snd-legendary-grid"></div>
-
-          <div class="section-bar">
-            <h2>SON ÉPIQUE</h2>
-            <span class="seemore">Joué à l'ouverture d'un vinyle épique ✨</span>
-          </div>
-          <div class="sound-grid" id="snd-epic-grid"></div>
-        </div>
-      </section>
-      <section id="screen-lobby" class="screen">
-        <div class="lobby-header">
-          <button class="lobby-back-btn" id="lobby-back-btn" title="Quitter le salon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Quitter
-          </button>
-        </div>
-        <div class="lobby-grid">
-          <aside class="panel">
-            <div class="panel-title">RÉGLAGES <span class="pt-num">HÔTE</span></div>
-            <div class="set-block">
-              <div class="set-label">Mode <span class="val" id="set-mode-val">CLASSIC</span></div>
-              <div class="seg-control" data-set="mode">
-                <button data-v="classic" class="active">Classic</button>
-                <button data-v="rush">Rush</button>
-                <button data-v="stem">Pistes</button>
-              </div>
-            </div>
-            <div class="set-block">
-              <div class="set-label">Manches <span class="val" id="set-rounds-val">10</span></div>
-              <div class="slider-row">
-                <div class="slider" data-set="rounds" data-min="5" data-max="20"><div class="fill"></div><div class="thumb"></div></div>
-                <div class="v" id="set-rounds-v">10</div>
-              </div>
-            </div>
-            <div class="set-block">
-              <div class="set-label">Durée / manche</div>
-              <div class="seg-control" data-set="duration">
-                <button data-v="15">15s</button>
-                <button data-v="30" class="active">30s</button>
-                <button data-v="45">45s</button>
-              </div>
-            </div>
-            <div class="set-block">
-              <div class="set-label">Catégories</div>
-              <div class="chip-grid" id="cats">
-                <div class="chip active" data-genres="Pop">🎤 Pop</div>
-                <div class="chip active" data-genres="Dance">💃 Dance</div>
-                <div class="chip" data-genres="Pop Française">🎷 Jazz</div>
-                <div class="chip active" data-genres="Rock">🔥 Rock</div>
-                <div class="chip" data-genres="Hip-Hop|Rap Français">🎙 Rap</div>
-                <div class="chip" data-genres="K-Pop|Latino">🌍 Monde</div>
-              </div>
-            </div>
-            <div class="set-block">
-              <div class="set-label">Privé</div>
-              <div class="seg-control" data-set="privacy">
-                <button data-v="public">Public</button>
-                <button data-v="private" class="active">🔒 Privé</button>
-              </div>
-            </div>
-          </aside>
-
-          <div class="lobby-center">
-            <div class="lobby-eyebrow">En attente du lancement</div>
-            <div class="lobby-title">SALON</div>
-            <div class="lobby-subtitle">4 joueurs sur 8 — partagez le code pour inviter</div>
-            <div class="players-stage" id="players-stage"></div>
-
-            <!-- Soundboard / Emotes -->
-            <div class="soundboard">
-              <div class="sb-row" id="sb-custom-row">
-                <div class="sb-label">SONS</div>
-                <div class="sb-pads" id="sb-custom-pads"></div>
-              </div>
-              <div class="sb-row">
-                <div class="sb-label">RÉACTIONS</div>
-                <div class="sb-pads" id="sb-emotes">
-                  <button class="sb-pad sb-pad-emote" data-emote="🔥">🔥</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="😂">😂</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="🤯">🤯</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="🤝">🤝</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="💀">💀</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="👀">👀</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="❤️">❤️</button>
-                  <button class="sb-pad sb-pad-emote" data-emote="🎉">🎉</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="copy-link-btn" id="copy-link-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg>
-              <span style="opacity:0.55">pompelup.vercel.app/?room=</span><b class="rcode">K9XQ4P</b>
-              <span class="copy-icon">COPIER</span>
-            </div>
-          </div>
-
-          <aside class="panel chat-panel">
-            <div class="panel-title">CHAT <span class="pt-num">4</span></div>
-            <div class="chat-list" id="chat-list">
-              <div class="chat-msg system"><div class="cm-body"><div class="ct">Cath a rejoint le salon</div></div></div>
-              <div class="chat-msg">
-                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=cath-vibe&radius=50" alt=""></div>
-                <div class="cm-body">
-                  <div class="cn"><b>Cath</b> · <span>Nv. 18</span></div>
-                  <div class="ct">Salut la teamz 🎤</div>
-                </div>
-              </div>
-              <div class="chat-msg system"><div class="cm-body"><div class="ct">Jules a rejoint le salon</div></div></div>
-              <div class="chat-msg">
-                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=jules-fresh&radius=50" alt=""></div>
-                <div class="cm-body">
-                  <div class="cn"><b>Jules</b> · <span>Nv. 7</span></div>
-                  <div class="ct">prêt à dominer 💪</div>
-                </div>
-              </div>
-              <div class="chat-msg you">
-                <div class="ca"><img id="you-chat-avatar" alt=""></div>
-                <div class="cm-body">
-                  <div class="cn"><b>Toi</b></div>
-                  <div class="ct">on lance ?</div>
-                </div>
-              </div>
-              <div class="chat-msg system"><div class="cm-body"><div class="ct">Léa a rejoint le salon</div></div></div>
-              <div class="chat-msg">
-                <div class="ca"><img src="https://api.dicebear.com/9.x/big-smile/svg?seed=lea-sunset&radius=50" alt=""></div>
-                <div class="cm-body">
-                  <div class="cn"><b>Léa</b> · <span>Nv. 24</span></div>
-                  <div class="ct">go go go 🔥🔥</div>
-                </div>
-              </div>
-            </div>
-            <div class="chat-input">
-              <input placeholder="Écris un message..." id="chat-input-field">
-              <button>→</button>
-            </div>
-          </aside>
-
-          <!-- Start game bar — spans full width below the 3-column grid -->
-          <div class="lobby-launch-bar">
-            <button class="btn btn-accent btn-xl" id="start-game-btn">LANCER LA PARTIE</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============== GAME ============== -->
-      <section id="screen-game" class="screen">
-        <div class="game-header">
-          <button class="gh-btn gh-back" id="gh-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Retour</button>
-          <button class="gh-btn gh-quit" id="gh-quit">Quitter la partie</button>
-        </div>
-        <div class="game-grid">
-          <aside class="game-side">
-            <div class="round-card">
-              <div class="rc-eyebrow">Manche</div>
-              <div class="rc-num"><span id="g-round">1</span><span class="total">/<span id="g-total">5</span></span></div>
-              <div class="rc-progress" id="g-progress"></div>
-            </div>
-            <div class="players-rail">
-              <div class="pr-title">JOUEURS <span class="total" id="pr-total">4 joueurs</span></div>
-              <div class="pr-list" id="pr-list"></div>
-            </div>
-          </aside>
-
-          <div class="game-center">
-            <!-- Presenter widget -->
-            <div class="presenter-wrap" id="presenter-wrap">
-              <div class="presenter-bubble" id="presenter-bubble">Yo la teamz, on est partis !</div>
-              <div class="presenter-figure">
-                <div class="presenter-hat" id="presenter-hat">🎩</div>
-                <div class="presenter-avatar" id="presenter-avatar"></div>
-                <div class="presenter-mic">🎤</div>
-                <div class="presenter-name" id="presenter-name">DJ FUNKY</div>
-              </div>
-            </div>
-
-            <div class="viz-card">
-              <div class="viz-header">
-                <div class="viz-eyebrow"><span class="live"></span> Extrait en cours</div>
-                <div class="timer-big" id="timer-big">⏱ <span id="timer-num">30</span>s</div>
-              </div>
-              <div class="viz-stage">
-                <div class="dj-scene">
-                  <div class="dj-bg-glow"></div>
-                  <div class="dj-lights">
-                    <span class="dj-light l-1"></span>
-                    <span class="dj-light l-2"></span>
-                    <span class="dj-light l-3"></span>
-                    <span class="dj-light l-4"></span>
-                    <span class="dj-light l-5"></span>
-                  </div>
-                  <div class="dj-ball"></div>
-
-                  <!-- Mur des participants (rempli par JS, sans siège vide) -->
-                  <div class="scene-wall" id="scene-wall"></div>
-
-                  <!-- Présentateur à droite -->
-                  <div class="dj-presenter-scene">
-                    <div class="dps-bubble">
-                      <img id="dj-scene-avatar" alt="" />
-                    </div>
-                    <div class="dps-name" id="dj-scene-name">DJ FUNKY</div>
-                  </div>
-
-                  <!-- EQ display sous le mur -->
-                  <div class="dj-eq-strip">
-                    <div class="booth-eq" id="viz-bars-radial"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="points-display">
-                <div class="pd-label">Points disponibles</div>
-                <div class="pd-val" id="g-points">1 000</div>
-              </div>
-            </div>
-
-            <div class="joker-row-host">
-              <div class="joker-pill" data-joker="letter"><div class="jicon">🔤</div><div class="jlabel">1ère lettre</div><div class="jcost">1 🎤</div></div>
-              <div class="joker-pill" data-joker="artist"><div class="jicon">🎤</div><div class="jlabel">Artiste</div><div class="jcost">2 🎤</div></div>
-              <div class="joker-pill" data-joker="decade"><div class="jicon">📅</div><div class="jlabel">Décennie</div><div class="jcost">1 🎤</div></div>
-              <div class="joker-pill" data-joker="length"><div class="jicon">📏</div><div class="jlabel">Longueur</div><div class="jcost">1 🎤</div></div>
-              <div class="joker-pill" data-joker="tempo"><div class="jicon">🎵</div><div class="jlabel">BPM</div><div class="jcost">1 🎤</div></div>
-              <div class="joker-pill" data-joker="time"><div class="jicon">⏱</div><div class="jlabel">+10 sec</div><div class="jcost">1 🎤</div></div>
-              <div class="joker-pill" data-joker="double"><div class="jicon">💎</div><div class="jlabel">Points ×2</div><div class="jcost">2 🎤</div></div>
-              <div class="joker-pill" data-joker="skip"><div class="jicon">⏭️</div><div class="jlabel">Passer</div><div class="jcost">3 🎤</div></div>
-            </div>
-
-            <div class="answer-card" id="answer-card">
-              <div class="answer-hint" id="g-hint"></div>
-              <form id="g-form">
-                <input id="g-input" placeholder="Titre, artiste, ou les deux..." autocomplete="off">
-                <button type="submit">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <aside class="game-side">
-            <div class="panel chat-panel" style="background: #fff; flex: 1; padding: 18px; min-height: 0;">
-              <div class="panel-title">CHAT <span class="pt-num">EN VIF</span></div>
-              <div class="chat-list" id="g-chat"></div>
-              <form class="gchat-send" id="g-chat-form">
-                <input type="text" id="g-chat-input" placeholder="Message..." autocomplete="off">
-                <button type="submit">→</button>
-              </form>
-            </div>
-            <div class="emote-row">
-              <button class="emote-btn" data-emote="🔥">🔥</button>
-              <button class="emote-btn" data-emote="😭">😭</button>
-              <button class="emote-btn" data-emote="🤯">🤯</button>
-              <button class="emote-btn" data-emote="👀">👀</button>
-              <button class="emote-btn" data-emote="💀">💀</button>
-              <button class="emote-btn" data-emote="👏">👏</button>
-              <button class="emote-btn gif-btn" id="game-gif-btn" title="Envoyer un GIF">GIF</button>
-            </div>
-            <!-- GIF picker popup -->
-            <div class="gif-picker" id="gif-picker">
-              <div class="gif-picker-head">
-                <input type="text" id="gif-search-input" placeholder="Cherche un GIF…" autocomplete="off">
-                <button id="gif-picker-close">×</button>
-              </div>
-              <div class="gif-grid" id="gif-grid"></div>
-            </div>
-          </aside>
-        </div>
-
-        <div class="round-end" id="round-end">
-          <div class="re-eyebrow">La bonne réponse était</div>
-          <div class="re-art" id="re-art">🎸</div>
-          <div class="re-title" id="re-title">SMELLS LIKE<br>TEEN SPIRIT</div>
-          <div class="re-artist" id="re-artist">Nirvana · 1991</div>
-          <div class="re-stats">
-            <div class="re-stat"><div class="l">Tes points</div><div class="v" id="re-pts">+0</div></div>
-            <div class="re-stat"><div class="l">XP gagné</div><div class="v" id="re-xp">+0</div></div>
-            <div class="re-stat"><div class="l">Trouvée par</div><div class="v" id="re-found">3/4</div></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============== RESULTS ============== -->
-      <section id="screen-results" class="screen">
-        <div class="results-wrap">
-          <div class="results-left">
-            <div class="r-eyebrow">Partie terminée · Manche 5/5</div>
-            <h2 class="r-title">VICTOIRE <span class="winner" id="r-winner-name">GUIGZ</span> !</h2>
-            <p class="r-sub">5 manches plus tard, le classement est tombé. T'as cartonné, on dirait.</p>
-
-            <div class="podium-bigs podium">
-              <div class="pcol p2">
-                <div class="ppos">2</div>
-                <div class="pavt"><img id="pod2-img" alt=""></div>
-                <div class="pnm" id="pod2-name">Cath</div>
-                <div class="pscore" id="pod2-score">3 240</div>
-              </div>
-              <div class="pcol p1">
-                <div class="crown">👑</div>
-                <div class="ppos">1</div>
-                <div class="pavt"><img id="pod1-img" alt=""></div>
-                <div class="pnm" id="pod1-name">Guigz</div>
-                <div class="pscore" id="pod1-score">4 720</div>
-              </div>
-              <div class="pcol p3">
-                <div class="ppos">3</div>
-                <div class="pavt"><img id="pod3-img" alt=""></div>
-                <div class="pnm" id="pod3-name">Jules</div>
-                <div class="pscore" id="pod3-score">2 100</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="results-right">
-            <div class="results-tabs">
-              <button class="active" data-results-tab="recap">Récap</button>
-              <button data-results-tab="stats">Stats</button>
-              <button data-results-tab="vinyls">Vinyles 🎁</button>
-            </div>
-            <div class="songs-recap" id="songs-recap"></div>
-            <div id="results-panel-stats" style="display:none;"></div>
-            <div id="results-panel-vinyls" style="display:none;"></div>
-            <div class="xp-block">
-              <div class="xpl">
-                <span class="l">Niveau 12 · Vinyl Hunter</span>
-                <span><b id="xp-cur">1137</b> / 2400 XP</span>
-              </div>
-              <div class="xpb"><div class="fill" id="xp-fill"></div></div>
-              <div class="gain">+ 290 XP gagnés · prochain niveau dans <b>1 263 XP</b></div>
-            </div>
-            <div class="results-cta">
-              <button class="btn btn-ghost btn-block" data-nav="home">Quitter</button>
-              <button class="btn btn-accent btn-block btn-lg" data-nav="lobby">REJOUER</button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div class="stats" aria-label="Tes stats">
+      <div class="stat"><b id="stat-best">0</b><span>Record</span></div>
+      <div class="stat"><b id="stat-games">0</b><span>Parties</span></div>
+      <div class="stat"><b id="stat-acc">–</b><span>Réussite</span></div>
     </div>
 
-    <!-- ============== Mobile bottom nav (hidden on desktop) ============== -->
-    <nav class="mobile-nav" id="mobile-nav">
-      <button class="mn-item active" data-nav="home">
-        <span class="mn-ico">🏠</span>
-        <span class="mn-lbl">Accueil</span>
+    <div class="play-dock">
+      <button class="btn-play" id="btn-play" type="button">
+        <span class="btn-play-ico" aria-hidden="true">▶</span>
+        <span class="btn-play-txt">Jouer<small id="play-sub">Tout mélangé · 10 manches</small></span>
       </button>
-      <button class="mn-item" data-nav="collection">
-        <span class="mn-ico">💿</span>
-        <span class="mn-lbl">Collection</span>
-      </button>
-      <button class="mn-item mn-cta" data-nav="lobby">
-        <span class="mn-cta-ring">
-          <span class="mn-ico">🎤</span>
-        </span>
-      </button>
-      <button class="mn-item" data-nav="shop">
-        <span class="mn-ico">🛒</span>
-        <span class="mn-lbl">Shop</span>
-      </button>
-      <button class="mn-item" data-nav="skins">
-        <span class="mn-ico-img"><img id="mn-avatar" alt=""></span>
-        <span class="mn-lbl">Profil</span>
-      </button>
-    </nav>
-
-    <!-- ============== Pack opening overlay ============== -->
-    <div class="pack-overlay" id="pack-overlay">
-      <div class="pack-rays" id="pack-rays"></div>
-      <div class="pack-halo" id="pack-halo"></div>
-      <canvas id="pack-canvas"></canvas>
-      <div class="rarity-flash" id="rarity-flash"></div>
-      <button class="pack-close" id="pack-close">×</button>
-
-      <div class="pack-stage" id="pack-stage">
-        <div class="pack-art" id="pack-art">
-          <div class="pack-stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
-          <div class="pack-emoji">🎁</div>
-          <div class="pack-title">PACK<br>QUOTIDIEN</div>
-          <div class="pack-sub">3 vinyles · Mystère</div>
-        </div>
-        <div class="pack-tap-hint" id="pack-tap-hint">Clique pour ouvrir</div>
-      </div>
-
-      <div class="reveal-grid" id="reveal-grid"></div>
     </div>
+  </section>
 
-    <!-- ============== Tweaks ============== -->
-    <button class="tweaks-fab" id="tweaks-fab">⚙</button>
-    <div class="tweaks-pop" id="tweaks-pop">
-      <h4>TWEAKS</h4>
-      <div class="set-label">Densité d'animation</div>
-      <div class="seg-control" data-set="anim">
-        <button data-v="calm">Calme</button>
-        <button data-v="normal" class="active">Normal</button>
-        <button data-v="chaos">Chaos</button>
+  <!-- ================= PARTIE ================= -->
+  <section class="screen screen-game" id="screen-game" aria-label="Partie">
+    <header class="game-head">
+      <button class="icon-btn" id="btn-quit" type="button" aria-label="Quitter la partie">✕</button>
+      <div class="game-round" id="game-round">Manche 1/10</div>
+      <div class="game-right">
+        <span class="game-gauge" id="game-gauge" aria-label="Jauge booster">🎁 <b id="game-gauge-n">0/6</b></span>
+        <div class="game-score" aria-live="polite"><span id="game-score">0</span><small>pts</small></div>
       </div>
-      <div class="set-label">Aller à un écran</div>
-      <div class="seg-control" data-set="goto" style="flex-wrap: wrap; gap: 4px;">
-        <button data-v="home">Home</button>
-        <button data-v="quests">Quêtes</button>
-        <button data-v="pass">Pass</button>
-        <button data-v="friends">Amis</button>
-        <button data-v="history">Histoire</button>
-        <button data-v="collection">Coll.</button>
-        <button data-v="lobby">Lobby</button>
-        <button data-v="game">Jeu</button>
-        <button data-v="results">Résultats</button>
-      </div>
-    </div>
-  </div>
-</div>
+    </header>
 
-<!-- ============== AUTH OVERLAY ============== -->
-<div id="auth-overlay" class="auth-overlay">
-  <div class="auth-bg"></div>
-  <div class="auth-card">
-    <div class="auth-logo">Pompe<span class="auth-accent">lup</span><div class="auth-dot"></div></div>
-    <div class="auth-tagline">Le blind test entre potes</div>
-
-    <!-- Guest — mise en avant principale -->
-    <button class="auth-guest-big" id="auth-guest-btn">
-      <span class="agb-icon">🎮</span>
-      <span class="agb-body">
-        <span class="agb-title">Jouer en invité</span>
-        <span class="agb-sub">Instantané · Sans compte requis</span>
-      </span>
-      <span class="agb-arrow">→</span>
-    </button>
-
-    <div class="auth-divider"><span>ou créer un compte</span></div>
-
-    <!-- SSO -->
-    <div class="auth-sso">
-      <button class="auth-sso-btn" id="auth-google-btn">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    <div class="stage" id="stage">
+      <div class="stage-status" id="stage-status">On chauffe les platines…</div>
+      <div class="disc-wrap">
+        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ring-bg" cx="50" cy="50" r="47"></circle>
+          <circle class="ring-fg" id="ring-fg" cx="50" cy="50" r="47" pathLength="100"></circle>
         </svg>
-        Continuer avec Google
-      </button>
-      <button class="auth-sso-btn auth-sso-apple" id="auth-apple-btn">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.39.07 2.36.74 3.18.77 1.22-.26 2.39-.96 3.68-.87 1.58.13 2.78.77 3.56 1.97-3.27 1.97-2.81 6.3.48 7.6-.62 1.57-1.43 3.12-2.9 4.41zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-        </svg>
-        Continuer avec Apple
-      </button>
+        <div class="disc" id="disc">
+          <div class="disc-label" id="disc-label"><span id="disc-emoji">🎵</span></div>
+          <img class="disc-art" id="disc-art" alt="">
+        </div>
+        <div class="tonearm" id="tonearm" aria-hidden="true"><i class="ta-base"></i><i class="ta-rod"></i><i class="ta-head"></i></div>
+        <div class="timer-num" id="timer-num" aria-live="off">20</div>
+      </div>
+      <div class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="clues" id="clues" hidden></div>
+      <div class="combo" id="combo" aria-live="polite"></div>
+
+      <div class="reveal" id="reveal" hidden>
+        <div class="reveal-verdict" id="reveal-verdict"></div>
+        <div class="reveal-title" id="reveal-title"></div>
+        <div class="reveal-artist" id="reveal-artist"></div>
+      </div>
     </div>
 
-    <div class="auth-divider"><span>ou par email</span></div>
+    <div class="answer" id="answer">
+      <div class="choices" id="choices"></div>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-auth-tab="login">Connexion</button>
-      <button class="auth-tab" data-auth-tab="signup">Inscription</button>
+      <form class="type-box" id="type-box" autocomplete="off" hidden>
+        <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions"></div>
+        <div class="attempts" id="attempts" hidden></div>
+        <div class="type-row">
+          <input id="type-input" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" placeholder="Titre de la chanson…" aria-label="Ta réponse">
+          <button class="btn-send" type="submit" aria-label="Valider">→</button>
+        </div>
+      </form>
+
+      <div class="answer-foot">
+        <button class="btn-ghost" id="btn-hint" type="button">💡 <span id="hint-label">Indice</span></button>
+        <button class="btn-next" id="btn-next" type="button" hidden><span>Suivant</span><i id="next-progress"></i></button>
+      </div>
     </div>
-    <div class="auth-panel active" id="auth-panel-login">
-      <input type="email" class="auth-input" id="auth-email-login" placeholder="Email" autocomplete="email">
-      <input type="password" class="auth-input" id="auth-pass-login" placeholder="Mot de passe" autocomplete="current-password">
-      <button type="button" class="auth-forgot" id="auth-forgot-btn">Mot de passe oublié ?</button>
-      <button class="btn btn-accent auth-submit" id="auth-login-btn">Se connecter</button>
-      <div class="auth-err" id="auth-login-err"></div>
+  </section>
+
+  <!-- ================= RÉSULTATS ================= -->
+  <section class="screen" id="screen-results" aria-label="Résultats">
+    <div class="res-hero">
+      <div class="res-kicker" id="res-kicker">Partie terminée</div>
+      <div class="res-score" id="res-score">0</div>
+      <div class="res-record" id="res-record" hidden>🏆 Nouveau record !</div>
+      <div class="res-line" id="res-line">0/10 trouvées</div>
     </div>
-    <div class="auth-panel" id="auth-panel-signup">
-      <input type="text" class="auth-input" id="auth-username" placeholder="Pseudo (affiché en jeu)" maxlength="20" autocomplete="username">
-      <input type="email" class="auth-input" id="auth-email-signup" placeholder="Email" autocomplete="email">
-      <input type="password" class="auth-input" id="auth-pass-signup" placeholder="Mot de passe (6 car. min)" autocomplete="new-password">
-      <button class="btn btn-accent auth-submit" id="auth-signup-btn">Créer un compte</button>
-      <div class="auth-err" id="auth-signup-err"></div>
+    <div class="res-stats">
+      <div class="stat"><b id="res-combo">0</b><span>Combo max</span></div>
+      <div class="stat"><b id="res-time">–</b><span>Temps moyen</span></div>
+      <div class="stat"><b id="res-xp">+0</b><span>XP gagnée</span></div>
+    </div>
+    <div class="res-booster" id="res-booster">
+      <div class="rb-art" aria-hidden="true"><div class="mini-pack mp-1 mp-sm"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span></div></div>
+      <div class="rb-body">
+        <b id="rb-title">Jauge booster</b>
+        <span class="gauge gauge-lg"><span id="rb-fill"></span></span>
+        <small id="rb-txt">0/6 bonnes réponses</small>
+      </div>
+      <button class="btn-primary rb-btn" id="rb-open" type="button" hidden>Ouvrir</button>
+    </div>
+    <div class="res-level">
+      <span>Niveau <b id="res-level">1</b></span>
+      <span class="gauge gauge-lg"><span id="res-level-fill"></span></span>
+    </div>
+    <ol class="recap" id="recap"></ol>
+    <div class="res-actions">
+      <button class="btn-secondary" id="btn-share" type="button">Partager</button>
+      <button class="btn-secondary" id="btn-home" type="button">Accueil</button>
+      <button class="btn-primary" id="btn-replay" type="button">Rejouer</button>
+    </div>
+  </section>
+
+  <!-- ================= COLLECTION ================= -->
+  <section class="screen" id="screen-collection" aria-label="Ma collection">
+    <header class="sub-head">
+      <button class="icon-btn icon-btn-light" id="coll-back" type="button" aria-label="Retour">←</button>
+      <div class="sub-title">Ma collection</div>
+      <button class="chip chip-boost" id="coll-open" type="button" aria-label="Ouvrir un booster">🎁 <b id="coll-boosters">0</b></button>
+    </header>
+    <div class="coll-progress">
+      <div class="coll-big"><b id="coll-n">0</b><span id="coll-of">/ 1000 vinyles</span><em id="coll-pct">0 %</em></div>
+      <span class="gauge gauge-lg"><span id="coll-fill"></span></span>
+    </div>
+    <div class="rar-filter" id="rar-filter" role="radiogroup" aria-label="Rareté"></div>
+    <div class="coll-grid" id="coll-grid"></div>
+    <div class="coll-empty" id="coll-empty" hidden>
+      <div class="coll-empty-disc" aria-hidden="true"></div>
+      <b>Ta collection est vide</b>
+      <p>Chaque booster contient 3 vinyles. Gagne-en en trouvant des chansons !</p>
+      <button class="btn-primary" id="coll-empty-play" type="button">Jouer une partie</button>
+    </div>
+  </section>
+
+  <!-- ================= SURCOUCHES ================= -->
+  <div class="overlay overlay-sheet" id="vinyl-sheet" hidden>
+    <div class="sheet vsheet" role="dialog" aria-modal="true" aria-labelledby="vs-title">
+      <div class="vs-visual" id="vs-visual"></div>
+      <span class="rar-pill" id="vs-rarity"></span>
+      <div class="vs-title" id="vs-title"></div>
+      <div class="vs-meta" id="vs-meta"></div>
+      <div class="vs-own" id="vs-own"></div>
+      <div class="sheet-actions">
+        <button class="btn-secondary" id="vs-close" type="button">Fermer</button>
+        <button class="btn-primary" id="vs-play" type="button">▶ Écouter</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ============== SOLO MODAL ============== -->
-<div class="solo-overlay" id="solo-overlay">
-  <div class="solo-sheet">
-    <div class="solo-sheet-header">
-      <div class="solo-sheet-title">PARTIE SOLO</div>
-      <button class="solo-close" id="solo-close">✕</button>
+  <div class="bo" id="booster" hidden>
+    <div class="bo-rays" aria-hidden="true"></div>
+    <div class="bo-glow" aria-hidden="true"></div>
+    <header class="bo-head">
+      <button class="icon-btn" id="bo-close" type="button" aria-label="Fermer">✕</button>
+      <div class="bo-count" id="bo-count">Booster</div>
+      <span class="bo-left" id="bo-left"></span>
+    </header>
+    <div class="bo-stage" id="bo-stage">
+      <div class="pack" id="pack" role="button" tabindex="0" aria-label="Déchirer le booster">
+        <div class="pack-inner" id="pack-inner">
+          <div class="pack-top" id="pack-top"><span class="pack-teeth"></span></div>
+          <div class="pack-body">
+            <div class="pack-foil"></div>
+            <div class="pack-window"><div class="pack-disc"></div></div>
+            <div class="pack-logo">Pompe<span>lup</span></div>
+            <div class="pack-name">Booster<br>vinyle</div>
+            <div class="pack-sub">3 vinyles · 1 rare garanti</div>
+            <span class="pack-teeth pack-teeth-b"></span>
+          </div>
+          <div class="pack-tear" aria-hidden="true"><i id="pack-tear-fill"></i></div>
+        </div>
+      </div>
+      <div class="vstack" id="vstack"></div>
     </div>
-
-    <div class="solo-section">
-      <div class="solo-label">Mode de jeu</div>
-      <div class="solo-seg" id="solo-mode-seg">
-        <button class="active" data-v="classic">🎵 Classic</button>
-        <button data-v="rush">⚡ Rush</button>
-        <button data-v="stem">🎛️ Pistes</button>
+    <div class="bo-hint" id="bo-hint">Glisse sur le haut du booster pour le déchirer</div>
+    <div class="bo-summary" id="bo-summary" hidden>
+      <div class="bo-sum-title" id="bo-sum-title">Nouveaux vinyles !</div>
+      <div class="bo-sum-grid" id="bo-sum-grid"></div>
+      <div class="bo-sum-actions">
+        <button class="btn-secondary" id="bo-to-coll" type="button">Ma collection</button>
+        <button class="btn-primary" id="bo-next" type="button">Continuer</button>
       </div>
     </div>
-
-    <div class="solo-section">
-      <div class="solo-label">Manches <span id="solo-rounds-val">10</span></div>
-      <div class="solo-rounds-row">
-        <button class="solo-rnd-btn" data-r="5">5</button>
-        <button class="solo-rnd-btn active" data-r="10">10</button>
-        <button class="solo-rnd-btn" data-r="15">15</button>
-        <button class="solo-rnd-btn" data-r="20">20</button>
-      </div>
-    </div>
-
-    <div class="solo-section">
-      <div class="solo-label">Difficulté</div>
-      <div class="solo-seg" id="solo-diff-seg">
-        <button data-v="easy">😌 Facile</button>
-        <button class="active" data-v="normal">😎 Normal</button>
-        <button data-v="hard">🔥 Difficile</button>
-      </div>
-    </div>
-
-    <div class="solo-section">
-      <div class="solo-label">Catégories</div>
-      <div class="chip-grid" id="solo-cats">
-        <div class="chip active" data-genres="Pop">🎤 Pop</div>
-        <div class="chip active" data-genres="Dance">💃 Dance</div>
-        <div class="chip active" data-genres="Rock">🔥 Rock</div>
-        <div class="chip" data-genres="Hip-Hop|Rap Français">🎙 Rap</div>
-        <div class="chip" data-genres="Pop Française">🎷 Jazz</div>
-        <div class="chip" data-genres="K-Pop|Latino">🌍 Monde</div>
-      </div>
-    </div>
-
-    <button class="btn btn-accent btn-xl solo-play-btn" id="solo-play-btn">JOUER !</button>
+    <div class="bo-fx" id="bo-fx" aria-hidden="true"></div>
   </div>
-</div>
 
-<div class="artist-overlay" id="artist-overlay" style="display:none">
-  <div class="artist-sheet" id="artist-sheet"></div>
-</div>
-
-<div class="step-overlay" id="step-overlay" style="display:none">
-  <div class="step-inner" id="step-inner"></div>
-</div>
-
-<div class="apo-overlay" id="apo-overlay" style="display:none">
-  <div class="apo-inner" id="apo-inner"></div>
-</div>
-
-<div class="quit-modal" id="quit-modal" style="display:none;">
-  <div class="quit-modal-box">
-    <div class="quit-modal-title">Quitter la partie ?</div>
-    <div class="quit-modal-sub">Tu vas perdre ta progression de cette manche.</div>
-    <div class="quit-modal-actions">
-      <button class="btn btn-ghost" id="quit-cancel">Annuler</button>
-      <button class="btn" id="quit-confirm" style="background:#ef4444;color:#fff;">Quitter</button>
+  <div class="overlay" id="streak-overlay" hidden>
+    <div class="streak-pop">
+      <div class="flame" aria-hidden="true">🔥</div>
+      <div class="streak-n" id="streak-n">1</div>
+      <div class="streak-label" id="streak-label">jour d'affilée</div>
+      <p class="streak-msg" id="streak-msg">Reviens demain pour garder ta série !</p>
+      <button class="btn-primary" id="streak-ok" type="button">Trop bien</button>
     </div>
   </div>
+
+  <div class="overlay overlay-sheet" id="quit-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="quit-title">
+      <div class="sheet-title" id="quit-title">Quitter la partie ?</div>
+      <p>Ta progression sur cette partie sera perdue.</p>
+      <div class="sheet-actions">
+        <button class="btn-secondary" id="quit-cancel" type="button">Continuer</button>
+        <button class="btn-danger" id="quit-confirm" type="button">Quitter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="fx-layer" id="fx-layer" aria-hidden="true"></div>
 </div>
 
-<script src="pompelup-web.js"></script>
+<audio id="player" preload="auto"></audio>
+<script src="songs.js"></script>
+<script src="quiz.js"></script>
 </body>
 </html>
