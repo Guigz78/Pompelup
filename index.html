@@ -69,6 +69,12 @@
       </button>
     </div>
 
+    <button class="story-card" id="story-card" type="button">
+      <span class="story-card-art" id="story-card-art" aria-hidden="true"></span>
+      <span class="story-card-txt"><span class="story-tag">Mode Histoire</span><b>Découvre les légendes</b><small id="story-card-sub">8 artistes · écoute, anecdotes, quiz</small></span>
+      <span class="story-card-go" aria-hidden="true">→</span>
+    </button>
+
     <div class="block">
       <div class="block-label">Catégorie</div>
       <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
@@ -124,7 +130,6 @@
         <div class="tonearm" id="tonearm" aria-hidden="true"><i class="ta-base"></i><i class="ta-rod"></i><i class="ta-head"></i></div>
         <div class="timer-num" id="timer-num" aria-live="off">20</div>
       </div>
-      <div class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="clues" id="clues" hidden></div>
       <div class="combo" id="combo" aria-live="polite"></div>
 
@@ -158,6 +163,7 @@
   <!-- ================= RÉSULTATS ================= -->
   <section class="screen" id="screen-results" aria-label="Résultats">
     <div class="res-hero">
+      <div class="res-char" id="res-char" aria-hidden="true"></div>
       <div class="res-kicker" id="res-kicker">Partie terminée</div>
       <div class="res-score" id="res-score">0</div>
       <div class="res-record" id="res-record" hidden>🏆 Nouveau record !</div>
@@ -189,26 +195,38 @@
     </div>
   </section>
 
-  <!-- ================= COLLECTION ================= -->
-  <section class="screen" id="screen-collection" aria-label="Ma collection">
-    <header class="sub-head">
-      <div class="sub-title">Mes vinyles</div>
-      <button class="chip chip-boost" id="coll-open" type="button" aria-label="Ouvrir un booster">🎁 <b id="coll-boosters">0</b></button>
+  <!-- ================= SALON (collection) ================= -->
+  <section class="screen" id="screen-collection" aria-label="Mon salon de vinyles">
+    <header class="sub-head room-head">
+      <div>
+        <div class="sub-title">Mon salon</div>
+        <small class="room-count"><b id="coll-n">0</b> <span id="coll-of">/ 1000 vinyles</span> · <em id="coll-pct">0 %</em></small>
+      </div>
+      <button class="chip chip-boost" id="coll-open" type="button" aria-label="Ouvrir un booster"><i class="mini-booster" aria-hidden="true"></i> <b id="coll-boosters">0</b></button>
     </header>
-    <div class="coll-progress">
-      <div class="coll-big"><b id="coll-n">0</b><span id="coll-of">/ 1000 vinyles</span><em id="coll-pct">0 %</em></div>
-      <span class="gauge gauge-lg"><span id="coll-fill"></span></span>
-    </div>
+    <span class="gauge gauge-lg room-gauge"><span id="coll-fill"></span></span>
     <div class="rar-filter" id="rar-filter" role="radiogroup" aria-label="Rareté"></div>
-    <div class="coll-grid" id="coll-grid"></div>
+    <div class="room" id="room">
+      <div class="wall" id="coll-grid"></div>
+      <div class="room-floor" aria-hidden="true"></div>
+    </div>
     <div class="coll-empty" id="coll-empty" hidden>
-      <div class="coll-empty-disc" aria-hidden="true"></div>
-      <b>Ta collection est vide</b>
+      <b>Ton mur est vide</b>
       <p>Chaque booster contient 3 vinyles. Gagne-en en trouvant des chansons !</p>
       <button class="btn-primary" id="coll-empty-play" type="button">Jouer une partie</button>
     </div>
   </section>
 
+  <!-- ================= HISTOIRE ================= -->
+  <section class="screen" id="screen-story" aria-label="Mode Histoire">
+    <header class="sub-head">
+      <button class="icon-btn icon-btn-light" id="story-back" type="button" aria-label="Retour">←</button>
+      <div class="sub-title">Histoire</div>
+      <span class="chip story-prog" id="story-prog">0/8</span>
+    </header>
+    <p class="story-intro">Découvre les artistes qui ont marqué la musique : écoute leurs tubes, apprends leur histoire, réponds à la question finale.</p>
+    <div class="story-list" id="story-list"></div>
+  </section>
 
   <!-- ================= BOUTIQUE ================= -->
   <section class="screen" id="screen-shop" aria-label="Boutique">
@@ -237,7 +255,11 @@
       <div class="pack-row" id="shop-packs"></div>
     </div>
     <div class="shop-sec">
-      <div class="block-label">Skins de vinyle <small>— ta platine en partie</small></div>
+      <div class="block-label">Skins <small>— ton personnage</small></div>
+      <div class="item-grid" id="shop-skin"></div>
+    </div>
+    <div class="shop-sec">
+      <div class="block-label">Vinyles de platine <small>— le disque en partie</small></div>
       <div class="item-grid" id="shop-disc"></div>
     </div>
     <div class="shop-sec">
@@ -248,16 +270,12 @@
       <div class="block-label">Effets de victoire <small>— quand tu trouves</small></div>
       <div class="item-grid" id="shop-fx"></div>
     </div>
-    <div class="shop-sec">
-      <div class="block-label">Avatars</div>
-      <div class="item-grid item-grid-4" id="shop-avatar"></div>
-    </div>
   </section>
 
   <!-- ================= PROFIL ================= -->
   <section class="screen" id="screen-profile" aria-label="Profil">
     <div class="pf-card">
-      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer d’avatar"><span id="pf-avatar-emoji">🎧</span></button>
+      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer de skin"><span id="pf-avatar-emoji"></span></button>
       <div class="pf-id">
         <input class="pf-name" id="pf-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
         <span class="pf-title" id="pf-title">Apprenti mélomane</span>
@@ -310,7 +328,7 @@
       <span>Boutique</span><i class="tab-badge" id="tb-shop" hidden></i>
     </button>
     <button class="tab" type="button" data-tab="profile">
-      <span class="tab-avatar" id="tab-avatar" aria-hidden="true">🎧</span>
+      <span class="tab-avatar" id="tab-avatar" aria-hidden="true"></span>
       <span>Profil</span><i class="tab-badge" id="tb-prof" hidden></i>
     </button>
   </nav>
@@ -339,18 +357,23 @@
       <span class="bo-left" id="bo-left"></span>
     </header>
     <div class="bo-stage" id="bo-stage">
-      <div class="pack" id="pack" role="button" tabindex="0" aria-label="Déchirer le booster">
+      <div class="pack" id="pack" role="button" tabindex="0" aria-label="Ouvrir la pochette">
         <div class="pack-inner" id="pack-inner">
-          <div class="pack-top" id="pack-top"><span class="pack-teeth"></span></div>
-          <div class="pack-body">
-            <div class="pack-foil"></div>
-            <div class="pack-window"><div class="pack-disc"></div></div>
-            <div class="pack-logo">Pompe<span>lup</span></div>
-            <div class="pack-name">Booster<br>vinyle</div>
-            <div class="pack-sub">3 vinyles · 1 rare garanti</div>
-            <span class="pack-teeth pack-teeth-b"></span>
+          <div class="sleeve-in" aria-hidden="true">
+            <i class="sl-disc"></i><i class="sl-disc"></i><i class="sl-disc"></i>
+            <span class="sl-notes">Face A · Face B · Face C</span>
           </div>
-          <div class="pack-tear" aria-hidden="true"><i id="pack-tear-fill"></i></div>
+          <div class="sleeve-cover" id="pack-top">
+            <div class="sc-out">
+              <div class="sc-art" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="pack-foil"></div>
+              <div class="pack-logo">Pompe<span>lup</span></div>
+              <div class="pack-name">Booster<br>vinyle</div>
+              <div class="pack-sub">3 vinyles · 1 rare garanti</div>
+              <span class="sc-sticker">3<small>vinyles</small></span>
+            </div>
+            <div class="sc-in" aria-hidden="true"><b>Pompelup Records</b><span>Pressage limité · 33 tours</span><i></i><i></i><i></i><i></i></div>
+          </div>
         </div>
       </div>
       <div class="vstack" id="vstack"></div>
@@ -415,6 +438,21 @@
     </div>
   </div>
 
+  <div class="overlay overlay-story" id="story-step" hidden>
+    <div class="sstep" role="dialog" aria-modal="true" aria-labelledby="ss-title">
+      <header class="ss-head">
+        <button class="icon-btn" id="ss-close" type="button" aria-label="Fermer">✕</button>
+        <div class="ss-dots" id="ss-dots"></div>
+        <span class="ss-count" id="ss-count">1/4</span>
+      </header>
+      <div class="ss-portrait" id="ss-portrait"></div>
+      <div class="ss-kicker" id="ss-kicker"></div>
+      <div class="ss-title" id="ss-title"></div>
+      <div class="ss-body" id="ss-body"></div>
+      <div class="ss-actions" id="ss-actions"></div>
+    </div>
+  </div>
+
   <div class="overlay" id="reward-overlay" hidden>
     <div class="reward-pop" role="dialog" aria-modal="true" aria-labelledby="rw-title">
       <div class="rw-rays" aria-hidden="true"></div>
@@ -432,8 +470,8 @@
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
       <div class="sheet-title" id="wl-title">Bienvenue sur Pompelup !</div>
-      <p>Choisis ton avatar et ton pseudo. Un booster de vinyles t’attend.</p>
-      <div class="wl-avatars" id="wl-avatars" role="radiogroup" aria-label="Avatar"></div>
+      <p>Choisis ton personnage et ton pseudo. Un booster de vinyles t’attend.</p>
+      <div class="wl-avatars" id="wl-avatars" role="radiogroup" aria-label="Personnage"></div>
       <input class="wl-name" id="wl-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
       <div class="sheet-actions">
         <button class="btn-secondary" id="wl-skip" type="button">Plus tard</button>
@@ -459,6 +497,8 @@
 
 <audio id="player" preload="auto"></audio>
 <script src="songs.js"></script>
+<script src="story-data.js"></script>
+<script src="character.js"></script>
 <script src="quiz.js"></script>
 </body>
 </html>

@@ -26,8 +26,9 @@ const defaults = () => ({
   daily: null,
   boosters: 1, goldBoosters: 0, gauge: 0, opened: 0, coll: {},
   coins: 100, gift: null, name: '', onboarded: false,
-  owned: { disc: ['classic'], theme: ['nuit'], fx: ['sparks'], avatar: ['🎧', '🎤', '🎸', '😎'] },
-  equip: { disc: 'classic', theme: 'nuit', fx: 'sparks', avatar: '🎧' },
+  owned: { skin: ['rookie', 'crate'], disc: ['classic'], theme: ['nuit'], fx: ['sparks'] },
+  equip: { skin: 'rookie', disc: 'classic', theme: 'nuit', fx: 'sparks' },
+  story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null,
   settings: { sound: true, haptics: true },
@@ -38,7 +39,8 @@ const store = (() => {
   try {
     const raw = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
     const merged = Object.assign(d, raw);
-    for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen']) merged[k] = Object.assign(defaults()[k], raw[k]);
+    for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen', 'story']) merged[k] = Object.assign(defaults()[k], raw[k]);
+    delete merged.equip.avatar;
     merged.owned = Object.fromEntries(Object.entries(defaults().owned).map(([k, base]) => [k, [...new Set([...base, ...((raw.owned || {})[k] || [])])]]));
     merged.coll = Object.assign({}, raw.coll);
     return merged;
@@ -86,22 +88,23 @@ const msToMidnight = () => { const n = new Date(), m = new Date(n); m.setHours(2
 const hms = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return [s / 3600, (s % 3600) / 60, s % 60].map(v => String(Math.floor(v)).padStart(2, '0')).join(':'); };
 
 /* ---------------- Catégories ---------------- */
+// illu : illustration de genre, pos : cadrage, bg : fond de la vignette
 const CATS = [
-  { id: 'all', name: 'Tout mélangé', emoji: '🎲', test: () => true },
-  { id: 'Pop', name: 'Pop', emoji: '🎤' },
-  { id: 'Rock', name: 'Rock', emoji: '🎸' },
-  { id: 'Hip-Hop', name: 'Hip-Hop', emoji: '🎧' },
-  { id: 'Dance', name: 'Dance', emoji: '🪩' },
-  { id: 'Pop Française', name: 'Pop FR', emoji: '🥖' },
-  { id: 'Rap Français', name: 'Rap FR', emoji: '🎙️' },
-  { id: 'Latino', name: 'Latino', emoji: '💃' },
-  { id: 'K-Pop', name: 'K-Pop', emoji: '💜' },
-  { id: 'd70', name: '60s & 70s', emoji: '🕺', test: s => s.year < 1980 },
-  { id: 'd80', name: 'Années 80', emoji: '📼', test: s => s.year >= 1980 && s.year < 1990 },
-  { id: 'd90', name: 'Années 90', emoji: '💿', test: s => s.year >= 1990 && s.year < 2000 },
-  { id: 'd00', name: 'Années 2000', emoji: '📱', test: s => s.year >= 2000 && s.year < 2010 },
-  { id: 'd10', name: 'Années 2010', emoji: '🔊', test: s => s.year >= 2010 && s.year < 2020 },
-  { id: 'd20', name: 'Années 2020', emoji: '✨', test: s => s.year >= 2020 },
+  { id: 'all', name: 'Tout mélangé', illu: 'assets/illu-dance.svg', pos: '50% 40%', bg: '#FDE68A', test: () => true },
+  { id: 'Pop', name: 'Pop', illu: 'assets/illu-pop.png', pos: '50% 30%', bg: '#BAE6FD' },
+  { id: 'Rock', name: 'Rock', illu: 'assets/illu-rock.svg', pos: '40% 30%', bg: '#A7F3D0' },
+  { id: 'Hip-Hop', name: 'Hip-Hop', illu: 'assets/illu-rap.svg', pos: '50% 35%', bg: '#FBCFE8' },
+  { id: 'Dance', name: 'Dance', illu: 'assets/illu-dance.svg', pos: '30% 60%', bg: '#DDD6FE' },
+  { id: 'Pop Française', name: 'Pop FR', illu: 'assets/illu-pop.png', pos: '70% 70%', bg: '#FECACA' },
+  { id: 'Rap Français', name: 'Rap FR', illu: 'assets/illu-rap.svg', pos: '30% 70%', bg: '#FED7AA' },
+  { id: 'Latino', name: 'Latino', illu: 'assets/illu-monde.svg', pos: '50% 40%', bg: '#FDE68A' },
+  { id: 'K-Pop', name: 'K-Pop', illu: 'assets/illu-pop.png', pos: '20% 50%', bg: '#F5D0FE' },
+  { id: 'd70', name: '60s & 70s', illu: 'assets/illu-jazz.svg', pos: '60% 30%', bg: '#FED7AA', test: s => s.year < 1980 },
+  { id: 'd80', name: 'Années 80', illu: 'assets/illu-rap.svg', pos: '60% 20%', bg: '#C7D2FE', test: s => s.year >= 1980 && s.year < 1990 },
+  { id: 'd90', name: 'Années 90', illu: 'assets/illu-rock.svg', pos: '80% 70%', bg: '#BBF7D0', test: s => s.year >= 1990 && s.year < 2000 },
+  { id: 'd00', name: 'Années 2000', illu: 'assets/illu-dance.svg', pos: '80% 40%', bg: '#FBCFE8', test: s => s.year >= 2000 && s.year < 2010 },
+  { id: 'd10', name: 'Années 2010', illu: 'assets/illu-pop.png', pos: '80% 20%', bg: '#BAE6FD', test: s => s.year >= 2010 && s.year < 2020 },
+  { id: 'd20', name: 'Années 2020', illu: 'assets/illu-monde.svg', pos: '20% 60%', bg: '#A5F3FC', test: s => s.year >= 2020 },
 ].map(c => Object.assign(c, { test: c.test || (s => s.genre === c.id) }));
 const catById = id => CATS.find(c => c.id === id) || CATS[0];
 const poolFor = id => SONGS.filter(catById(id).test);
@@ -163,22 +166,15 @@ const COSMETICS = {
     { id: 'flames', name: 'Flammes', rarity: 'epic', price: 550, glyphs: ['🔥'], desc: 'Tu es en feu, et ça se voit.' },
     { id: 'coins', name: 'Pluie de jetons', rarity: 'legendary', unlock: 'combo', glyphs: ['coin'], desc: 'Chaque bonne réponse fait pleuvoir des jetons.' },
   ],
-  avatar: [
-    ...['🎧', '🎤', '🎸', '😎'].map(id => ({ id, rarity: 'common', price: 0 })),
-    ...['🥁', '🎹', '🎷', '🎺'].map(id => ({ id, rarity: 'rare', price: 150 })),
-    ...['🦄', '🐯', '👽', '🤖', '🐙', '🦊'].map(id => ({ id, rarity: 'epic', price: 300 })),
-    { id: '🔥', rarity: 'epic', unlock: 'combo' },
-    { id: '⚡', rarity: 'epic', unlock: 'fast' },
-    { id: '🏆', rarity: 'epic', unlock: 'perfect' },
-    { id: '🕵️', rarity: 'epic', unlock: 'daily' },
-    { id: '💎', rarity: 'legendary', unlock: 'coll' },
-    { id: '👑', rarity: 'legendary', unlock: 'level' },
-  ],
+  skin: window.PompeChar.SKINS,
 };
-const KIND_NAME = { disc: 'Skin de vinyle', theme: 'Scène', fx: 'Effet de victoire', avatar: 'Avatar' };
-const KIND_NAMES = { disc: 'Skins de vinyle', theme: 'Scènes', fx: 'Effets de victoire', avatar: 'Avatars' };
+const KINDS = ['skin', 'disc', 'theme', 'fx'];
+const KIND_NAME = { skin: 'Skin', disc: 'Vinyle de platine', theme: 'Scène', fx: 'Effet de victoire' };
+const KIND_NAMES = { skin: 'Skins', disc: 'Vinyles de platine', theme: 'Scènes', fx: 'Effets de victoire' };
 const itemOf = (kind, id) => COSMETICS[kind]?.find(i => i.id === id);
-const itemName = (kind, it) => kind === 'avatar' ? `Avatar ${it.id}` : it.name;
+const itemName = (kind, it) => it.name;
+const mySkin = () => window.PompeChar.byId(store.equip.skin);
+const charHTML = (sk = mySkin(), opts) => window.PompeChar.svg(sk, opts);
 const isOwned = (kind, id) => store.owned[kind].includes(id);
 function own(kind, id) { if (!isOwned(kind, id)) store.owned[kind].push(id); }
 
@@ -187,7 +183,7 @@ function itemPreviewHTML(kind, it) {
   if (kind === 'disc') return discPrevHTML(it.id);
   if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
   if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
-  return `<span class="av-prev">${it.id}</span>`;
+  return `<span class="char-prev">${charHTML(it)}</span>`;
 }
 function applySkins() {
   const disc = $('#disc'), game = $('#screen-game');
@@ -196,8 +192,8 @@ function applySkins() {
   [...game.classList].filter(c => c.startsWith('theme-')).forEach(c => game.classList.remove(c));
   game.classList.add(`theme-${store.equip.theme}`);
   $$('.play-card-disc').forEach(el => { el.className = `play-card-disc skin-${store.equip.disc}`; });
-  $('#tab-avatar').textContent = store.equip.avatar;
-  $('#pf-avatar-emoji').textContent = store.equip.avatar;
+  $('#tab-avatar').innerHTML = charHTML(mySkin(), { head: true });
+  $('#pf-avatar-emoji').innerHTML = charHTML(mySkin(), { head: true });
 }
 function equipItem(kind, id) {
   if (!isOwned(kind, id)) return;
@@ -215,6 +211,7 @@ function renderCoins(bump = false) {
 }
 function addCoins(n) {
   if (!n) return;
+  sfx.coin();
   store.coins += n;
   save();
   renderCoins(true);
@@ -234,23 +231,23 @@ const ACHS = [
   { id: 'found', icon: '🎵', name: 'Mélomane', label: n => `Trouve ${n} chansons`, val: () => store.found,
     tiers: [[25, { coins: 60 }], [100, { coins: 150 }], [500, { coins: 400 }], [2000, { coins: 1000, gold: 1 }]] },
   { id: 'combo', icon: '🔥', name: 'En feu', label: n => `Atteins un combo ×${n}`, val: () => store.stats.bestCombo,
-    tiers: [[3, { coins: 40 }], [5, { coins: 100, item: 'avatar:🔥' }], [8, { item: 'fx:coins' }], [12, { gold: 1 }]] },
+    tiers: [[3, { coins: 40 }], [5, { coins: 100, item: 'skin:neon' }], [8, { item: 'fx:coins' }], [12, { gold: 1 }]] },
   { id: 'fast', icon: '⚡', name: 'Oreille d’or', label: n => `Trouve ${n} chansons en moins de 3 s`, val: () => store.stats.fast,
-    tiers: [[5, { coins: 60 }], [25, { coins: 150, item: 'avatar:⚡' }], [100, { coins: 400 }]] },
+    tiers: [[5, { coins: 60 }], [25, { coins: 150 }], [100, { coins: 400 }]] },
   { id: 'perfect', icon: '💯', name: 'Sans faute', label: n => `Termine ${plural(n, 'partie', 'parties')} sans faute (5 manches min.)`, val: () => store.stats.perfect,
-    tiers: [[1, { coins: 100, item: 'avatar:🏆' }], [3, { item: 'theme:club' }], [10, { gold: 1 }]] },
+    tiers: [[1, { coins: 100 }], [3, { item: 'theme:club' }], [10, { gold: 1 }]] },
   { id: 'coll', icon: '💿', name: 'Collectionneur', label: n => `Possède ${n} vinyles`, val: () => ownedIds().length,
-    tiers: [[10, { coins: 80 }], [50, { coins: 200 }], [150, { coins: 500, item: 'avatar:💎' }], [400, { coins: 1000 }]] },
+    tiers: [[10, { coins: 80 }], [50, { coins: 200 }], [150, { coins: 500 }], [400, { coins: 1000 }]] },
   { id: 'legend', icon: '⭐', name: 'Légendes', label: n => `Possède ${plural(n, 'vinyle légendaire', 'vinyles légendaires')}`, val: () => ownedIds().filter(id => RARITY.get(id) === 'legendary').length,
-    tiers: [[1, { coins: 100 }], [5, { item: 'disc:holo' }], [15, { coins: 1000, gold: 1 }]] },
+    tiers: [[1, { coins: 100 }], [5, { item: 'disc:holo' }], [10, { item: 'skin:gold' }], [15, { coins: 1000, gold: 1 }]] },
   { id: 'streak', icon: '📅', name: 'Fidèle', label: n => `Joue ${n} jours d’affilée`, val: () => store.stats.bestStreak,
     tiers: [[3, { boosters: 1 }], [7, { item: 'theme:aurora' }], [30, { coins: 1500, gold: 1 }]] },
   { id: 'daily', icon: '🕵️', name: 'Détective', label: n => `Réussis ${plural(n, 'défi du jour', 'défis du jour')}`, val: () => store.stats.dailyWins,
-    tiers: [[1, { coins: 50 }], [7, { boosters: 1, item: 'avatar:🕵️' }], [30, { coins: 500 }]] },
+    tiers: [[1, { coins: 50 }], [7, { boosters: 1, item: 'skin:dj' }], [30, { coins: 500 }]] },
   { id: 'opened', icon: '🎁', name: 'Ouvreur', label: n => `Ouvre ${plural(n, 'booster', 'boosters')}`, val: () => store.opened,
     tiers: [[5, { coins: 80 }], [25, { gold: 1 }], [100, { coins: 600 }]] },
   { id: 'level', icon: '👑', name: 'Légende vivante', label: n => `Atteins le niveau ${n}`, val: () => levelOf(store.xp).lvl,
-    tiers: [[5, { item: 'avatar:👑' }], [10, { item: 'disc:gold' }], [20, { coins: 1000, gold: 1 }]] },
+    tiers: [[5, { coins: 300 }], [10, { item: 'skin:astro' }], [15, { item: 'disc:gold' }], [20, { coins: 1000, gold: 1 }]] },
 ];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 function achState(a) {
@@ -274,7 +271,7 @@ function rewardParts(r) {
   return parts;
 }
 function rewardInline(r) {
-  if (r.item) { const [k, id] = r.item.split(':'); return k === 'avatar' ? id : '🎨'; }
+  if (r.item) { const [k, id] = r.item.split(':'); return k === 'skin' ? `<span class="rw-mini">${charHTML(itemOf(k, id), { head: true })}</span>` : '🎨'; }
   if (r.gold) return '<i class="mini-booster mp-gold"></i>';
   if (r.boosters) return '<i class="mini-booster"></i>';
   return `<i class="coin"></i>${fmt(r.coins)}`;
@@ -375,7 +372,7 @@ function claimMissionBonus() {
 /* Offre du jour */
 function dealOfTheDay() {
   const cands = [];
-  for (const kind of ['disc', 'theme', 'fx', 'avatar']) COSMETICS[kind].forEach(it => { if (it.price > 0 && !isOwned(kind, it.id)) cands.push({ kind, it }); });
+  for (const kind of KINDS) COSMETICS[kind].forEach(it => { if (it.price > 0 && !isOwned(kind, it.id)) cands.push({ kind, it }); });
   if (!cands.length) return null;
   const d = cands[hashStr(`deal-${dayKey()}`) % cands.length];
   return Object.assign(d, { price: Math.round(d.it.price * .6 / 10) * 10 });
@@ -518,6 +515,29 @@ function unlockAudio() {
     player.play().catch(() => {});
   }
 }
+/* Sound design : timbres doux (cloches, marimba, nappes), passés dans une petite
+   réverbération de pièce et un compresseur pour un rendu chaud et homogène. */
+let bus = null;
+function impulse(sec, decay) {
+  const n = Math.floor(actx.sampleRate * sec), b = actx.createBuffer(2, n, actx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decay); }
+  return b;
+}
+function out() {
+  if (bus) return bus;
+  const inp = actx.createGain(), warm = actx.createBiquadFilter(), comp = actx.createDynamicsCompressor(), verb = actx.createConvolver(), wet = actx.createGain();
+  inp.gain.value = .9;
+  warm.type = 'lowpass'; warm.frequency.value = 6500;
+  comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = .004; comp.release.value = .25;
+  verb.buffer = impulse(2.2, 3.2);
+  wet.gain.value = .26;
+  inp.connect(warm); warm.connect(comp); comp.connect(actx.destination);
+  warm.connect(verb); verb.connect(wet); wet.connect(comp);
+  bus = inp;
+  return bus;
+}
+const note = m => 440 * Math.pow(2, (m - 69) / 12);
+const soundOn = () => actx && store.settings.sound;
 function rawTone(freq, dur = .12, type = 'sine', gain = .18, when = 0, slideTo) {
   if (!actx) return;
   const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
@@ -525,44 +545,88 @@ function rawTone(freq, dur = .12, type = 'sine', gain = .18, when = 0, slideTo) 
   o.frequency.setValueAtTime(freq, t);
   if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
   g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(gain, t + .01);
+  g.gain.linearRampToValueAtTime(gain, t + .012);
   g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-  o.connect(g).connect(actx.destination);
-  o.start(t); o.stop(t + dur + .02);
+  o.connect(g).connect(out());
+  o.start(t); o.stop(t + dur + .03);
 }
 const tone = (...a) => { if (store.settings.sound) rawTone(...a); };
-function noise(dur = .3, from = 3000, to = 600, gain = .25) {
-  if (!actx || !store.settings.sound) return;
+// Cloche / boîte à musique : fondamentale + partiels qui s'éteignent plus vite
+function bell(m, when = 0, gain = .1, dur = 1.3) {
+  if (!soundOn()) return;
+  [[1, 1, 1], [2.01, .35, .55], [3.99, .12, .35], [5.43, .05, .2]].forEach(([r, gm, dm]) => rawTone(note(m) * r, dur * dm, 'sine', gain * gm, when));
+}
+// Marimba : attaque boisée, très courte
+function mallet(m, when = 0, gain = .09, dur = .35) {
+  if (!soundOn()) return;
+  rawTone(note(m), dur, 'sine', gain, when);
+  rawTone(note(m) * 4, dur * .25, 'sine', gain * .25, when);
+}
+// Nappe chaude (accord tenu, légèrement désaccordé)
+function pad(ms, when = 0, gain = .035, dur = 1.8) {
+  if (!soundOn()) return;
+  ms.forEach(m => { rawTone(note(m), dur, 'triangle', gain, when); rawTone(note(m) * 1.004, dur, 'triangle', gain * .8, when + .01); });
+}
+function noise(dur = .3, from = 3000, to = 600, gain = .25, type = 'bandpass', when = 0) {
+  if (!soundOn()) return;
   const len = Math.floor(actx.sampleRate * dur), buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-  const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain(), t = actx.currentTime;
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+  const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain(), t = actx.currentTime + when;
   src.buffer = buf;
-  f.type = 'bandpass'; f.Q.value = .9;
+  f.type = type; f.Q.value = .8;
   f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
   g.gain.value = gain;
-  src.connect(f).connect(g).connect(actx.destination);
-  src.start();
+  src.connect(f).connect(g).connect(out());
+  src.start(t);
 }
-function playFile(src, vol = .8) { if (!store.settings.sound) return null; try { const a = new Audio(src); a.volume = vol; a.play().catch(() => {}); return a; } catch (e) { return null; } }
-const LEGENDARY_SFX = ['assets/legendary-1.mp3', 'assets/legendary-2.mp3', 'assets/legendary-3.mp3', 'assets/legendary-4.mp3'];
-const EPIC_SFX = ['assets/epic-1.mp3', 'assets/epic-2.mp3'];
+const MAJOR = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16];
 const sfx = {
-  right: combo => { [660, 880, 1320].forEach((f, i) => tone(f * (1 + Math.min(combo, 6) * .03), .16, 'triangle', .16, i * .07)); },
-  wrong: () => { tone(200, .25, 'sawtooth', .09); tone(150, .3, 'sawtooth', .07, .08); },
-  tick: last => tone(last ? 1320 : 1000, .05, 'square', .05),
-  timeout: () => { tone(330, .18, 'triangle', .12); tone(247, .3, 'triangle', .12, .15); },
-  tap: () => tone(700, .04, 'sine', .06),
-  fanfare: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .22, 'triangle', .14, i * .11)),
-  booster: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, .18, 'triangle', .14, i * .06)); tone(392, .5, 'sine', .12); },
-  whoosh: () => noise(.45, 400, 2400, .12),
-  tear: () => { noise(.32, 5000, 900, .3); noise(.2, 2000, 400, .2); },
-  zip: p => tone(420 + p * 900, .03, 'square', .035),
-  charge: ms => { tone(180, ms / 1000, 'sawtooth', .05, 0, 900); tone(90, ms / 1000, 'sine', .12, 0, 360); },
+  // Bonne réponse : arpège qui monte d'un degré à chaque combo
+  right: combo => { const base = 67 + MAJOR[Math.min(Math.max(combo, 1) - 1, 7)]; [0, 4, 7, 12].forEach((iv, i) => bell(base + iv, i * .07, .09)); },
+  wrong: () => { tone(note(57), .32, 'sine', .14, 0, note(50)); mallet(50, .04, .05); },
+  tick: last => mallet(last ? 96 : 91, 0, .045, .12),
+  timeout: () => [67, 63, 60].forEach((m, i) => bell(m, i * .14, .07, 1)),
+  tap: () => mallet(79, 0, .05, .18),
+  pop: () => { mallet(84, 0, .06); mallet(91, .06, .05); },
+  coin: () => { bell(88, 0, .07, .5); bell(95, .08, .07, .9); },
+  fanfare: () => { [60, 64, 67, 72, 76].forEach((m, i) => bell(m, i * .09, .09)); pad([60, 64, 67], .1, .03, 2); },
+  booster: () => { [84, 88, 91, 96].forEach((m, i) => bell(m, i * .05, .06, .9)); pad([72, 76, 79], 0, .02, 1.2); },
+  needle: () => { noise(.08, 2500, 1800, .05, 'highpass'); tone(90, .18, 'sine', .08, .02, 55); },
+  whoosh: () => noise(.5, 500, 2200, .07, 'bandpass'),
+  // La pochette qui glisse : papier + petit bruit sourd
+  tear: () => { noise(.6, 900, 2600, .09, 'bandpass'); tone(110, .25, 'sine', .08, .45, 70); },
+  zip: p => mallet(55 + Math.round(p * 17), 0, .03, .12),
+  charge: ms => { const d = ms / 1000; tone(note(48), d, 'triangle', .04, 0, note(72)); noise(d, 400, 3000, .035, 'bandpass'); },
   reveal: r => {
-    const seq = r === 'legendary' ? [523, 659, 784, 1047, 1319] : r === 'epic' ? [523, 784, 1047, 1319] : r === 'rare' ? [523, 784, 1047] : [659, 880];
-    seq.forEach((f, i) => tone(f, .55, r === 'legendary' ? 'sine' : 'triangle', r === 'common' ? .12 : .17, i * .06));
-    if (r === 'legendary') { tone(110, 1.6, 'sine', .3); playFile(pickOne(LEGENDARY_SFX), .75); }
-    if (r === 'epic') playFile(pickOne(EPIC_SFX), .7);
+    if (r === 'common') { [72, 76, 79].forEach((m, i) => bell(m, i * .06, .08)); return; }
+    if (r === 'rare') { [72, 76, 79, 84].forEach((m, i) => bell(m, i * .06, .09)); pad([72, 76, 79], .05, .025, 1.4); return; }
+    if (r === 'epic') { [74, 78, 81, 86, 90].forEach((m, i) => bell(m, i * .07, .09)); pad([62, 69, 74, 78], .05, .03, 2.2); return; }
+    tone(65, 1.4, 'sine', .2, 0, 44);
+    [72, 74, 76, 79, 81, 84, 88, 91].forEach((m, i) => bell(m, .05 + i * .07, .085, 1.6));
+    pad([60, 64, 67, 72], .1, .035, 2.8);
+  },
+};
+// Ambiance du salon : crépitement de vinyle très doux, en boucle
+const ambience = {
+  src: null,
+  start() {
+    if (!soundOn() || this.src) return;
+    const sec = 4, n = actx.sampleRate * sec, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * .015 + (Math.random() < .0009 ? (Math.random() * 2 - 1) * .6 : 0);
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = b; src.loop = true;
+    f.type = 'lowpass'; f.frequency.value = 3500;
+    g.gain.value = 0; g.gain.linearRampToValueAtTime(.5, actx.currentTime + 1.2);
+    src.connect(f).connect(g).connect(actx.destination);
+    src.start();
+    this.src = src; this.g = g;
+  },
+  stop() {
+    if (!this.src) return;
+    const s = this.src, g = this.g;
+    g.gain.linearRampToValueAtTime(0, actx.currentTime + .4);
+    setTimeout(() => { try { s.stop(); } catch (e) {} }, 450);
+    this.src = null;
   },
 };
 const buzz = p => { if (!store.settings.haptics) return; try { navigator.vibrate?.(p); } catch (e) {} };
@@ -599,7 +663,7 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
-const TAB_SCREENS = ['home', 'collection', 'shop', 'profile'];
+const TAB_SCREENS = ['home', 'collection', 'shop', 'profile', 'story'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'game' ? '#1C1230' : '#FFF4EA');
@@ -607,9 +671,10 @@ function show(id) {
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
-  if (id === 'collection') renderCollection();
+  if (id === 'collection') { renderCollection(); ambience.start(); } else ambience.stop();
   if (id === 'shop') renderShop();
   if (id === 'profile') renderProfile();
+  if (id === 'story') renderStory();
   renderBadges();
 }
 function renderBadges() {
@@ -700,7 +765,7 @@ function renderHome() {
   if (!list.children.length) {
     list.innerHTML = CATS.map(c => `
       <button class="cat" type="button" role="radio" data-cat="${c.id}">
-        <span class="cat-emoji" aria-hidden="true">${c.emoji}</span>
+        <span class="cat-illu" aria-hidden="true" style="background:${c.bg}"><img src="${c.illu}" alt="" loading="lazy" style="object-position:${c.pos}"></span>
         <span class="cat-name">${esc(c.name)}</span>
         <span class="cat-count">${poolFor(c.id).length} titres</span>
       </button>`).join('');
@@ -711,6 +776,7 @@ function renderHome() {
   $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
+  renderStoryCard();
   renderDaily();
   clearInterval(dailyTicker);
   dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
@@ -833,7 +899,6 @@ async function startRound() {
   $('#reveal').hidden = true;
   $('#clues').hidden = true;
   $('#btn-next').hidden = true;
-  $('#eq').classList.remove('is-playing');
   $('#game-round').textContent = G.cfg.daily ? 'Défi du jour' : `Manche ${G.i + 1}/${G.songs.length}`;
   $('#stage-status').textContent = G.i === 0 ? 'On chauffe les platines…' : 'Chargement de l’extrait…';
   setTimer(1, G.dur);
@@ -869,6 +934,7 @@ async function startRound() {
   }
 
   $('#tonearm').classList.add('is-on');
+  sfx.needle();
   let playing = false;
   if (pv) playing = await playPreview(pv.url);
   if (token !== G.token) return;
@@ -886,7 +952,6 @@ async function startRound() {
   G.t0 = performance.now();
   G.lastSec = null;
   disc.classList.add('is-spinning');
-  $('#eq').classList.add('is-playing');
   $$('.choice').forEach(b => { b.disabled = false; });
   hintBtn.disabled = false;
   if (G.cfg.mode === 'type' && matchMedia('(pointer: fine)').matches) $('#type-input').focus();
@@ -977,7 +1042,6 @@ function finishRound(ok, reason, sourceEl) {
   $('#disc').classList.remove('is-spinning');
   $('#disc').classList.add('is-revealed');
   $('#tonearm').classList.remove('is-on');
-  $('#eq').classList.remove('is-playing');
   stopBeat();
   $('#btn-hint').disabled = true;
   $$('.choice').forEach(b => {
@@ -1129,6 +1193,8 @@ function endGame() {
   save();
   const after = levelOf(store.xp);
 
+  const ratio = n ? found / n : 0;
+  $('#res-char').innerHTML = charHTML(mySkin(), { mood: record ? 'wow' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'wink' : 'sad' });
   $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : '4 choix'}`;
   $('#res-record').hidden = !record;
   $('#res-line').textContent = G.cfg.daily
@@ -1275,7 +1341,7 @@ function openBooster() {
   $('#bo-stage').hidden = false;
   $('#bo-summary').hidden = true;
   $('#bo-hint').hidden = false;
-  $('#bo-hint').textContent = 'Glisse ton doigt sur le booster pour le déchirer';
+  $('#bo-hint').textContent = 'Glisse ton doigt pour ouvrir la pochette';
   $('#bo-count').textContent = BO.welcome ? 'Booster de bienvenue' : kind === 'gold' ? 'Booster Or' : 'Booster vinyle';
   $('#bo-left').textContent = totalBoosters() > 1 ? `×${totalBoosters()}` : '';
   document.body.style.overflow = 'hidden';
@@ -1549,21 +1615,30 @@ function renderCollection() {
   const list = ids.filter(id => COLL.filter === 'all' || RARITY.get(id) === COLL.filter)
     .sort((a, b) => (RANK[RARITY.get(b)] - RANK[RARITY.get(a)]) || (store.coll[b].t - store.coll[a].t));
   $('#coll-empty').hidden = ids.length > 0;
-  $('#coll-empty-play').textContent = nb ? 'Ouvrir mon booster' : 'Jouer une partie';
+  $('#coll-empty-play').textContent = totalBoosters() ? 'Ouvrir mon booster' : 'Jouer une partie';
   const grid = $('#coll-grid');
-  grid.hidden = ids.length === 0;
-  if (ids.length && !list.length) {
-    grid.innerHTML = `<p class="coll-more" style="color:var(--ink-3);text-align:center;margin:20px 0">Aucun vinyle ${R_NAME[COLL.filter].toLowerCase()} pour l’instant.</p>`;
-    return;
-  }
   const shown = list.slice(0, COLL.shown);
-  grid.innerHTML = shown.map((id, i) => {
+  // Le mur : 4 colonnes, le coin salon occupe le centre (2×2), les cadres l'entourent.
+  const frames = Math.max(12, Math.ceil(shown.length / 4) * 4);
+  const empties = Math.max(0, frames - shown.length);
+  const nook = `<div class="nook" id="nook">
+      <span class="nook-light" aria-hidden="true"></span>
+      <span class="nook-rug" aria-hidden="true"></span>
+      <span class="nook-player" aria-hidden="true"><i></i></span>
+      <span class="nook-lamp" aria-hidden="true"><i></i></span>
+      <span class="nook-plant" aria-hidden="true"><i></i><i></i><i></i></span>
+      <button class="nook-char" id="nook-char" type="button" aria-label="Ton personnage">${charHTML(mySkin(), { mood: ids.length ? 'happy' : 'wow' })}</button>
+      <span class="nook-bubble" id="nook-bubble" hidden></span>
+    </div>`;
+  grid.innerHTML = nook + shown.map((id, i) => {
     const s = SONG.get(id), r = RARITY.get(id), e = store.coll[id];
-    return `<button class="vt r-${r}" type="button" data-id="${id}" style="animation-delay:${Math.min(i, 18) * .02}s" aria-label="${esc(s.title)} — ${esc(s.artist)}, ${R_NAME[r].toLowerCase()}">
-      <span class="vt-cover"><span class="vt-disc"></span><span class="vt-sleeve">${coverHTML(s)}</span>${e.seen === false ? '<span class="vt-new">NEW</span>' : e.n > 1 ? `<span class="vt-n">×${e.n}</span>` : ''}</span>
-      <span class="vt-title">${esc(s.title)}</span><span class="vt-artist">${esc(s.artist)}</span>
+    return `<button class="frame vt r-${r}" type="button" data-id="${id}" style="animation-delay:${Math.min(i, 18) * .025}s" aria-label="${esc(s.title)} — ${esc(s.artist)}, ${R_NAME[r].toLowerCase()}">
+      <span class="frame-in"><span class="frame-disc"></span><span class="frame-cover">${coverHTML(s)}</span></span>
+      ${e.seen === false ? '<span class="vt-new">NEW</span>' : e.n > 1 ? `<span class="vt-n">×${e.n}</span>` : ''}
     </button>`;
-  }).join('') + (list.length > shown.length ? `<button class="btn-secondary coll-more" id="coll-more" type="button">Voir plus (${list.length - shown.length})</button>` : '');
+  }).join('') + Array.from({ length: empties }, () => '<span class="frame frame-empty" aria-hidden="true"><span class="frame-in"><span class="frame-q">?</span></span></span>').join('');
+  $('#coll-more')?.remove();
+  if (list.length > shown.length) grid.insertAdjacentHTML('afterend', `<button class="btn-secondary coll-more" id="coll-more" type="button">Voir plus de vinyles (${list.length - shown.length})</button>`);
 
   tileObserver?.disconnect();
   tileObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
@@ -1579,6 +1654,23 @@ function renderCollection() {
   let changed = false;
   ids.forEach(id => { if (store.coll[id].seen === false) { store.coll[id].seen = true; changed = true; } });
   if (changed) save();
+}
+
+const CHAR_LINES = [
+  n => n ? `${plural(n, 'vinyle', 'vinyles')} au mur, pas mal !` : 'Mon mur est tout vide…',
+  () => `Encore ${fmt(SONGS.length - ownedIds().length)} vinyles à trouver !`,
+  () => totalBoosters() ? `Tu as ${plural(totalBoosters(), 'booster', 'boosters')} à ouvrir 🎁` : 'On se fait une partie ?',
+  () => `J’adore ${pickOne(ownedIds().map(id => SONG.get(id).artist).concat(['le disco', 'le vinyle']))} !`,
+];
+let chatIdx = 0, chatTimer;
+function charChat() {
+  const b = $('#nook-bubble'), c = $('#nook-char');
+  b.textContent = CHAR_LINES[chatIdx++ % CHAR_LINES.length](ownedIds().length);
+  b.hidden = false;
+  c.classList.remove('is-wave'); void c.offsetWidth; c.classList.add('is-wave');
+  sfx.pop();
+  clearTimeout(chatTimer);
+  chatTimer = setTimeout(() => { b.hidden = true; }, 2600);
 }
 
 let vsSong = null;
@@ -1633,9 +1725,8 @@ function itemCardHTML(kind, it, deal) {
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
   const price = isDeal ? deal.price : it.price;
   const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? '<span class="item-state">🔒 Succès</span>' : `<span class="item-price">${fmt(price)}<i class="coin"></i></span>`;
-  const cls = `item r-${it.rarity}${kind === 'avatar' ? ' av-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
+  const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
   const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
-  if (kind === 'avatar') return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}">${itemPreviewHTML(kind, it)}${state}</button>`;
   return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
 }
 function renderShopTimers() {
@@ -1666,7 +1757,7 @@ function renderShop() {
       <span class="pk-art">${packArt(p.id)}</span><b>${p.name}</b><small>${p.short}</small>
       <span class="pk-price">${fmt(p.price)}<i class="coin"></i></span>
     </button>`).join('');
-  for (const kind of ['disc', 'theme', 'fx', 'avatar']) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
+  for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
   clearInterval(shopTicker);
   shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
 }
@@ -1680,7 +1771,7 @@ function claimGift() {
   renderBadges();
 }
 
-/* Fiche article (skins, avatars, boosters) */
+/* Fiche article (skins, boosters) */
 let IS = null;
 function openItem(kind, id) {
   const it = itemOf(kind, id);
@@ -1692,8 +1783,8 @@ function openItem(kind, id) {
   const pill = $('#is-rarity');
   pill.className = `rar-pill r-${it.rarity}`;
   pill.textContent = `${R_ICON[it.rarity]} ${R_NAME[it.rarity]} · ${KIND_NAME[kind]}`;
-  $('#is-name').textContent = kind === 'avatar' ? `Avatar ${it.id}` : it.name;
-  $('#is-desc').textContent = it.desc || (kind === 'avatar' ? 'Il s’affiche sur ton profil et dans la barre de navigation.' : '');
+  $('#is-name').textContent = it.name;
+  $('#is-desc').textContent = it.desc || '';
   const lock = !isOwned(kind, id) && !it.price ? unlockInfo(kind, id) : null;
   $('#is-lock').hidden = !lock;
   if (lock) {
@@ -1718,7 +1809,7 @@ function itemAction() {
   if (isOwned(kind, id)) {
     equipItem(kind, id);
     sfx.tap(); buzz(20);
-    toast(`${kind === 'avatar' ? 'Avatar' : it.name} équipé ✓`);
+    toast(`${it.name} équipé ✓`);
   } else if (!it.price) {
     closeItem();
     PF_TAB = 'ach';
@@ -1730,7 +1821,7 @@ function itemAction() {
     equipItem(kind, id);
     sfx.reveal(it.rarity); buzz([30, 40, 60]);
     confetti(50);
-    toast(`${kind === 'avatar' ? 'Avatar' : it.name} acheté et équipé ! 🎉`);
+    toast(`${it.name} acheté et équipé ! 🎉`);
   }
   renderItemAction();
   refreshScreen();
@@ -1787,7 +1878,7 @@ function nextReward() {
   $('#rw-kicker').textContent = RW.kicker || 'Récompense';
   $('#rw-visual').innerHTML = visual;
   $('#rw-title').textContent = RW.title || '';
-  $('#rw-sub').textContent = rewardParts(r).join(' · ');
+  $('#rw-sub').textContent = [rewardParts(r).join(' · '), RW.extra].filter(Boolean).join(' ');
   $('#rw-later').hidden = !action;
   $('.rw-actions').classList.toggle('is-single', !action);
   $('#rw-ok').textContent = action ? action.label : 'Super !';
@@ -1877,11 +1968,11 @@ function renderAchPanel() {
 }
 function renderSkinsPanel() {
   const order = (kind, it) => (store.equip[kind] === it.id ? 0 : isOwned(kind, it.id) ? 1 : 2);
-  $('#pf-skins').innerHTML = ['disc', 'theme', 'fx', 'avatar'].map(kind => {
+  $('#pf-skins').innerHTML = KINDS.map(kind => {
     const items = COSMETICS[kind].slice().sort((x, y) => order(kind, x) - order(kind, y));
     const have = items.filter(it => isOwned(kind, it.id)).length;
     return `<h3 id="pf-sec-${kind}">${KIND_NAMES[kind]} · ${have}/${items.length}</h3>
-      <div class="item-grid${kind === 'avatar' ? ' item-grid-4' : ''}">${items.map(it => itemCardHTML(kind, it, null)).join('')}</div>`;
+      <div class="item-grid">${items.map(it => itemCardHTML(kind, it, null)).join('')}</div>`;
   }).join('');
 }
 function renderStatsPanel() {
@@ -1901,8 +1992,8 @@ function renderStatsPanel() {
 let wlAvatar = null;
 function maybeWelcome() {
   if (store.onboarded) return;
-  wlAvatar = store.equip.avatar;
-  $('#wl-avatars').innerHTML = COSMETICS.avatar.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}">${a.id}</button>`).join('');
+  wlAvatar = store.equip.skin;
+  $('#wl-avatars').innerHTML = COSMETICS.skin.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}" aria-label="${esc(a.name)}">${charHTML(a)}<b>${esc(a.name)}</b></button>`).join('');
   $('#wl-name').value = store.name;
   $('#welcome-sheet').hidden = false;
 }
@@ -1910,7 +2001,7 @@ function finishWelcome(keep) {
   if (keep) {
     const name = $('#wl-name').value.trim().slice(0, 16);
     if (name) store.name = name;
-    if (wlAvatar) store.equip.avatar = wlAvatar;
+    if (wlAvatar) store.equip.skin = wlAvatar;
   }
   store.onboarded = true;
   save();
@@ -1920,11 +2011,161 @@ function finishWelcome(keep) {
   if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue 🎁` : 'Ouvre ton booster de bienvenue 🎁');
 }
 
+/* ================= MODE HISTOIRE ================= */
+const ARTISTS = window.STORY_ARTISTS || [];
+const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
+const artistById = id => ARTISTS.find(a => a.id === id);
+const artistLook = a => Object.assign({ name: a.name }, (window.STORY_LOOKS || {})[a.id] || { skin: '#F5C7A1', hair: ['tuft', '#333'], top: ['hoodie', a.color] });
+const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
+// L'intro (bio) est la première étape de chaque parcours.
+const stepsOf = a => [{ type: 'intro' }, ...a.steps];
+function renderStoryCard() {
+  const art = $('#story-card-art');
+  art.innerHTML = ARTISTS.slice(0, 3).map(a => `<span style="background:${a.color}">${charHTML(artistLook(a), { head: true })}</span>`).join('');
+  const d = storyDone();
+  $('#story-card-sub').textContent = d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes · écoute, anecdotes, quiz`;
+}
+function renderStory() {
+  const lvl = levelOf(store.xp).lvl;
+  $('#story-prog').textContent = `${storyDone()}/${ARTISTS.length}`;
+  $('#story-list').innerHTML = CHAPTERS.map(c => {
+    const locked = lvl < c.minLevel;
+    return `<section class="chapter${locked ? ' is-locked' : ''}">
+      <div class="chapter-head" style="background:${c.gradient}">
+        <span class="chapter-num">Chapitre ${c.num}</span><b>${esc(c.title)}</b><small>${locked ? `🔒 Débloqué au niveau ${c.minLevel}` : esc(c.subtitle)}</small>
+      </div>
+      <div class="artist-grid">${c.artists.map(id => {
+        const a = artistById(id); if (!a) return '';
+        const st = store.story[a.id] || {}, total = stepsOf(a).length, prog = st.done ? total : st.step || 0;
+        return `<button class="artist-card${st.done ? ' is-done' : ''}" type="button" data-artist="${a.id}" ${locked ? 'disabled' : ''} style="--ac:${a.color}">
+          <span class="ac-portrait">${charHTML(artistLook(a))}</span>
+          <span class="ac-name">${esc(a.name)}</span>
+          <span class="ac-meta">${esc(a.genre)}</span>
+          <span class="ac-dots">${Array.from({ length: total }, (_, i) => `<i class="${i < prog ? 'is-on' : ''}"></i>`).join('')}</span>
+          <span class="ac-cta">${locked ? '🔒' : st.done ? 'Découvert ✓' : prog ? 'Continuer' : 'Commencer'}</span>
+        </button>`;
+      }).join('')}</div>
+    </section>`;
+  }).join('');
+}
+
+let ST = null;
+function openArtist(id) {
+  const a = artistById(id); if (!a) return;
+  unlockAudio();
+  const st = store.story[a.id] || {};
+  ST = { a, i: st.done ? 0 : st.step || 0, answered: false, firstTry: true };
+  $('#ss-portrait').innerHTML = `<span style="background:${a.color}">${charHTML(artistLook(a), { mood: 'happy' })}</span>`;
+  $('#story-step').hidden = false;
+  renderStep();
+}
+function closeArtist() {
+  try { listen.pause(); } catch (e) {}
+  $('#story-step').hidden = true;
+  ST = null;
+  if (currentScreen() === 'story') renderStory();
+  if (currentScreen() === 'home') renderHome();
+}
+function renderStep() {
+  const { a } = ST, steps = stepsOf(a), step = steps[ST.i];
+  try { listen.pause(); } catch (e) {}
+  ST.answered = false;
+  $('#ss-dots').innerHTML = steps.map((_, i) => `<i class="${i < ST.i ? 'is-on' : i === ST.i ? 'is-cur' : ''}"></i>`).join('');
+  $('#ss-count').textContent = `${ST.i + 1}/${steps.length}`;
+  const body = $('#ss-body'), actions = $('#ss-actions');
+  const nextBtn = (label = 'Suivant') => `<button class="btn-primary ss-next" id="ss-next" type="button">${label}</button>`;
+  if (step.type === 'intro') {
+    $('#ss-kicker').textContent = `${a.origin} · ${a.active}`;
+    $('#ss-title').textContent = a.name;
+    body.innerHTML = `<p>${esc(a.bio)}</p>`;
+    actions.innerHTML = nextBtn('C’est parti !');
+  } else if (step.type === 'listen') {
+    const s = SONG.get(step.songId);
+    $('#ss-kicker').textContent = 'Écoute';
+    $('#ss-title').textContent = s.title;
+    body.innerHTML = `<div class="ss-listen"><span class="ss-sleeve">${coverHTML(s)}</span><span class="ss-disc" id="ss-disc"></span></div><p>${esc(step.label)} · ${s.year}</p>`;
+    getArt(s).then(art => { if (art && ST) fillCover(body, art); });
+    actions.innerHTML = `<button class="btn-secondary" id="ss-play" type="button">▶ Écouter</button>${nextBtn()}`;
+  } else if (step.type === 'fact') {
+    $('#ss-kicker').textContent = 'Le savais-tu ?';
+    $('#ss-title').textContent = step.emoji || '💡';
+    body.innerHTML = `<p class="ss-fact">${esc(step.text)}</p>`;
+    actions.innerHTML = nextBtn();
+  } else if (step.type === 'mcq') {
+    $('#ss-kicker').textContent = 'Question finale';
+    $('#ss-title').textContent = step.question;
+    body.innerHTML = `<div class="ss-opts">${step.opts.map((o, k) => `<button class="choice ss-opt" type="button" data-k="${k}"><span class="choice-key">${'ABCD'[k]}</span><span class="choice-txt"><span class="choice-title">${esc(o)}</span></span></button>`).join('')}</div>`;
+    actions.innerHTML = '';
+  }
+  $('#ss-title').classList.toggle('is-emoji', step.type === 'fact');
+}
+async function storyListen() {
+  const step = stepsOf(ST.a)[ST.i], s = SONG.get(step.songId), btn = $('#ss-play');
+  if (!listen.paused) { listen.pause(); btn.textContent = '▶ Écouter'; $('#ss-disc')?.classList.remove('is-playing'); return; }
+  btn.textContent = 'Chargement…';
+  const pv = await fetchPreview(s);
+  if (!ST || !$('#ss-play')) return;
+  if (!pv) { btn.textContent = '▶ Écouter'; toast('Extrait indisponible pour le moment'); return; }
+  listen.src = pv.url;
+  listen.play().then(() => { btn.textContent = '⏸ Pause'; $('#ss-disc')?.classList.add('is-playing'); }, () => { btn.textContent = '▶ Écouter'; });
+}
+function storyAnswer(k) {
+  if (ST.answered) return;
+  const step = stepsOf(ST.a)[ST.i], ok = k === step.correct;
+  const opts = $$('.ss-opt');
+  if (!ok) {
+    ST.firstTry = false;
+    opts[k].classList.add('is-wrong');
+    sfx.wrong(); buzz(40);
+    return;
+  }
+  ST.answered = true;
+  opts[k].classList.add('is-right');
+  opts.forEach(o => { o.disabled = true; });
+  sfx.right(3); buzz(30);
+  winFx(opts[k]);
+  $('#ss-actions').innerHTML = '<button class="btn-primary ss-next" id="ss-next" type="button">Terminer</button>';
+}
+function storyNext() {
+  const steps = stepsOf(ST.a);
+  if (ST.i < steps.length - 1) {
+    ST.i++;
+    store.story[ST.a.id] = Object.assign(store.story[ST.a.id] || {}, { step: ST.i });
+    save();
+    sfx.tap();
+    renderStep();
+    return;
+  }
+  finishArtist();
+}
+function finishArtist() {
+  const a = ST.a, st = store.story[a.id] || {};
+  const first = !st.done;
+  store.story[a.id] = { step: 0, done: true };
+  if (first) {
+    const vinyl = a.steps.find(s => s.songId)?.songId;
+    const coins = ST.firstTry ? 150 : 100;
+    if (vinyl && !store.coll[vinyl]) store.coll[vinyl] = { n: 1, t: Date.now(), seen: false };
+    store.coins += coins;
+    addXP(80);
+    save();
+    renderCoins(true);
+    const s = SONG.get(vinyl);
+    closeArtist();
+    showReward({ kicker: 'Artiste découvert', title: a.name, reward: { coins }, extra: s ? `+ le vinyle « ${s.title} » sur ton mur` : '' });
+    checkAchievements();
+  } else {
+    save();
+    closeArtist();
+    toast(`${a.name} : parcours revu ✓`);
+  }
+}
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
 $('#nav-play').addEventListener('click', quickPlay);
-$('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { sfx.tap(); show(t.dataset.tab); } });
+$('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); sfx.tap(); show(t.dataset.tab); } });
 $('#home-coins').addEventListener('click', () => show('shop'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', () => {
@@ -1989,11 +2230,23 @@ $('#coll-empty-play').addEventListener('click', () => {
   else { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); }
 });
 $('#rar-filter').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b) return; COLL.filter = b.dataset.r; COLL.shown = 60; renderCollection(); });
-$('#coll-grid').addEventListener('click', e => {
+$('#screen-collection').addEventListener('click', e => {
   if (e.target.closest('#coll-more')) { COLL.shown += 60; renderCollection(); return; }
-  const t = e.target.closest('.vt'); if (t) openVinyl(t.dataset.id);
+  if (e.target.closest('#nook-char')) { charChat(); return; }
+  const t = e.target.closest('.frame.vt'); if (t) openVinyl(t.dataset.id);
 });
 $('#vs-close').addEventListener('click', closeVinyl);
+
+// Histoire
+$('#story-card').addEventListener('click', () => show('story'));
+$('#story-back').addEventListener('click', () => show('home'));
+$('#story-list').addEventListener('click', e => { const c = e.target.closest('.artist-card'); if (c && !c.disabled) openArtist(c.dataset.artist); });
+$('#ss-close').addEventListener('click', closeArtist);
+$('#story-step').addEventListener('click', e => {
+  if (e.target.closest('#ss-next')) storyNext();
+  else if (e.target.closest('#ss-play')) storyListen();
+  else { const o = e.target.closest('.ss-opt'); if (o) storyAnswer(+o.dataset.k); }
+});
 
 // Boutique
 $('#gift-card').addEventListener('click', claimGift);
@@ -2028,11 +2281,11 @@ $('#pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target
 $('#pf-avatar').addEventListener('click', () => {
   PF_TAB = 'skins';
   renderProfile();
-  $('#pf-sec-avatar')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+  $('#pf-sec-skin')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
 });
 $('#pf-ach').addEventListener('click', e => { const b = e.target.closest('.ach-claim'); if (b) claimAch(b.dataset.ach); });
 $('#pf-skins').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id); });
-$('#set-sound').addEventListener('change', e => { store.settings.sound = e.target.checked; save(); if (e.target.checked) { unlockAudio(); sfx.tap(); } });
+$('#set-sound').addEventListener('change', e => { store.settings.sound = e.target.checked; save(); if (e.target.checked) { unlockAudio(); sfx.tap(); } else ambience.stop(); });
 $('#set-haptics').addEventListener('change', e => { store.settings.haptics = e.target.checked; save(); buzz(40); });
 $('#set-reset').addEventListener('click', () => { $('#reset-sheet').hidden = false; kbFocus($('#rs-cancel')); });
 $('#rs-cancel').addEventListener('click', () => { $('#reset-sheet').hidden = true; });
@@ -2069,6 +2322,7 @@ document.addEventListener('keydown', e => {
     if (!$('#missions-sheet').hidden) { $('#missions-sheet').hidden = true; return; }
     if (!$('#reset-sheet').hidden) { $('#reset-sheet').hidden = true; return; }
     if (!$('#reward-overlay').hidden) { closeReward(false); return; }
+    if (!$('#story-step').hidden) { closeArtist(); return; }
   }
   if (currentScreen() !== 'game') return;
   if (e.key === 'Escape') { $('#quit-sheet').hidden ? $('#btn-quit').click() : ($('#quit-sheet').hidden = true); return; }
