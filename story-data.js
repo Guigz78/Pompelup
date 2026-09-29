@@ -131,8 +131,8 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { skin: '#8D5A3B', hair: ['tuft', '#111111'], top: ['suit', '#111827', '#FFFFFF'], acc: ['fedora', '#111827'] },
-  'queen': { skin: '#D9A07A', hair: ['tuft', '#1F140E'], top: ['jacket', '#FBBF24', '#FFFFFF'], acc: ['crown', '#FBBF24'], extra: 'moustache' },
+  'michael-jackson': { skin: '#8D5A3B', hair: ['short', '#111111'], top: ['suit', '#111827', '#FFFFFF'], acc: ['fedora', '#111827'] },
+  'queen': { skin: '#D9A07A', hair: ['short', '#1F140E'], top: ['jacket', '#FBBF24', '#FFFFFF'], acc: ['crown', '#FBBF24'], extra: 'moustache' },
   'daft-punk': { skin: '#E0A57E', hair: ['none'], top: ['suit', '#111827', '#9CA3AF'], acc: ['robot', '#FBBF24'] },
   'nirvana': { skin: '#F2C6A6', hair: ['long', '#E9C46A'], top: ['stripes', '#15803D'] },
   'dua-lipa': { skin: '#E8B089', hair: ['long', '#111827'], top: ['jacket', '#DB2777', '#111827'] },

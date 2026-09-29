@@ -1089,3 +1089,27 @@ img { display: block; max-width: 100%; }
 .stem.is-next:not(:disabled):active { transform: scale(.94); }
 @media (max-height: 740px) { .host { min-height: 58px; } .host-av { flex-basis: 52px; width: 52px; height: 52px; } }
 .char.char-bust, .char.char-head { overflow: hidden; }
+
+/* ---------- Avatars « pâte 3D » (v3) ---------- */
+.char-prev, .skin-item .char-prev, .item .acc-prev { width: 100%; border-radius: 14px; overflow: hidden; background: linear-gradient(#5B8FE0, #7BB3F5); filter: none; }
+.item.r-rare .char-prev { background: linear-gradient(#3AA0D8, #8FD3F7); }
+.item.r-epic .char-prev { background: linear-gradient(#8B6BE0, #C4A8F7); }
+.item.r-legendary .char-prev { background: linear-gradient(#E0A93A, #F7D98F); }
+.item.is-locked .char-prev { filter: grayscale(.8) brightness(.95); opacity: .75; }
+.char-prev .char { display: block; }
+.pf-avatar, .tab-avatar { background: linear-gradient(#5B8FE0, #7BB3F5); }
+.pf-avatar span .char { transform: none; }
+.host-av .char { transform: none; }
+.res-char { width: 120px; height: 120px; margin: 0 auto 2px; border-radius: 50%; overflow: hidden; background: linear-gradient(#5B8FE0, #7BB3F5); box-shadow: 0 0 0 4px rgba(255,255,255,.12); filter: none; }
+.wl-av .char { width: 100%; border-radius: 12px; background: linear-gradient(#5B8FE0, #7BB3F5); }
+.ac-portrait { padding: 0; }
+.ss-portrait span { padding: 0; }
+.story-card-art span .char, .rw-mini .char { display: block; }
+.vc-acc-box, .bs-acc { background: linear-gradient(#5B8FE0, #7BB3F5); }
+/* Salon : le personnage derrière sa console de DJ */
+.nook-char { width: 74%; margin-bottom: 44px; filter: drop-shadow(0 8px 10px rgba(70,40,18,.3)); }
+.nook-char .char { border-radius: 0; }
+.nook-booth { position: absolute; left: 6%; right: 6%; bottom: 8px; z-index: 3; height: 58px; border-radius: 10px 10px 6px 6px; background: linear-gradient(#3B2A4E, #1F1530); box-shadow: 0 8px 14px rgba(40,20,10,.4), inset 0 3px 0 rgba(255,255,255,.12); display: flex; align-items: flex-start; justify-content: space-around; padding-top: 6px; }
+.nook-booth b { position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font-family: var(--display); font-weight: 400; font-size: 13px; letter-spacing: 2px; color: var(--orange); opacity: .9; }
+.nb-deck { width: 30%; height: 22px; border-radius: 50%; background: radial-gradient(circle, var(--orange) 0 14%, #0c0716 15%, #1d1233 60%, #0c0716 62%); transform: scaleY(.9); animation: spin 3s linear infinite; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.nook-rug { bottom: -4px; }

@@ -1425,7 +1425,7 @@ function endGame() {
   const after = levelOf(store.xp);
 
   const ratio = n ? found / n : 0;
-  $('#res-char').innerHTML = meHTML({ mood: record ? 'wow' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'wink' : 'sad' });
+  $('#res-char').innerHTML = meHTML({ mood: record ? 'grin' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'smirk' : 'sad' });
   $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'partie rapide' : '4 choix'}`;
   $('#res-record').hidden = !record;
   $('#res-line').textContent = G.cfg.daily
@@ -1892,7 +1892,7 @@ function renderCollection() {
   const nook = `<div class="nook" id="nook">
       <span class="nook-light" aria-hidden="true"></span>
       <span class="nook-rug" aria-hidden="true"></span>
-      <span class="nook-player" aria-hidden="true"><i></i></span>
+      <span class="nook-booth" aria-hidden="true"><i class="nb-deck"></i><i class="nb-deck"></i><b>Pompelup</b></span>
       <span class="nook-lamp" aria-hidden="true"><i></i></span>
       <span class="nook-plant" aria-hidden="true"><i></i><i></i><i></i></span>
       <button class="nook-char" id="nook-char" type="button" aria-label="Ton personnage">${meHTML({ mood: ids.length ? 'happy' : 'wow' })}</button>
