@@ -169,7 +169,7 @@ window.SONGS = [
   { id: 's167', title: "L'Aventurier",                  artist: 'Indochine',                year: 1982, genre: 'Pop Française', emoji: '🌏', bpm: 130, color: '#374151' },
   { id: 's163', title: 'Tombé pour la France',          artist: 'Étienne Daho',             year: 1985, genre: 'Pop Française', emoji: '🇫🇷', bpm: 130, color: '#3B4FE8' },
   { id: 's164', title: 'Je te donne',                   artist: 'Jean-Jacques Goldman',     year: 1985, genre: 'Pop Française', emoji: '🤝', bpm: 120, color: '#F97316' },
-  { id: 's166', title: "Toute la musique que j'aime",   artist: 'Julien Clerc',             year: 1984, genre: 'Pop Française', emoji: '🎵', bpm: 112, color: '#8B5CF6' },
+  { id: 's166', title: "Toute la musique que j'aime",   artist: 'Johnny Hallyday',          year: 1973, genre: 'Pop Française', emoji: '🎵', bpm: 112, color: '#8B5CF6' },
   { id: 's168', title: '3 Nuits par Semaine',           artist: 'Indochine',                year: 1986, genre: 'Pop Française', emoji: '🌙', bpm: 118, color: '#3B4FE8' },
   { id: 's151', title: 'Voyage Voyage',                 artist: 'Desireless',               year: 1986, genre: 'Pop Française', emoji: '✈️', bpm: 118, color: '#F472B6' },
   { id: 's152', title: 'Joe le Taxi',                   artist: 'Vanessa Paradis',          year: 1987, genre: 'Pop Française', emoji: '🚕', bpm: 116, color: '#F97316' },

@@ -24,17 +24,28 @@ const defaults = () => ({
   xp: 0, best: 0, games: 0, found: 0, played: 0,
   streak: { count: 0, last: null },
   daily: null,
-  boosters: 1, gauge: 0, opened: 0, coll: {},
+  boosters: 1, goldBoosters: 0, gauge: 0, opened: 0, coll: {},
+  coins: 100, gift: null, name: '', onboarded: false,
+  owned: { disc: ['classic'], theme: ['nuit'], fx: ['sparks'], avatar: ['🎧', '🎤', '🎸', '😎'] },
+  equip: { disc: 'classic', theme: 'nuit', fx: 'sparks', avatar: '🎧' },
+  stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
+  ach: {}, achSeen: {}, missions: null,
+  settings: { sound: true, haptics: true },
   prefs: { cat: 'all', mode: 'choice', rounds: 10 },
 });
 const store = (() => {
+  const d = defaults();
   try {
     const raw = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-    const d = defaults();
-    return Object.assign(d, raw, { prefs: Object.assign(d.prefs, raw.prefs), streak: Object.assign(d.streak, raw.streak), coll: Object.assign({}, raw.coll) });
-  } catch (e) { return defaults(); }
+    const merged = Object.assign(d, raw);
+    for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen']) merged[k] = Object.assign(defaults()[k], raw[k]);
+    merged.owned = Object.fromEntries(Object.entries(defaults().owned).map(([k, base]) => [k, [...new Set([...base, ...((raw.owned || {})[k] || [])])]]));
+    merged.coll = Object.assign({}, raw.coll);
+    return merged;
+  } catch (e) { return d; }
 })();
 const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} };
+store.stats.bestStreak = Math.max(store.stats.bestStreak, store.streak.count || 0);
 
 /* ---------------- Dates, streak, niveau ---------------- */
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -61,7 +72,7 @@ function addXP(n) {
   const before = levelOf(store.xp).lvl;
   store.xp += n;
   const gained = levelOf(store.xp).lvl - before;
-  if (gained > 0) store.boosters += gained;
+  if (gained > 0) { store.boosters += gained; store.coins += 100 * gained; }
   return gained;
 }
 // Retourne le nombre de boosters gagnés par la jauge.
@@ -104,7 +115,7 @@ const R_COLOR = { common: '#B9B3C4', rare: '#38BDF8', epic: '#C084FC', legendary
 const R_GLOW = { common: 'rgba(185,179,196,.28)', rare: 'rgba(56,189,248,.42)', epic: 'rgba(192,132,252,.5)', legendary: 'rgba(251,191,36,.62)' };
 const R_RAY = { common: 'rgba(255,255,255,.05)', rare: 'rgba(56,189,248,.14)', epic: 'rgba(192,132,252,.18)', legendary: 'rgba(251,191,36,.24)' };
 const R_ICON = { common: '●', rare: '◆', epic: '✦', legendary: '★' };
-const DUP_XP = { common: 10, rare: 25, epic: 60, legendary: 150 };
+const DUP_COINS = { common: 15, rare: 40, epic: 100, legendary: 250 };
 const LEGENDARY_IDS = new Set(['s3', 's2', 's1', 's16', 's15', 's211', 's286', 's4', 's6', 's29', 's331', 's76', 's5', 's39', 's186', 's156', 's661', 's11', 's490', 's894', 's75', 's12', 's157', 's868', 's188', 's53', 's27', 's14']);
 const EPIC_IDS = new Set(['s52', 's9', 's7', 's8', 's13', 's91', 's38', 's37', 's200', 's49', 's195', 's487', 's78', 's496', 's352', 's34', 's48', 's10', 's462', 's453', 's71', 's35', 's68', 's246', 's280', 's17', 's21', 's23', 's121', 's359', 's673', 's167', 's851', 's206', 's187', 's189']);
 const RARITY = new Map(SONGS.map(s => {
@@ -117,11 +128,266 @@ const BY_RARITY = Object.fromEntries(RARITIES.map(r => [r, SONGS.filter(s => RAR
 const ODDS = { common: 62, rare: 28, epic: 8.5, legendary: 1.5 };
 const ODDS_LAST = { rare: 75, epic: 20, legendary: 5 };
 const ODDS_WELCOME = { epic: 70, legendary: 30 };
+const ODDS_GOLD = { rare: 55, epic: 35, legendary: 10 };
+const ODDS_GOLD_LAST = { epic: 75, legendary: 25 };
 function roll(table) {
   let r = Math.random() * Object.values(table).reduce((a, b) => a + b, 0);
   for (const [k, w] of Object.entries(table)) { if ((r -= w) < 0) return k; }
   return Object.keys(table)[0];
 }
+
+/* ================= MÉTA-JEU : jetons, skins, succès, missions ================= */
+const COSMETICS = {
+  disc: [
+    { id: 'classic', name: 'Classique', rarity: 'common', price: 0, desc: 'Le noir mat indémodable.' },
+    { id: 'crystal', name: 'Cristal', rarity: 'rare', price: 350, desc: 'Un vinyle translucide couleur glacier.' },
+    { id: 'splatter', name: 'Éclaboussures', rarity: 'rare', price: 450, desc: 'Vinyle blanc éclaboussé de peinture.' },
+    { id: 'marble', name: 'Marbre bleu', rarity: 'rare', price: 500, desc: 'Des volutes bleues pressées dans la cire.' },
+    { id: 'neon', name: 'Néon', rarity: 'epic', price: 750, desc: 'Des sillons qui brillent comme en boîte de nuit.' },
+    { id: 'lava', name: 'Lave', rarity: 'epic', price: 850, desc: 'Un disque en fusion, à ne pas toucher.' },
+    { id: 'holo', name: 'Holographique', rarity: 'legendary', unlock: 'legend', desc: 'Toutes les couleurs à la fois.' },
+    { id: 'gold', name: 'Disque d’or', rarity: 'legendary', unlock: 'level', desc: 'Réservé aux légendes du blind test.' },
+  ],
+  theme: [
+    { id: 'nuit', name: 'Nuit violette', rarity: 'common', price: 0, desc: 'La scène d’origine de Pompelup.' },
+    { id: 'sunset', name: 'Coucher de soleil', rarity: 'rare', price: 400, desc: 'Orange et rose, ambiance plage.' },
+    { id: 'ocean', name: 'Océan', rarity: 'rare', price: 400, desc: 'Bleu profond et reflets turquoise.' },
+    { id: 'retro', name: 'Rétro 70s', rarity: 'epic', price: 650, desc: 'Brun, moutarde et boule à facettes.' },
+    { id: 'club', name: 'Club laser', rarity: 'epic', unlock: 'perfect', desc: 'Noir total, lasers vert et violet.' },
+    { id: 'aurora', name: 'Aurore boréale', rarity: 'legendary', unlock: 'streak', desc: 'Le ciel du Grand Nord en fond de scène.' },
+  ],
+  fx: [
+    { id: 'sparks', name: 'Étincelles', rarity: 'common', price: 0, glyphs: ['✦', '✧', '★'], desc: 'Une gerbe d’étoiles dorées.' },
+    { id: 'notes', name: 'Notes de musique', rarity: 'rare', price: 300, glyphs: ['♪', '♫', '♬'], desc: 'Des notes qui s’envolent.' },
+    { id: 'hearts', name: 'Cœurs', rarity: 'rare', price: 300, glyphs: ['💜', '💖', '❤️'], desc: 'Pour les coups de cœur musicaux.' },
+    { id: 'flames', name: 'Flammes', rarity: 'epic', price: 550, glyphs: ['🔥'], desc: 'Tu es en feu, et ça se voit.' },
+    { id: 'coins', name: 'Pluie de jetons', rarity: 'legendary', unlock: 'combo', glyphs: ['coin'], desc: 'Chaque bonne réponse fait pleuvoir des jetons.' },
+  ],
+  avatar: [
+    ...['🎧', '🎤', '🎸', '😎'].map(id => ({ id, rarity: 'common', price: 0 })),
+    ...['🥁', '🎹', '🎷', '🎺'].map(id => ({ id, rarity: 'rare', price: 150 })),
+    ...['🦄', '🐯', '👽', '🤖', '🐙', '🦊'].map(id => ({ id, rarity: 'epic', price: 300 })),
+    { id: '🔥', rarity: 'epic', unlock: 'combo' },
+    { id: '⚡', rarity: 'epic', unlock: 'fast' },
+    { id: '🏆', rarity: 'epic', unlock: 'perfect' },
+    { id: '🕵️', rarity: 'epic', unlock: 'daily' },
+    { id: '💎', rarity: 'legendary', unlock: 'coll' },
+    { id: '👑', rarity: 'legendary', unlock: 'level' },
+  ],
+};
+const KIND_NAME = { disc: 'Skin de vinyle', theme: 'Scène', fx: 'Effet de victoire', avatar: 'Avatar' };
+const KIND_NAMES = { disc: 'Skins de vinyle', theme: 'Scènes', fx: 'Effets de victoire', avatar: 'Avatars' };
+const itemOf = (kind, id) => COSMETICS[kind]?.find(i => i.id === id);
+const itemName = (kind, it) => kind === 'avatar' ? `Avatar ${it.id}` : it.name;
+const isOwned = (kind, id) => store.owned[kind].includes(id);
+function own(kind, id) { if (!isOwned(kind, id)) store.owned[kind].push(id); }
+
+function discPrevHTML(id) { return `<span class="disc-prev skin-${id}"></span>`; }
+function itemPreviewHTML(kind, it) {
+  if (kind === 'disc') return discPrevHTML(it.id);
+  if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
+  if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
+  return `<span class="av-prev">${it.id}</span>`;
+}
+function applySkins() {
+  const disc = $('#disc'), game = $('#screen-game');
+  [...disc.classList].filter(c => c.startsWith('skin-')).forEach(c => disc.classList.remove(c));
+  disc.classList.add(`skin-${store.equip.disc}`);
+  [...game.classList].filter(c => c.startsWith('theme-')).forEach(c => game.classList.remove(c));
+  game.classList.add(`theme-${store.equip.theme}`);
+  $$('.play-card-disc').forEach(el => { el.className = `play-card-disc skin-${store.equip.disc}`; });
+  $('#tab-avatar').textContent = store.equip.avatar;
+  $('#pf-avatar-emoji').textContent = store.equip.avatar;
+}
+function equipItem(kind, id) {
+  if (!isOwned(kind, id)) return;
+  store.equip[kind] = id;
+  save();
+  applySkins();
+}
+
+/* Jetons */
+function renderCoins(bump = false) {
+  $$('.coins-n').forEach(el => {
+    el.textContent = fmt(store.coins);
+    if (bump) { el.classList.remove('is-bump'); void el.offsetWidth; el.classList.add('is-bump'); }
+  });
+}
+function addCoins(n) {
+  if (!n) return;
+  store.coins += n;
+  save();
+  renderCoins(true);
+}
+function spendCoins(n) {
+  if (store.coins < n) return false;
+  store.coins -= n;
+  save();
+  renderCoins(true);
+  return true;
+}
+
+/* Succès à paliers */
+const ACHS = [
+  { id: 'games', icon: '🎮', name: 'Habitué', label: n => `Joue ${plural(n, 'partie', 'parties')}`, val: () => store.games,
+    tiers: [[1, { coins: 50 }], [10, { coins: 100, boosters: 1 }], [50, { coins: 300 }], [200, { coins: 500, gold: 1 }]] },
+  { id: 'found', icon: '🎵', name: 'Mélomane', label: n => `Trouve ${n} chansons`, val: () => store.found,
+    tiers: [[25, { coins: 60 }], [100, { coins: 150 }], [500, { coins: 400 }], [2000, { coins: 1000, gold: 1 }]] },
+  { id: 'combo', icon: '🔥', name: 'En feu', label: n => `Atteins un combo ×${n}`, val: () => store.stats.bestCombo,
+    tiers: [[3, { coins: 40 }], [5, { coins: 100, item: 'avatar:🔥' }], [8, { item: 'fx:coins' }], [12, { gold: 1 }]] },
+  { id: 'fast', icon: '⚡', name: 'Oreille d’or', label: n => `Trouve ${n} chansons en moins de 3 s`, val: () => store.stats.fast,
+    tiers: [[5, { coins: 60 }], [25, { coins: 150, item: 'avatar:⚡' }], [100, { coins: 400 }]] },
+  { id: 'perfect', icon: '💯', name: 'Sans faute', label: n => `Termine ${plural(n, 'partie', 'parties')} sans faute (5 manches min.)`, val: () => store.stats.perfect,
+    tiers: [[1, { coins: 100, item: 'avatar:🏆' }], [3, { item: 'theme:club' }], [10, { gold: 1 }]] },
+  { id: 'coll', icon: '💿', name: 'Collectionneur', label: n => `Possède ${n} vinyles`, val: () => ownedIds().length,
+    tiers: [[10, { coins: 80 }], [50, { coins: 200 }], [150, { coins: 500, item: 'avatar:💎' }], [400, { coins: 1000 }]] },
+  { id: 'legend', icon: '⭐', name: 'Légendes', label: n => `Possède ${plural(n, 'vinyle légendaire', 'vinyles légendaires')}`, val: () => ownedIds().filter(id => RARITY.get(id) === 'legendary').length,
+    tiers: [[1, { coins: 100 }], [5, { item: 'disc:holo' }], [15, { coins: 1000, gold: 1 }]] },
+  { id: 'streak', icon: '📅', name: 'Fidèle', label: n => `Joue ${n} jours d’affilée`, val: () => store.stats.bestStreak,
+    tiers: [[3, { boosters: 1 }], [7, { item: 'theme:aurora' }], [30, { coins: 1500, gold: 1 }]] },
+  { id: 'daily', icon: '🕵️', name: 'Détective', label: n => `Réussis ${plural(n, 'défi du jour', 'défis du jour')}`, val: () => store.stats.dailyWins,
+    tiers: [[1, { coins: 50 }], [7, { boosters: 1, item: 'avatar:🕵️' }], [30, { coins: 500 }]] },
+  { id: 'opened', icon: '🎁', name: 'Ouvreur', label: n => `Ouvre ${plural(n, 'booster', 'boosters')}`, val: () => store.opened,
+    tiers: [[5, { coins: 80 }], [25, { gold: 1 }], [100, { coins: 600 }]] },
+  { id: 'level', icon: '👑', name: 'Légende vivante', label: n => `Atteins le niveau ${n}`, val: () => levelOf(store.xp).lvl,
+    tiers: [[5, { item: 'avatar:👑' }], [10, { item: 'disc:gold' }], [20, { coins: 1000, gold: 1 }]] },
+];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+function achState(a) {
+  const claimed = store.ach[a.id] || 0, v = a.val();
+  const reached = a.tiers.filter(([n]) => v >= n).length;
+  const next = a.tiers[claimed];
+  return { claimed, reached, v, next, max: claimed >= a.tiers.length, claimable: reached > claimed };
+}
+const claimableAchs = () => ACHS.filter(a => achState(a).claimable).length;
+// Élément cosmétique débloqué par un succès : palier et progression.
+function unlockInfo(kind, id) {
+  for (const a of ACHS) for (const [n, r] of a.tiers) if (r.item === `${kind}:${id}`) return { text: a.label(n), v: Math.min(a.val(), n), n, ach: a };
+  return null;
+}
+function rewardParts(r) {
+  const parts = [];
+  if (r.coins) parts.push(`+${fmt(r.coins)} jetons`);
+  if (r.boosters) parts.push(`+${plural(r.boosters, 'booster', 'boosters')}`);
+  if (r.gold) parts.push(`+${plural(r.gold, 'Booster Or', 'Boosters Or')}`);
+  if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); parts.push(`${KIND_NAME[k]} « ${itemName(k, it).replace('Avatar ', '')} »`); }
+  return parts;
+}
+function rewardInline(r) {
+  if (r.item) { const [k, id] = r.item.split(':'); return k === 'avatar' ? id : '🎨'; }
+  if (r.gold) return '<i class="mini-booster mp-gold"></i>';
+  if (r.boosters) return '<i class="mini-booster"></i>';
+  return `<i class="coin"></i>${fmt(r.coins)}`;
+}
+function grantReward(r) {
+  if (r.coins) store.coins += r.coins;
+  if (r.boosters) store.boosters += r.boosters;
+  if (r.gold) store.goldBoosters += r.gold;
+  if (r.item) { const [k, id] = r.item.split(':'); own(k, id); }
+  save();
+  renderCoins(true);
+}
+function claimAch(id) {
+  const a = ACHS.find(x => x.id === id), st = achState(a);
+  if (!st.claimable) return;
+  const [n, r] = a.tiers[st.claimed];
+  store.ach[a.id] = st.claimed + 1;
+  grantReward(r);
+  sfx.fanfare(); buzz([30, 40, 60]);
+  showReward({ kicker: `Succès · ${a.name} ${ROMAN[st.claimed]}`, title: a.label(n), reward: r });
+  renderBadges();
+}
+// Signale une seule fois chaque palier atteint.
+function checkAchievements() {
+  ACHS.forEach(a => {
+    const st = achState(a), seen = store.achSeen[a.id] || 0;
+    if (st.reached > seen) {
+      store.achSeen[a.id] = st.reached;
+      toast(`🏆 Succès « ${a.name} ${ROMAN[st.reached - 1]} » — récompense dans ton profil`);
+    }
+  });
+  save();
+  renderBadges();
+}
+
+/* Missions du jour */
+const MISSION_POOL = [
+  { id: 'find10', text: 'Trouve 10 chansons', ev: 'found', target: 10, reward: 60 },
+  { id: 'find25', text: 'Trouve 25 chansons', ev: 'found', target: 25, reward: 120 },
+  { id: 'games2', text: 'Termine 2 parties', ev: 'game', target: 2, reward: 60 },
+  { id: 'combo4', text: 'Fais un combo ×4', ev: 'combo', target: 4, max: true, reward: 70 },
+  { id: 'fast3', text: 'Trouve 3 chansons en moins de 5 s', ev: 'fast5', target: 3, reward: 70 },
+  { id: 'type5', text: 'Trouve 5 chansons en mode Saisie', ev: 'typeFound', target: 5, reward: 100 },
+  { id: 'daily', text: 'Réussis le défi du jour', ev: 'dailyWin', target: 1, reward: 80 },
+  { id: 'open1', text: 'Ouvre un booster', ev: 'opened', target: 1, reward: 50 },
+  { id: 'score', text: 'Marque 5 000 points en une partie', ev: 'score', target: 5000, max: true, reward: 80 },
+  { id: 'nohint', text: 'Termine une partie sans indice', ev: 'noHint', target: 1, reward: 60 },
+  { id: 'cat', text: 'Termine une partie', ev: 'catGame', target: 1, reward: 70 },
+];
+function ensureMissions() {
+  const today = dayKey();
+  if (store.missions?.date === today) return store.missions;
+  const h = hashStr(`missions-${today}`), pool = MISSION_POOL.slice(), picks = [], evs = new Set();
+  let k = h;
+  while (picks.length < 3 && pool.length) {
+    const m = pool.splice(k % pool.length, 1)[0];
+    k = Math.imul(k ^ (k >>> 13), 2654435761) >>> 0;
+    if (evs.has(m.ev)) continue;
+    evs.add(m.ev);
+    const entry = { id: m.id, text: m.text, ev: m.ev, target: m.target, max: !!m.max, reward: m.reward, p: 0, claimed: false };
+    if (m.ev === 'catGame') { const cats = CATS.filter(c => c.id !== 'all'); const c = cats[h % cats.length]; entry.cat = c.id; entry.text = `Termine une partie ${c.name}`; }
+    picks.push(entry);
+  }
+  store.missions = { date: today, list: picks, bonus: false };
+  save();
+  return store.missions;
+}
+function missionEvent(ev, val = 1, extra) {
+  const M = ensureMissions();
+  M.list.forEach(m => {
+    if (m.ev !== ev || m.p >= m.target) return;
+    if (m.cat && m.cat !== extra) return;
+    m.p = Math.min(m.target, m.max ? Math.max(m.p, val) : m.p + val);
+    if (m.p >= m.target) toast(`🎯 Mission accomplie : ${m.text} — récupère +${m.reward} jetons`);
+  });
+  save();
+}
+const missionsClaimable = () => { const M = ensureMissions(); return M.list.filter(m => m.p >= m.target && !m.claimed).length + (M.list.every(m => m.claimed) && !M.bonus ? 1 : 0); };
+function claimMission(i) {
+  const m = ensureMissions().list[i];
+  if (!m || m.claimed || m.p < m.target) return;
+  m.claimed = true;
+  addCoins(m.reward);
+  sfx.booster(); buzz(30);
+  renderMissionsSheet();
+  renderHome();
+}
+function claimMissionBonus() {
+  const M = ensureMissions();
+  if (M.bonus || !M.list.every(m => m.claimed)) return;
+  M.bonus = true;
+  grantReward({ boosters: 1 });
+  showReward({ kicker: 'Missions du jour', title: '3 missions sur 3 !', reward: { boosters: 1 } });
+  renderMissionsSheet();
+  renderHome();
+}
+
+/* Offre du jour */
+function dealOfTheDay() {
+  const cands = [];
+  for (const kind of ['disc', 'theme', 'fx', 'avatar']) COSMETICS[kind].forEach(it => { if (it.price > 0 && !isOwned(kind, it.id)) cands.push({ kind, it }); });
+  if (!cands.length) return null;
+  const d = cands[hashStr(`deal-${dayKey()}`) % cands.length];
+  return Object.assign(d, { price: Math.round(d.it.price * .6 / 10) * 10 });
+}
+const PACKS = [
+  { id: 'std', name: 'Booster', short: '3 vinyles', desc: '3 vinyles, dont au moins 1 rare.', price: 150, give: { boosters: 1 } },
+  { id: 'gold', name: 'Booster Or', short: 'Épique garanti', desc: '3 vinyles de qualité : 1 épique garanti et 25 % de chances de légendaire sur le dernier.', price: 450, give: { gold: 1 } },
+  { id: 'bundle', name: 'Lot de 5', short: '5 boosters', desc: '5 boosters vinyle d’un coup, soit 150 jetons d’économie.', price: 600, give: { boosters: 5 }, tag: '−20 %' },
+];
+const TITLES = [[1, 'Apprenti mélomane'], [3, 'DJ de salon'], [6, 'Oreille affûtée'], [10, 'Maître du blind test'], [15, 'Légende du vinyle']];
+const titleFor = lvl => TITLES.filter(([n]) => lvl >= n).pop()[1];
+const displayName = () => store.name.trim() || 'Joueur';
 
 /* ---------------- Réponses ---------------- */
 const normalize = s => String(s).toLowerCase()
@@ -252,7 +518,7 @@ function unlockAudio() {
     player.play().catch(() => {});
   }
 }
-function tone(freq, dur = .12, type = 'sine', gain = .18, when = 0, slideTo) {
+function rawTone(freq, dur = .12, type = 'sine', gain = .18, when = 0, slideTo) {
   if (!actx) return;
   const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
   o.type = type;
@@ -264,8 +530,9 @@ function tone(freq, dur = .12, type = 'sine', gain = .18, when = 0, slideTo) {
   o.connect(g).connect(actx.destination);
   o.start(t); o.stop(t + dur + .02);
 }
+const tone = (...a) => { if (store.settings.sound) rawTone(...a); };
 function noise(dur = .3, from = 3000, to = 600, gain = .25) {
-  if (!actx) return;
+  if (!actx || !store.settings.sound) return;
   const len = Math.floor(actx.sampleRate * dur), buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
   const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain(), t = actx.currentTime;
@@ -276,7 +543,7 @@ function noise(dur = .3, from = 3000, to = 600, gain = .25) {
   src.connect(f).connect(g).connect(actx.destination);
   src.start();
 }
-function playFile(src, vol = .8) { try { const a = new Audio(src); a.volume = vol; a.play().catch(() => {}); return a; } catch (e) { return null; } }
+function playFile(src, vol = .8) { if (!store.settings.sound) return null; try { const a = new Audio(src); a.volume = vol; a.play().catch(() => {}); return a; } catch (e) { return null; } }
 const LEGENDARY_SFX = ['assets/legendary-1.mp3', 'assets/legendary-2.mp3', 'assets/legendary-3.mp3', 'assets/legendary-4.mp3'];
 const EPIC_SFX = ['assets/epic-1.mp3', 'assets/epic-2.mp3'];
 const sfx = {
@@ -298,7 +565,7 @@ const sfx = {
     if (r === 'epic') playFile(pickOne(EPIC_SFX), .7);
   },
 };
-const buzz = p => { try { navigator.vibrate?.(p); } catch (e) {} };
+const buzz = p => { if (!store.settings.haptics) return; try { navigator.vibrate?.(p); } catch (e) {} };
 // Le focus programmatique n'est donné qu'aux joueurs au clavier (pas d'anneau parasite au doigt).
 let keyboardUser = false;
 document.addEventListener('keydown', () => { keyboardUser = true; }, true);
@@ -310,7 +577,7 @@ function startBeat(bpm) {
   if (!actx) return;
   const period = 60000 / Math.max(70, Math.min(bpm || 110, 170));
   let n = 0;
-  const hit = () => { tone(n % 2 ? 180 : 70, .12, n % 2 ? 'triangle' : 'sine', n % 2 ? .06 : .22); tone(6000, .03, 'square', .015, period / 2000); n++; };
+  const hit = () => { rawTone(n % 2 ? 180 : 70, .12, n % 2 ? 'triangle' : 'sine', n % 2 ? .06 : .22); rawTone(6000, .03, 'square', .015, period / 2000); n++; };
   hit();
   beatTimer = setInterval(hit, period);
 }
@@ -332,22 +599,67 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
+const TAB_SCREENS = ['home', 'collection', 'shop', 'profile'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'game' ? '#1C1230' : '#FFF4EA');
+  $('#tabbar').hidden = !TAB_SCREENS.includes(id);
+  $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
   if (id === 'collection') renderCollection();
+  if (id === 'shop') renderShop();
+  if (id === 'profile') renderProfile();
+  renderBadges();
+}
+function renderBadges() {
+  const unseen = ownedIds().filter(id => store.coll[id].seen === false).length;
+  const setBadge = (el, v) => { el.hidden = !v; el.textContent = v === true ? '!' : v; };
+  setBadge($('#tb-coll'), unseen > 9 ? '9+' : unseen);
+  setBadge($('#tb-shop'), store.gift !== dayKey() ? true : 0);
+  setBadge($('#tb-prof'), claimableAchs());
+  $('#pt-badge').hidden = !claimableAchs();
 }
 
 /* ---------------- Toast & FX ---------------- */
-let toastTimer;
-function toast(msg, ms = 2300) {
+const toastQueue = [];
+let toastBusy = false;
+function toast(msg) {
+  if (toastQueue.includes(msg)) return;
+  toastQueue.push(msg);
+  // Un message vieux de plusieurs événements n'a plus de sens : on garde les plus récents.
+  while (toastQueue.length > 2) toastQueue.shift();
+  if (!toastBusy) nextToast();
+}
+function nextToast() {
+  const ms = toastQueue.length > 1 ? 1700 : 2300;
+  const msg = toastQueue.shift();
   const t = $('#toast');
+  if (!msg) { toastBusy = false; return; }
+  toastBusy = true;
   t.textContent = msg;
   t.classList.add('is-on');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('is-on'), ms);
+  setTimeout(() => { t.classList.remove('is-on'); setTimeout(nextToast, 220); }, ms);
+}
+function winFx(el) {
+  if (REDUCED) return;
+  const it = itemOf('fx', store.equip.fx) || COSMETICS.fx[0], r = el?.getBoundingClientRect();
+  const x = r ? r.left + r.width / 2 : innerWidth / 2, y = r ? r.top + r.height / 2 : innerHeight / 2;
+  const layer = $('#fx-layer');
+  for (let i = 0; i < 16; i++) {
+    const g = it.glyphs[i % it.glyphs.length], p = document.createElement('i'), a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 120;
+    p.className = g === 'coin' ? 'wfx coin' : 'wfx';
+    if (g !== 'coin') p.textContent = g;
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    p.style.setProperty('--s', `${14 + Math.random() * 16}px`);
+    p.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+    p.style.setProperty('--dy', `${Math.sin(a) * d - 40}px`);
+    p.style.setProperty('--rot', `${(Math.random() - .5) * 120}deg`);
+    p.style.setProperty('--c', ['#FBBF24', '#FFFFFF', '#F97316'][i % 3]);
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
 }
 function flyPoints(text, el) {
   const r = el?.getBoundingClientRect(), d = document.createElement('div');
@@ -382,12 +694,7 @@ function renderHome() {
   $('#home-streak-n').textContent = streak;
   $('#home-streak').classList.toggle('is-cold', !playedToday());
   $('#home-streak').setAttribute('aria-label', `Série : ${plural(streak, 'jour', 'jours')}${playedToday() ? '' : ' — joue aujourd’hui pour la garder'}`);
-  const L = levelOf(store.xp);
-  $('#home-level').textContent = L.lvl;
-  $('#home-level-fill').style.width = `${Math.round(L.pct * 100)}%`;
-  $('#stat-best').textContent = fmt(store.best);
-  $('#stat-games').textContent = fmt(store.games);
-  $('#stat-acc').textContent = store.played ? `${Math.round(store.found / store.played * 100)}%` : '–';
+  renderCoins();
 
   const list = $('#cat-list');
   if (!list.children.length) {
@@ -403,38 +710,39 @@ function renderHome() {
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
   $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : ''}`;
   renderBoosterCard();
-  renderCollCard();
+  renderMissionsCard();
   renderDaily();
   clearInterval(dailyTicker);
   dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
 }
+const totalBoosters = () => store.boosters + store.goldBoosters;
 function renderBoosterCard() {
-  const n = store.boosters, card = $('#booster-card');
+  const n = totalBoosters(), card = $('#booster-card');
   card.classList.toggle('is-empty', n === 0);
+  $('.mp-1', card).classList.toggle('mp-gold', store.goldBoosters > 0);
+  $('.mp-1 .mp-name', card).textContent = store.goldBoosters > 0 ? 'Booster Or' : 'Booster';
   $('.mp-2', card).hidden = n < 2;
   $('.mp-3', card).hidden = n < 3;
   $('#bcard-badge').hidden = n === 0;
   $('#bcard-badge').textContent = n;
   const welcome = store.opened === 0 && n > 0;
-  $('.bcard-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : 'Boosters de vinyles';
+  $('.bcard-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : store.goldBoosters ? 'Booster Or disponible !' : 'Boosters de vinyles';
   $('#bcard-title').textContent = welcome ? '1 booster offert !' : n ? `${plural(n, 'booster', 'boosters')} à ouvrir` : 'Prochain booster';
   $('#bcard-gauge-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
   $('#bcard-gauge-txt').textContent = n
     ? `Prochain : ${store.gauge}/${GAUGE_MAX} bonnes réponses`
     : `${store.gauge}/${GAUGE_MAX} bonnes réponses · encore ${GAUGE_MAX - store.gauge} !`;
-  $('#btn-open-booster').textContent = n ? 'Ouvrir' : 'Ma collection';
+  $('#btn-open-booster').textContent = n ? 'Ouvrir' : 'Boutique';
 }
 function ownedIds() { return Object.keys(store.coll).filter(id => SONG.has(id)); }
-function renderCollCard() {
-  const ids = ownedIds();
-  $('#coll-card-n').textContent = ids.length;
-  $('#coll-card-total').textContent = `/${SONGS.length}`;
-  const last = ids.sort((a, b) => store.coll[b].t - store.coll[a].t).slice(0, 3);
-  const fan = $('#coll-fan');
-  fan.innerHTML = last.length
-    ? last.map((id, i) => `<span class="fan-item r-${RARITY.get(id)}" style="left:${i * 28}px; transform: rotate(${(i - 1) * 7}deg); z-index:${3 - i}">${coverHTML(SONG.get(id))}</span>`).join('')
-    : [0, 1, 2].map(i => `<span class="fan-empty" style="left:${i * 28}px"></span>`).join('');
-  $$('.fan-item .cover', fan).forEach(cov => { const s = SONG.get(cov.dataset.cover); if (!knownArt(s.id)) queueArt(s, a => fillCover(cov, a)); });
+function renderMissionsCard() {
+  const M = ensureMissions(), done = M.list.filter(m => m.p >= m.target).length;
+  $('#mis-done').textContent = done;
+  $$('#mis-dots i').forEach((d, i) => { const m = M.list[i]; d.className = m?.claimed ? 'is-claimed' : m && m.p >= m.target ? 'is-done' : ''; });
+  const next = M.list.find(m => m.p < m.target);
+  const claim = missionsClaimable();
+  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer →` : next ? `${next.text} (${next.max ? fmt(next.p) : next.p}/${next.max ? fmt(next.target) : next.target})` : 'Toutes les missions sont faites ✓';
+  $('#mis-badge').hidden = !claim;
 }
 function dailyToday() { return store.daily && store.daily.date === dayKey() ? store.daily : null; }
 function renderDaily() {
@@ -442,7 +750,7 @@ function renderDaily() {
   card.classList.toggle('is-done', !!d);
   if (!d) {
     $('#daily-title').textContent = 'Chanson mystère';
-    $('#daily-sub').textContent = '3 essais · +150 XP · +1 🎁';
+    $('#daily-sub').textContent = '3 essais · +1 booster';
     $('#daily-cta').textContent = 'Jouer →';
     return;
   }
@@ -466,7 +774,7 @@ function startGame(cfg) {
   Object.assign(G, {
     cfg, token: G.token + 1, phase: 'loading',
     songs: pool.slice(0, rounds), spares: pool.slice(rounds, rounds + 12),
-    i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0,
+    i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false,
     dur: cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20,
   });
   if (cfg.daily) { store.daily = { date: dayKey(), won: false, tries: 0, done: false }; save(); }
@@ -475,6 +783,7 @@ function startGame(cfg) {
   $('#game-gauge').hidden = !!cfg.daily;
   $('.game-score').hidden = !!cfg.daily;
   updateGameGauge();
+  applySkins();
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
   startRound();
@@ -633,6 +942,13 @@ function finishRound(ok, reason, sourceEl) {
     sfx.right(G.combo);
     buzz(35);
     flyPoints(`+${fmt(pts)}`, sourceEl || $('#disc'));
+    winFx(sourceEl || $('#disc'));
+    store.stats.bestCombo = Math.max(store.stats.bestCombo, G.combo);
+    if (elapsed < 3) store.stats.fast++;
+    missionEvent('found');
+    missionEvent('combo', G.combo);
+    if (elapsed < 5) missionEvent('fast5');
+    if (G.cfg.mode === 'type') missionEvent('typeFound');
     if (G.combo >= 2) {
       const c = $('#combo');
       c.textContent = `🔥 COMBO ×${G.combo}`;
@@ -765,6 +1081,7 @@ function renderSuggestions(q) {
 function useHint() {
   if (G.phase !== 'playing' || G.hint) return;
   G.hint = 1;
+  G.hintUsed = true;
   $('#btn-hint').disabled = true;
   sfx.tap();
   if (G.cfg.mode === 'type') {
@@ -783,15 +1100,23 @@ function endGame() {
   clearTimeout(G.autoNext);
   stopMusic();
   const found = G.results.filter(r => r.ok).length, n = G.results.length;
-  let xp;
+  let xp, coins;
   if (G.cfg.daily) {
     const won = found === 1;
     xp = won ? 150 : 20;
-    if (won) { store.boosters++; G.boostersWon++; }
+    coins = won ? 60 : 10;
+    if (won) { store.boosters++; G.boostersWon++; store.stats.dailyWins++; missionEvent('dailyWin'); }
     store.daily = { date: dayKey(), won, tries: won ? G.tries + 1 : G.cfg.attempts, done: true, title: G.song.title, artist: G.song.artist };
   } else {
     xp = Math.round(G.score / 25) + found * 5;
+    coins = Math.round(G.score / 100) + found * 5;
+    if (n >= 5 && found === n) store.stats.perfect++;
+    missionEvent('game');
+    missionEvent('score', G.score);
+    missionEvent('catGame', 1, G.cfg.cat);
+    if (!G.hintUsed) missionEvent('noHint');
   }
+  store.coins += coins;
   const record = !G.cfg.daily && G.score > store.best && G.score > 0;
   if (record) store.best = G.score;
   if (!G.cfg.daily) store.games++;
@@ -800,6 +1125,7 @@ function endGame() {
   const levels = addXP(xp);
   G.boostersWon += levels;
   const streakUp = recordPlay();
+  store.stats.bestStreak = Math.max(store.stats.bestStreak, store.streak.count);
   save();
   const after = levelOf(store.xp);
 
@@ -811,7 +1137,8 @@ function endGame() {
   $('#res-combo').textContent = `×${G.bestCombo}`;
   const okTimes = G.results.filter(r => r.ok).map(r => r.time);
   $('#res-time').textContent = okTimes.length ? `${(okTimes.reduce((a, b) => a + b, 0) / okTimes.length).toFixed(1).replace('.', ',')} s` : '–';
-  $('#res-xp').textContent = `+${xp}`;
+  $('#res-xp').textContent = `+${xp} XP`;
+  $('#res-coins').innerHTML = `+${fmt(coins)}<i class="coin"></i>`;
   $('#res-level').textContent = after.lvl;
   $('#res-level-fill').style.width = '0';
   $('#recap').innerHTML = G.results.map((r, i) => `
@@ -834,11 +1161,12 @@ function endGame() {
   setTimeout(() => { $('#res-level-fill').style.width = `${Math.round(after.pct * 100)}%`; }, 250);
 
   if (record || (G.cfg.daily && found) || (found === n && n >= 5)) { sfx.fanfare(); confetti(); }
-  if (levels) setTimeout(() => { toast(`Niveau ${after.lvl} atteint ! +${plural(levels, 'booster', 'boosters')} 🎁`, 2800); confetti(40); }, 900);
+  if (levels) setTimeout(() => { toast(`Niveau ${after.lvl} atteint ! +${plural(levels, 'booster', 'boosters')} et +${100 * levels} jetons`); confetti(40); }, 900);
   if (streakUp) setTimeout(showStreak, 1300);
+  setTimeout(checkAchievements, 1500);
 }
 function renderResBooster() {
-  const box = $('#res-booster'), won = G.boostersWon || 0, n = store.boosters;
+  const box = $('#res-booster'), won = G.boostersWon || 0, n = totalBoosters();
   box.classList.toggle('is-earned', won > 0);
   $('#rb-title').textContent = won ? `🎁 +${plural(won, 'booster', 'boosters')} !` : 'Jauge booster';
   $('#rb-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
@@ -890,11 +1218,11 @@ function share() {
 /* ================= BOOSTERS ================= */
 let BO = null;
 
-function makeBooster() {
+function makeBooster(kind = 'std') {
   const welcome = store.opened === 0;
   const cards = [], used = new Set();
   for (let k = 0; k < 3; k++) {
-    const rarity = roll(k === 2 ? (welcome ? ODDS_WELCOME : ODDS_LAST) : ODDS);
+    const rarity = kind === 'gold' ? roll(k === 2 ? ODDS_GOLD_LAST : ODDS_GOLD) : roll(k === 2 ? (welcome ? ODDS_WELCOME : ODDS_LAST) : ODDS);
     const pool = BY_RARITY[rarity].filter(s => !used.has(s.id));
     const fresh = pool.filter(s => !store.coll[s.id]);
     const src = fresh.length && Math.random() < .75 ? fresh : pool;
@@ -904,29 +1232,31 @@ function makeBooster() {
   }
   return cards.sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
 }
-function commitBooster(cards) {
-  store.boosters = Math.max(0, store.boosters - 1);
+function commitBooster(cards, kind) {
+  if (kind === 'gold') store.goldBoosters = Math.max(0, store.goldBoosters - 1);
+  else store.boosters = Math.max(0, store.boosters - 1);
   store.opened++;
-  let xp = 0;
+  let coins = 0;
   for (const c of cards) {
     const e = store.coll[c.song.id];
     c.isNew = !e;
-    if (e) { e.n++; c.dupXp = DUP_XP[c.rarity]; xp += c.dupXp; }
+    if (e) { e.n++; c.dupCoins = DUP_COINS[c.rarity]; coins += c.dupCoins; }
     else store.coll[c.song.id] = { n: 1, t: Date.now(), seen: false };
   }
-  const levels = xp ? addXP(xp) : 0;
+  store.coins += coins;
+  missionEvent('opened');
   save();
-  return levels;
 }
 
 function openBooster() {
-  if (store.boosters <= 0) { toast('Pas de booster… trouve des chansons pour en gagner ! 🎁'); return; }
+  if (totalBoosters() <= 0) { toast('Pas de booster… trouve des chansons ou passe à la boutique ! 🎁'); return; }
   unlockAudio();
   stopMusic();
   try { listen.pause(); } catch (e) {}
-  const cards = makeBooster();
+  const kind = store.goldBoosters > 0 ? 'gold' : 'std';
+  const cards = makeBooster(kind);
   const best = cards[cards.length - 1].rarity;
-  BO = { cards, idx: 0, state: 'pack', best, welcome: store.opened === 0 };
+  BO = { cards, idx: 0, state: 'pack', best, kind, welcome: store.opened === 0 && kind === 'std' };
   cards.forEach(c => { c.art = knownArt(c.song.id); getArt(c.song).then(a => { if (a) c.art = a; }); });
 
   const bo = $('#booster'), pack = $('#pack');
@@ -934,8 +1264,10 @@ function openBooster() {
   bo.className = 'bo';
   bo.style.setProperty('--glow', 'rgba(249,115,22,.32)');
   bo.style.setProperty('--ray', 'rgba(255,255,255,.05)');
-  pack.className = 'pack';
+  pack.className = kind === 'gold' ? 'pack is-gold' : 'pack';
   pack.hidden = false;
+  $('.pack-name', pack).innerHTML = kind === 'gold' ? 'Booster<br>Or' : 'Booster<br>vinyle';
+  $('.pack-sub', pack).textContent = kind === 'gold' ? '3 vinyles · épique garanti' : '3 vinyles · 1 rare garanti';
   pack.style.setProperty('--tear', 0);
   pack.style.setProperty('--leak', R_COLOR[best]);
   $('#vstack').innerHTML = '';
@@ -944,8 +1276,8 @@ function openBooster() {
   $('#bo-summary').hidden = true;
   $('#bo-hint').hidden = false;
   $('#bo-hint').textContent = 'Glisse ton doigt sur le booster pour le déchirer';
-  $('#bo-count').textContent = BO.welcome ? 'Booster de bienvenue' : 'Booster vinyle';
-  $('#bo-left').textContent = store.boosters > 1 ? `×${store.boosters}` : '';
+  $('#bo-count').textContent = BO.welcome ? 'Booster de bienvenue' : kind === 'gold' ? 'Booster Or' : 'Booster vinyle';
+  $('#bo-left').textContent = totalBoosters() > 1 ? `×${totalBoosters()}` : '';
   document.body.style.overflow = 'hidden';
   sfx.whoosh();
   setTimeout(() => kbFocus(pack), 50);
@@ -961,6 +1293,10 @@ function closeBooster() {
   if (s === 'home') renderHome();
   if (s === 'collection') renderCollection();
   if (s === 'results') renderResBooster();
+  if (s === 'shop') renderShop();
+  if (s === 'profile') renderProfile();
+  renderCoins();
+  checkAchievements();
 }
 
 /* Déchirer : glisser, taper ou clavier */
@@ -1026,8 +1362,7 @@ function autoTear(from = 0) {
 function tearPack() {
   if (BO?.state !== 'pack') return;
   BO.state = 'tearing';
-  const levels = commitBooster(BO.cards);
-  BO.levels = levels;
+  commitBooster(BO.cards, BO.kind);
   const bo = $('#booster'), pack = $('#pack');
   sfx.tear();
   buzz([20, 30, 60]);
@@ -1053,7 +1388,7 @@ function cardHTML(c, i) {
       <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]}</span>
       <div class="vc-title">${esc(s.title)}</div>
       <div class="vc-artist">${esc(s.artist)} · ${s.year}</div>
-      ${c.isNew ? '<span class="vc-tag is-new">Nouveau !</span>' : `<span class="vc-tag is-dup">Doublon · +${c.dupXp} XP</span>`}
+      ${c.isNew ? '<span class="vc-tag is-new">Nouveau !</span>' : `<span class="vc-tag is-dup">Doublon · +${c.dupCoins} <i class="coin"></i></span>`}
     </div>
   </div>`;
 }
@@ -1176,18 +1511,19 @@ function showSummary() {
   const cards = BO.cards, best = BO.best, fresh = cards.filter(c => c.isNew).length;
   $('#bo-stage').hidden = true;
   $('#bo-hint').hidden = true;
-  $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +XP !';
+  $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
   $('#bo-sum-grid').innerHTML = cards.map(c => `
     <div class="bs r-${c.rarity}">
       <span class="bs-cover">${coverHTML(c.song, c.art)}</span>
       <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]}</span>
       <b>${esc(c.song.title)}</b>
     </div>`).join('');
-  const n = store.boosters;
+  const n = totalBoosters();
   $('#bo-next').textContent = n ? `Ouvrir le suivant (${n})` : 'Continuer';
   $('#bo-summary').hidden = false;
   $('#bo-left').textContent = '';
-  if (BO.levels) toast(`Niveau ${levelOf(store.xp).lvl} ! +${plural(BO.levels, 'booster', 'boosters')} 🎁`, 2600);
+  const dup = cards.reduce((a, c) => a + (c.dupCoins || 0), 0);
+  if (dup) toast(`Doublons convertis : +${fmt(dup)} jetons`);
   kbFocus($('#bo-next'));
 }
 
@@ -1284,11 +1620,313 @@ async function toggleListen() {
 }
 listen.addEventListener('ended', () => { $('#vs-play').textContent = '▶ Écouter'; $('#vs-visual').classList.remove('is-playing'); });
 
+/* ================= BOUTIQUE ================= */
+let shopTicker = null;
+function packArt(id) {
+  const pack = (cls, name) => `<div class="mini-pack ${cls}"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span><span class="mp-name">${name}</span></div>`;
+  if (id === 'gold') return pack('mp-1 mp-gold', 'Or');
+  if (id === 'bundle') return `<div class="mini-pack mp-3"></div><div class="mini-pack mp-2"></div>${pack('mp-1', '×5')}`;
+  return pack('mp-1', 'Booster');
+}
+function itemCardHTML(kind, it, deal) {
+  const owned = isOwned(kind, it.id), eq = store.equip[kind] === it.id, locked = !owned && !it.price;
+  const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
+  const price = isDeal ? deal.price : it.price;
+  const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? '<span class="item-state">🔒 Succès</span>' : `<span class="item-price">${fmt(price)}<i class="coin"></i></span>`;
+  const cls = `item r-${it.rarity}${kind === 'avatar' ? ' av-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
+  const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
+  if (kind === 'avatar') return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}">${itemPreviewHTML(kind, it)}${state}</button>`;
+  return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
+}
+function renderShopTimers() {
+  const t = hms(msToMidnight());
+  if (store.gift === dayKey()) $('#gift-sub').textContent = `Prochain cadeau dans ${t}`;
+  $('#deal-timer').textContent = `⏳ Encore ${t}`;
+}
+function renderShop() {
+  renderCoins();
+  const claimed = store.gift === dayKey();
+  $('#gift-card').classList.toggle('is-claimed', claimed);
+  $('#gift-title').textContent = claimed ? 'Cadeau récupéré' : 'Cadeau du jour';
+  $('#gift-sub').textContent = '50 jetons offerts chaque jour';
+  $('#gift-cta').textContent = claimed ? '✓ Pris' : 'Récupérer';
+  const d = dealOfTheDay(), dc = $('#deal-card');
+  dc.hidden = !d;
+  if (d) {
+    dc.dataset.kind = d.kind;
+    dc.dataset.id = d.it.id;
+    $('#deal-preview').innerHTML = itemPreviewHTML(d.kind, d.it);
+    $('#deal-name').textContent = itemName(d.kind, d.it);
+    $('#deal-old').textContent = fmt(d.it.price);
+    $('#deal-new').textContent = fmt(d.price);
+  }
+  renderShopTimers();
+  $('#shop-packs').innerHTML = PACKS.map(p => `
+    <button class="pk" type="button" data-pack="${p.id}">${p.tag ? `<span class="pk-tag">${p.tag}</span>` : ''}
+      <span class="pk-art">${packArt(p.id)}</span><b>${p.name}</b><small>${p.short}</small>
+      <span class="pk-price">${fmt(p.price)}<i class="coin"></i></span>
+    </button>`).join('');
+  for (const kind of ['disc', 'theme', 'fx', 'avatar']) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
+  clearInterval(shopTicker);
+  shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
+}
+function claimGift() {
+  if (store.gift === dayKey()) { toast(`Prochain cadeau dans ${hms(msToMidnight())} 🎁`); return; }
+  store.gift = dayKey();
+  grantReward({ coins: 50 });
+  sfx.booster(); buzz([30, 40, 30]);
+  showReward({ kicker: 'Cadeau du jour', title: 'Merci d’être là !', reward: { coins: 50 } });
+  renderShop();
+  renderBadges();
+}
+
+/* Fiche article (skins, avatars, boosters) */
+let IS = null;
+function openItem(kind, id) {
+  const it = itemOf(kind, id);
+  if (!it) return;
+  const deal = dealOfTheDay();
+  const price = deal && deal.kind === kind && deal.it.id === id ? deal.price : it.price;
+  IS = { kind, id, price };
+  $('#is-preview').innerHTML = itemPreviewHTML(kind, it);
+  const pill = $('#is-rarity');
+  pill.className = `rar-pill r-${it.rarity}`;
+  pill.textContent = `${R_ICON[it.rarity]} ${R_NAME[it.rarity]} · ${KIND_NAME[kind]}`;
+  $('#is-name').textContent = kind === 'avatar' ? `Avatar ${it.id}` : it.name;
+  $('#is-desc').textContent = it.desc || (kind === 'avatar' ? 'Il s’affiche sur ton profil et dans la barre de navigation.' : '');
+  const lock = !isOwned(kind, id) && !it.price ? unlockInfo(kind, id) : null;
+  $('#is-lock').hidden = !lock;
+  if (lock) {
+    $('#is-lock-txt').textContent = `🔒 Succès « ${lock.ach.name} » : ${lock.text} (${fmt(lock.v)}/${fmt(lock.n)})`;
+    $('#is-lock-fill').style.width = `${lock.v / lock.n * 100}%`;
+  }
+  renderItemAction();
+  $('#item-sheet').hidden = false;
+  kbFocus($('#is-action'));
+}
+function renderItemAction() {
+  const { kind, id, price } = IS, btn = $('#is-action'), it = itemOf(kind, id);
+  btn.disabled = false;
+  if (store.equip[kind] === id) { btn.textContent = 'Équipé ✓'; btn.disabled = true; }
+  else if (isOwned(kind, id)) btn.textContent = 'Équiper';
+  else if (!it.price) btn.textContent = 'Voir mes succès';
+  else if (store.coins < price) { btn.textContent = `Il te manque ${fmt(price - store.coins)} jetons`; btn.disabled = true; }
+  else btn.innerHTML = `Acheter · ${fmt(price)} <i class="coin"></i>`;
+}
+function itemAction() {
+  const { kind, id, price } = IS, it = itemOf(kind, id);
+  if (isOwned(kind, id)) {
+    equipItem(kind, id);
+    sfx.tap(); buzz(20);
+    toast(`${kind === 'avatar' ? 'Avatar' : it.name} équipé ✓`);
+  } else if (!it.price) {
+    closeItem();
+    PF_TAB = 'ach';
+    show('profile');
+    return;
+  } else {
+    if (!spendCoins(price)) { toast('Pas assez de jetons'); return; }
+    own(kind, id);
+    equipItem(kind, id);
+    sfx.reveal(it.rarity); buzz([30, 40, 60]);
+    confetti(50);
+    toast(`${kind === 'avatar' ? 'Avatar' : it.name} acheté et équipé ! 🎉`);
+  }
+  renderItemAction();
+  refreshScreen();
+}
+function closeItem() { $('#item-sheet').hidden = true; IS = null; }
+function openPack(id) {
+  const p = PACKS.find(x => x.id === id);
+  IS = { pack: p };
+  $('#is-preview').innerHTML = `<span class="pk-art">${packArt(p.id)}</span>`;
+  const pill = $('#is-rarity');
+  pill.className = `rar-pill r-${p.id === 'gold' ? 'legendary' : 'rare'}`;
+  pill.textContent = p.id === 'gold' ? '★ Premium' : '◆ Booster';
+  $('#is-name').textContent = p.name;
+  $('#is-desc').textContent = p.desc;
+  $('#is-lock').hidden = true;
+  const btn = $('#is-action');
+  btn.disabled = store.coins < p.price;
+  if (btn.disabled) btn.textContent = `Il te manque ${fmt(p.price - store.coins)} jetons`;
+  else btn.innerHTML = `Acheter · ${fmt(p.price)} <i class="coin"></i>`;
+  $('#item-sheet').hidden = false;
+}
+function buyPack() {
+  const p = IS.pack;
+  if (!spendCoins(p.price)) { toast('Pas assez de jetons'); return; }
+  grantReward(p.give);
+  sfx.booster(); buzz([30, 40, 30]);
+  closeItem();
+  renderBadges();
+  openBooster();
+}
+
+/* ================= RÉCOMPENSES ================= */
+const rewardQueue = [];
+let RW = null;
+function showReward(opts) {
+  rewardQueue.push(opts);
+  if (!RW) nextReward();
+}
+function nextReward() {
+  RW = rewardQueue.shift() || null;
+  const ov = $('#reward-overlay');
+  if (!RW) { ov.hidden = true; return; }
+  const r = RW.reward || {};
+  let visual = `<span class="rw-coins"><i class="coin"></i>+${fmt(r.coins || 0)}</span>`, action = null;
+  if (r.item) {
+    const [k, id] = r.item.split(':');
+    visual = itemPreviewHTML(k, itemOf(k, id));
+    action = { label: 'Équiper', run: () => { equipItem(k, id); toast('Équipé ✓'); refreshScreen(); } };
+  } else if (r.gold || r.boosters) {
+    visual = `<span class="pk-art">${packArt(r.gold ? 'gold' : 'std')}</span>`;
+    action = { label: 'Ouvrir', run: () => openBooster() };
+  }
+  RW.action = action;
+  $('#rw-kicker').textContent = RW.kicker || 'Récompense';
+  $('#rw-visual').innerHTML = visual;
+  $('#rw-title').textContent = RW.title || '';
+  $('#rw-sub').textContent = rewardParts(r).join(' · ');
+  $('#rw-later').hidden = !action;
+  $('.rw-actions').classList.toggle('is-single', !action);
+  $('#rw-ok').textContent = action ? action.label : 'Super !';
+  ov.hidden = false;
+  confetti(40, ['#FBBF24', '#FDE68A', '#F97316', '#FFFFFF']);
+  kbFocus($('#rw-ok'));
+}
+function closeReward(run) {
+  const act = RW?.action;
+  $('#reward-overlay').hidden = true;
+  RW = null;
+  if (run && act) act.run();
+  if (rewardQueue.length) setTimeout(nextReward, 200);
+  refreshScreen();
+}
+function refreshScreen() {
+  const s = currentScreen();
+  if (s === 'home') renderHome();
+  if (s === 'shop') renderShop();
+  if (s === 'profile') renderProfile();
+  if (s === 'results') renderResBooster();
+  renderCoins();
+  renderBadges();
+}
+
+/* ================= MISSIONS ================= */
+let misTicker = null;
+function renderMissionsSheet() {
+  const M = ensureMissions();
+  $('#ms-sub').textContent = `Nouvelles missions dans ${hms(msToMidnight())}`;
+  $('#ms-list').innerHTML = M.list.map((m, i) => {
+    const done = m.p >= m.target, pct = Math.round(m.p / m.target * 100);
+    return `<div class="ms-item${m.claimed ? ' is-claimed' : done ? ' is-done' : ''}">
+      <div><b>${esc(m.text)}</b><span class="gauge"><span style="width:${pct}%"></span></span><small>${m.max ? fmt(m.p) : m.p} / ${m.max ? fmt(m.target) : m.target}</small></div>
+      ${m.claimed ? '<span class="ach-reward">✓ Récupéré</span>' : done ? `<button class="ach-claim ms-claim" type="button" data-i="${i}">+${m.reward} <i class="coin"></i></button>` : `<span class="ach-reward">+${m.reward} <i class="coin"></i></span>`}
+    </div>`;
+  }).join('');
+  const allClaimed = M.list.every(m => m.claimed), bonus = $('#ms-bonus');
+  bonus.disabled = !allClaimed || M.bonus;
+  bonus.classList.toggle('is-ready', allClaimed && !M.bonus);
+  $('#ms-bonus-txt').textContent = M.bonus ? 'Bonus récupéré ✓' : allClaimed ? 'Touche pour récupérer ton booster !' : `Récupère les 3 missions (${M.list.filter(m => m.claimed).length}/3)`;
+}
+function openMissions() {
+  renderMissionsSheet();
+  $('#missions-sheet').hidden = false;
+  clearInterval(misTicker);
+  misTicker = setInterval(() => { if ($('#missions-sheet').hidden) clearInterval(misTicker); else $('#ms-sub').textContent = `Nouvelles missions dans ${hms(msToMidnight())}`; }, 1000);
+}
+
+/* ================= PROFIL ================= */
+let PF_TAB = 'ach';
+function renderProfile() {
+  const L = levelOf(store.xp);
+  applySkins();
+  const nameInput = $('#pf-name');
+  if (document.activeElement !== nameInput) nameInput.value = store.name;
+  $('#pf-title').textContent = titleFor(L.lvl);
+  $('#pf-level').textContent = L.lvl;
+  $('#pf-level-fill').style.width = `${Math.round(L.pct * 100)}%`;
+  $('#pf-level-txt').textContent = `${fmt(L.rest)} / ${fmt(L.need)} XP`;
+  renderCoins();
+  $('#pf-boosters').textContent = totalBoosters();
+  $('#pf-vinyls').textContent = ownedIds().length;
+  $$('#pf-tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.pt === PF_TAB)));
+  for (const t of ['ach', 'skins', 'stats', 'settings']) $(`#pf-${t}`).hidden = t !== PF_TAB;
+  if (PF_TAB === 'ach') renderAchPanel();
+  if (PF_TAB === 'skins') renderSkinsPanel();
+  if (PF_TAB === 'stats') renderStatsPanel();
+  if (PF_TAB === 'settings') { $('#set-sound').checked = store.settings.sound; $('#set-haptics').checked = store.settings.haptics; }
+}
+function renderAchPanel() {
+  const rows = ACHS.map(a => ({ a, st: achState(a) }))
+    .sort((x, y) => (y.st.claimable - x.st.claimable) || (x.st.max - y.st.max));
+  $('#pf-ach').innerHTML = rows.map(({ a, st }) => {
+    const [n, r] = st.max ? a.tiers[a.tiers.length - 1] : a.tiers[st.claimed];
+    const pct = Math.min(100, st.v / n * 100);
+    const tier = st.max ? '<em>MAX</em>' : `<em>${ROMAN[st.claimed]}</em>`;
+    const right = st.claimable ? `<button class="ach-claim" type="button" data-ach="${a.id}">Récupérer</button>`
+      : st.max ? '<span class="ach-reward">Terminé ✓</span>' : `<span class="ach-reward">${rewardInline(r)}</span>`;
+    return `<div class="ach${st.claimable ? ' is-claimable' : ''}${st.max ? ' is-max' : ''}">
+      <span class="ach-ico" aria-hidden="true">${a.icon}</span>
+      <div class="ach-body"><b>${esc(a.name)} ${tier}</b><small>${esc(a.label(n))}</small>
+        <span class="gauge"><span style="width:${pct}%"></span></span><small class="ach-prog">${fmt(Math.min(st.v, n))} / ${fmt(n)}</small></div>
+      ${right}
+    </div>`;
+  }).join('');
+}
+function renderSkinsPanel() {
+  const order = (kind, it) => (store.equip[kind] === it.id ? 0 : isOwned(kind, it.id) ? 1 : 2);
+  $('#pf-skins').innerHTML = ['disc', 'theme', 'fx', 'avatar'].map(kind => {
+    const items = COSMETICS[kind].slice().sort((x, y) => order(kind, x) - order(kind, y));
+    const have = items.filter(it => isOwned(kind, it.id)).length;
+    return `<h3 id="pf-sec-${kind}">${KIND_NAMES[kind]} · ${have}/${items.length}</h3>
+      <div class="item-grid${kind === 'avatar' ? ' item-grid-4' : ''}">${items.map(it => itemCardHTML(kind, it, null)).join('')}</div>`;
+  }).join('');
+}
+function renderStatsPanel() {
+  const legend = ownedIds().filter(id => RARITY.get(id) === 'legendary').length;
+  const S = [
+    ['Record', fmt(store.best)], ['Parties', fmt(store.games)],
+    ['Réussite', store.played ? `${Math.round(store.found / store.played * 100)} %` : '–'], ['Chansons trouvées', fmt(store.found)],
+    ['Combo max', `×${store.stats.bestCombo}`], ['Réponses éclair', fmt(store.stats.fast)],
+    ['Parties sans faute', fmt(store.stats.perfect)], ['Défis réussis', fmt(store.stats.dailyWins)],
+    ['Meilleure série', plural(store.stats.bestStreak, 'jour', 'jours')], ['Vinyles', `${ownedIds().length}/${SONGS.length}`],
+    ['Légendaires', `${legend}/${BY_RARITY.legendary.length}`], ['Boosters ouverts', fmt(store.opened)],
+  ];
+  $('#pf-stats').innerHTML = `<div class="stat-grid">${S.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('')}</div>`;
+}
+
+/* ================= BIENVENUE ================= */
+let wlAvatar = null;
+function maybeWelcome() {
+  if (store.onboarded) return;
+  wlAvatar = store.equip.avatar;
+  $('#wl-avatars').innerHTML = COSMETICS.avatar.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}">${a.id}</button>`).join('');
+  $('#wl-name').value = store.name;
+  $('#welcome-sheet').hidden = false;
+}
+function finishWelcome(keep) {
+  if (keep) {
+    const name = $('#wl-name').value.trim().slice(0, 16);
+    if (name) store.name = name;
+    if (wlAvatar) store.equip.avatar = wlAvatar;
+  }
+  store.onboarded = true;
+  save();
+  $('#welcome-sheet').hidden = true;
+  applySkins();
+  renderHome();
+  if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue 🎁` : 'Ouvre ton booster de bienvenue 🎁');
+}
+
 /* ---------------- Événements ---------------- */
-$('#btn-play').addEventListener('click', () => {
-  const p = store.prefs;
-  startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds });
-});
+const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
+$('#btn-play').addEventListener('click', quickPlay);
+$('#nav-play').addEventListener('click', quickPlay);
+$('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { sfx.tap(); show(t.dataset.tab); } });
+$('#home-coins').addEventListener('click', () => show('shop'));
+$('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', () => {
   if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())} ⏳`); return; }
   startGame({ daily: true, mode: 'type', rounds: 1, attempts: 3, candidates: dailySongCandidates() });
@@ -1300,9 +1938,8 @@ $('#home-streak').addEventListener('click', () => {
 $('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat'); if (!b) return; store.prefs.cat = b.dataset.cat; save(); renderHome(); });
 $('#mode-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); renderHome(); });
 $('#rounds-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.rounds = +b.dataset.rounds; save(); renderHome(); });
-$('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); store.boosters ? openBooster() : show('collection'); });
-$('#booster-card').addEventListener('click', () => { store.boosters ? openBooster() : show('collection'); });
-$('#coll-card').addEventListener('click', () => show('collection'));
+$('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); totalBoosters() ? openBooster() : show('shop'); });
+$('#booster-card').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 
 $('#choices').addEventListener('click', e => { const b = e.target.closest('.choice'); if (b) onChoice(b); });
 $('#type-box').addEventListener('submit', e => { e.preventDefault(); submitText($('#type-input').value); });
@@ -1342,14 +1979,13 @@ $('#bo-stage').addEventListener('click', e => {
   else if (BO.state === 'revealed') nextCard();
 });
 $('#bo-close').addEventListener('click', closeBooster);
-$('#bo-next').addEventListener('click', () => { if (store.boosters) openBooster(); else closeBooster(); });
+$('#bo-next').addEventListener('click', () => { if (totalBoosters()) openBooster(); else closeBooster(); });
 $('#bo-to-coll').addEventListener('click', () => { closeBooster(); show('collection'); });
 
 // Collection
-$('#coll-back').addEventListener('click', () => show('home'));
 $('#coll-open').addEventListener('click', openBooster);
 $('#coll-empty-play').addEventListener('click', () => {
-  if (store.boosters) openBooster();
+  if (totalBoosters()) openBooster();
   else { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); }
 });
 $('#rar-filter').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b) return; COLL.filter = b.dataset.r; COLL.shown = 60; renderCollection(); });
@@ -1358,6 +1994,63 @@ $('#coll-grid').addEventListener('click', e => {
   const t = e.target.closest('.vt'); if (t) openVinyl(t.dataset.id);
 });
 $('#vs-close').addEventListener('click', closeVinyl);
+
+// Boutique
+$('#gift-card').addEventListener('click', claimGift);
+$('#deal-card').addEventListener('click', e => openItem(e.currentTarget.dataset.kind, e.currentTarget.dataset.id));
+$('#screen-shop').addEventListener('click', e => {
+  const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
+  const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id);
+});
+$('#is-close').addEventListener('click', closeItem);
+$('#is-action').addEventListener('click', () => { if (!IS) return; IS.pack ? buyPack() : itemAction(); });
+$('#item-sheet').addEventListener('click', e => { if (e.target.id === 'item-sheet') closeItem(); });
+
+// Missions
+$('#ms-list').addEventListener('click', e => { const b = e.target.closest('.ms-claim'); if (b) claimMission(+b.dataset.i); });
+$('#ms-bonus').addEventListener('click', claimMissionBonus);
+$('#ms-close').addEventListener('click', () => { $('#missions-sheet').hidden = true; });
+$('#missions-sheet').addEventListener('click', e => { if (e.target.id === 'missions-sheet') $('#missions-sheet').hidden = true; });
+
+// Récompenses
+$('#rw-ok').addEventListener('click', () => closeReward(true));
+$('#rw-later').addEventListener('click', () => closeReward(false));
+
+// Profil
+$('#pf-tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; PF_TAB = b.dataset.pt; renderProfile(); });
+$('#pf-name').addEventListener('change', e => {
+  store.name = e.target.value.trim().slice(0, 16);
+  e.target.value = store.name;
+  save();
+  toast(store.name ? `C’est noté, ${store.name} !` : 'Pseudo effacé');
+});
+$('#pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+$('#pf-avatar').addEventListener('click', () => {
+  PF_TAB = 'skins';
+  renderProfile();
+  $('#pf-sec-avatar')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+});
+$('#pf-ach').addEventListener('click', e => { const b = e.target.closest('.ach-claim'); if (b) claimAch(b.dataset.ach); });
+$('#pf-skins').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id); });
+$('#set-sound').addEventListener('change', e => { store.settings.sound = e.target.checked; save(); if (e.target.checked) { unlockAudio(); sfx.tap(); } });
+$('#set-haptics').addEventListener('change', e => { store.settings.haptics = e.target.checked; save(); buzz(40); });
+$('#set-reset').addEventListener('click', () => { $('#reset-sheet').hidden = false; kbFocus($('#rs-cancel')); });
+$('#rs-cancel').addEventListener('click', () => { $('#reset-sheet').hidden = true; });
+$('#reset-sheet').addEventListener('click', e => { if (e.target.id === 'reset-sheet') $('#reset-sheet').hidden = true; });
+$('#rs-confirm').addEventListener('click', () => {
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  location.reload();
+});
+
+// Bienvenue
+$('#wl-avatars').addEventListener('click', e => {
+  const b = e.target.closest('.wl-av'); if (!b) return;
+  wlAvatar = b.dataset.av;
+  $$('.wl-av').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+});
+$('#wl-go').addEventListener('click', () => finishWelcome(true));
+$('#wl-skip').addEventListener('click', () => finishWelcome(false));
+$('#wl-name').addEventListener('keydown', e => { if (e.key === 'Enter') finishWelcome(true); });
 $('#vs-play').addEventListener('click', toggleListen);
 $('#vinyl-sheet').addEventListener('click', e => { if (e.target.id === 'vinyl-sheet') closeVinyl(); });
 
@@ -1370,7 +2063,13 @@ document.addEventListener('keydown', e => {
     }
     return;
   }
-  if (!$('#vinyl-sheet').hidden && e.key === 'Escape') { closeVinyl(); return; }
+  if (e.key === 'Escape') {
+    if (!$('#vinyl-sheet').hidden) { closeVinyl(); return; }
+    if (!$('#item-sheet').hidden) { closeItem(); return; }
+    if (!$('#missions-sheet').hidden) { $('#missions-sheet').hidden = true; return; }
+    if (!$('#reset-sheet').hidden) { $('#reset-sheet').hidden = true; return; }
+    if (!$('#reward-overlay').hidden) { closeReward(false); return; }
+  }
   if (currentScreen() !== 'game') return;
   if (e.key === 'Escape') { $('#quit-sheet').hidden ? $('#btn-quit').click() : ($('#quit-sheet').hidden = true); return; }
   if (G.phase === 'reveal' && (e.key === 'Enter' || e.key === ' ') && document.activeElement?.id !== 'type-input') { e.preventDefault(); nextRound(); return; }
@@ -1385,6 +2084,10 @@ document.addEventListener('visibilitychange', () => {
   } else if (G.phase === 'playing' && G.pv) player.play().catch(() => {});
 });
 
-if (/[?&]debug\b/.test(location.search)) window.__PQ = { G, store, save, openBooster, get BO() { return BO; }, RARITY, BY_RARITY };
+if (/[?&]debug\b/.test(location.search)) window.__PQ = { G, store, save, openBooster, get BO() { return BO; }, RARITY, BY_RARITY, ACHS, achState, ensureMissions, checkAchievements };
+ensureMissions();
+applySkins();
+renderCoins();
 show('home');
+setTimeout(maybeWelcome, 500);
 })();
