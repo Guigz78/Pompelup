@@ -26,8 +26,8 @@ const defaults = () => ({
   daily: null,
   boosters: 1, goldBoosters: 0, gauge: 0, opened: 0, coll: {},
   coins: 100, gift: null, name: '', onboarded: false,
-  owned: { skin: ['rookie', 'crate'], disc: ['classic'], theme: ['nuit'], fx: ['sparks'] },
-  equip: { skin: 'rookie', disc: 'classic', theme: 'nuit', fx: 'sparks' },
+  owned: { skin: ['rookie', 'crate'], acc: [], disc: ['classic'], theme: ['nuit'], fx: ['sparks'] },
+  equip: { skin: 'rookie', acc: { head: null, eyes: null, ears: null, neck: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null,
@@ -41,6 +41,7 @@ const store = (() => {
     const merged = Object.assign(d, raw);
     for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen', 'story']) merged[k] = Object.assign(defaults()[k], raw[k]);
     delete merged.equip.avatar;
+    merged.equip.acc = Object.assign(defaults().equip.acc, (raw.equip || {}).acc);
     merged.owned = Object.fromEntries(Object.entries(defaults().owned).map(([k, base]) => [k, [...new Set([...base, ...((raw.owned || {})[k] || [])])]]));
     merged.coll = Object.assign({}, raw.coll);
     return merged;
@@ -167,14 +168,24 @@ const COSMETICS = {
     { id: 'coins', name: 'Pluie de jetons', rarity: 'legendary', unlock: 'combo', glyphs: ['coin'], desc: 'Chaque bonne réponse fait pleuvoir des jetons.' },
   ],
   skin: window.PompeChar.SKINS,
+  acc: window.PompeChar.ACCESSORIES,
 };
-const KINDS = ['skin', 'disc', 'theme', 'fx'];
-const KIND_NAME = { skin: 'Skin', disc: 'Vinyle de platine', theme: 'Scène', fx: 'Effet de victoire' };
-const KIND_NAMES = { skin: 'Skins', disc: 'Vinyles de platine', theme: 'Scènes', fx: 'Effets de victoire' };
+const KINDS = ['skin', 'acc', 'disc', 'theme', 'fx'];
+const KIND_NAME = { skin: 'Skin', acc: 'Accessoire', disc: 'Vinyle de platine', theme: 'Scène', fx: 'Effet de victoire' };
+const KIND_NAMES = { skin: 'Skins', acc: 'Accessoires', disc: 'Vinyles de platine', theme: 'Scènes', fx: 'Effets de victoire' };
 const itemOf = (kind, id) => COSMETICS[kind]?.find(i => i.id === id);
 const itemName = (kind, it) => it.name;
 const mySkin = () => window.PompeChar.byId(store.equip.skin);
 const charHTML = (sk = mySkin(), opts) => window.PompeChar.svg(sk, opts);
+// Accessoires équipés, indexés par emplacement, prêts pour le rendu
+const myAccs = (extra) => {
+  const out = {};
+  for (const [slot, id] of Object.entries(store.equip.acc)) { const a = id && window.PompeChar.accById(id); if (a) out[slot] = a; }
+  if (extra) out[extra.slot] = extra;
+  return out;
+};
+const meHTML = (opts = {}) => charHTML(mySkin(), Object.assign({ accs: myAccs() }, opts));
+const isEquipped = (kind, id) => kind === 'acc' ? Object.values(store.equip.acc).includes(id) : store.equip[kind] === id;
 const isOwned = (kind, id) => store.owned[kind].includes(id);
 function own(kind, id) { if (!isOwned(kind, id)) store.owned[kind].push(id); }
 
@@ -183,7 +194,8 @@ function itemPreviewHTML(kind, it) {
   if (kind === 'disc') return discPrevHTML(it.id);
   if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
   if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
-  return `<span class="char-prev">${charHTML(it)}</span>`;
+  if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { bust: true, accs: myAccs(it) })}</span>`;
+  return `<span class="char-prev">${charHTML(it, { bust: true })}</span>`;
 }
 function applySkins() {
   const disc = $('#disc'), game = $('#screen-game');
@@ -192,12 +204,13 @@ function applySkins() {
   [...game.classList].filter(c => c.startsWith('theme-')).forEach(c => game.classList.remove(c));
   game.classList.add(`theme-${store.equip.theme}`);
   $$('.play-card-disc').forEach(el => { el.className = `play-card-disc skin-${store.equip.disc}`; });
-  $('#tab-avatar').innerHTML = charHTML(mySkin(), { head: true });
-  $('#pf-avatar-emoji').innerHTML = charHTML(mySkin(), { head: true });
+  $('#tab-avatar').innerHTML = meHTML({ head: true });
+  $('#pf-avatar-emoji').innerHTML = meHTML({ bust: true });
 }
 function equipItem(kind, id) {
   if (!isOwned(kind, id)) return;
-  store.equip[kind] = id;
+  if (kind === 'acc') { const a = itemOf('acc', id); store.equip.acc[a.slot] = id; }
+  else store.equip[kind] = id;
   save();
   applySkins();
 }
@@ -646,7 +659,7 @@ function startBeat(bpm) {
   beatTimer = setInterval(hit, period);
 }
 function stopBeat() { clearInterval(beatTimer); beatTimer = null; }
-function stopMusic() { stopBeat(); try { player.pause(); } catch (e) {} }
+function stopMusic() { stopBeat(); try { player.pause(); } catch (e) {} try { stemAudio.pause(); } catch (e) {} }
 function playPreview(url) {
   return new Promise(resolve => {
     let done = false;
@@ -773,7 +786,7 @@ function renderHome() {
   $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
   $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : ''}`;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
   renderStoryCard();
@@ -850,6 +863,9 @@ function startGame(cfg) {
   $('.game-score').hidden = !!cfg.daily;
   updateGameGauge();
   applySkins();
+  host.mood = null;
+  host.render('happy');
+  $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
   startRound();
@@ -898,14 +914,18 @@ async function startRound() {
   img.removeAttribute('src');
   $('#reveal').hidden = true;
   $('#clues').hidden = true;
+  $('#rapid').hidden = true;
   $('#btn-next').hidden = true;
+  G.holding = false;
+  if (!G.cfg.daily) say(G.i === G.songs.length - 1 && G.i > 0 ? HOST_LINES.last() : HOST_LINES.start(G.i + 1));
+  else say('Le défi du jour : 3 essais, pas un de plus !');
   $('#game-round').textContent = G.cfg.daily ? 'Défi du jour' : `Manche ${G.i + 1}/${G.songs.length}`;
   $('#stage-status').textContent = G.i === 0 ? 'On chauffe les platines…' : 'Chargement de l’extrait…';
   setTimer(1, G.dur);
   $('#choices').innerHTML = '';
   $('#type-box').hidden = true;
   const hintBtn = $('#btn-hint');
-  hintBtn.hidden = !!G.cfg.daily;
+  hintBtn.hidden = !!G.cfg.daily || G.cfg.mode === 'stems';
   hintBtn.disabled = true;
   $('#hint-label').textContent = G.cfg.mode === 'type' ? 'Indice (−30 %)' : '50/50 (−30 %)';
 
@@ -935,6 +955,7 @@ async function startRound() {
 
   $('#tonearm').classList.add('is-on');
   sfx.needle();
+  if (G.cfg.mode === 'stems') { await startRapidRound(token, song, pv); return; }
   let playing = false;
   if (pv) playing = await playPreview(pv.url);
   if (token !== G.token) return;
@@ -975,6 +996,7 @@ function loop(token) {
   const sec = Math.ceil(left);
   if (sec !== G.lastSec) {
     G.lastSec = sec;
+    if (sec === 5) say(HOST_LINES.hurry(), 'wow', 1500);
     if (sec <= 5 && sec > 0) {
       sfx.tick(sec === 1);
       const n = $('#timer-num');
@@ -986,6 +1008,7 @@ function loop(token) {
 }
 
 function points() {
+  if (G.cfg.mode === 'stems') return Math.round(rapidPoints() * (1 + Math.min(.5, .1 * (G.combo - 1))) / 10) * 10;
   const left = Math.max(0, G.dur - (performance.now() - G.t0) / 1000);
   const base = 100 + 900 * (left / G.dur);
   const comboMult = 1 + Math.min(.5, .1 * (G.combo - 1));
@@ -997,7 +1020,9 @@ function points() {
 function finishRound(ok, reason, sourceEl) {
   if (G.phase !== 'playing') return;
   G.phase = 'reveal';
-  const song = G.song, elapsed = (performance.now() - G.t0) / 1000;
+  const rapid = G.cfg.mode === 'stems';
+  if (rapid) holdEnd();
+  const song = G.song, elapsed = rapid ? G.heard : (performance.now() - G.t0) / 1000;
   let pts = 0;
   if (ok) {
     G.combo++;
@@ -1050,7 +1075,16 @@ function finishRound(ok, reason, sourceEl) {
   });
   $('#type-input').blur();
   $('#suggest').innerHTML = '';
-  setTimer(ok ? (G.dur - elapsed) / G.dur : 0, ok ? G.dur - elapsed : 0);
+  if (!rapid) setTimer(ok ? (G.dur - elapsed) / G.dur : 0, ok ? G.dur - elapsed : 0);
+  say(ok ? HOST_LINES.right(G.combo, elapsed < 3) : reason === 'timeout' ? HOST_LINES.timeout(song) : HOST_LINES.wrong(song), ok ? (G.combo >= 3 ? 'wow' : 'happy') : 'sad', 2600);
+  if (rapid) {
+    renderStems();
+    $('#rapid').hidden = true;
+    // Récompense : on entend enfin le morceau complet
+    if (G.rapidSrc === 'stems') { setStemLevel(4); stemAudio.play().catch(() => {}); }
+    else if (G.rapidSrc === 'plain') player.play().catch(() => {});
+    $('#disc').classList.remove('is-spinning');
+  }
   $('#timer-num').classList.remove('is-low');
   $('#ring-fg').classList.remove('is-low');
 
@@ -1090,6 +1124,202 @@ function nextRound() {
   if (G.i >= G.songs.length - 1) return endGame();
   G.i++;
   startRound();
+}
+
+/* ================= PRÉSENTATRICE ================= */
+const HOST = { name: 'Lulu', skin: '#C68863', eyes: '#7C3AED', hair: ['afro', '#F97316'], top: ['sequin', '#6D28D9'], phones: '#FBBF24' };
+const host = {
+  mood: null, timer: null,
+  render(mood) {
+    if (mood === this.mood) return;
+    this.mood = mood;
+    $('#host-av').innerHTML = charHTML(HOST, { bust: true, mood });
+  },
+  // Petite voix musicale : une syllabe = une note douce de la gamme pentatonique
+  voice(text) {
+    if (!soundOn()) return;
+    const syl = Math.min(9, Math.max(2, Math.round(text.replace(/[^a-zà-ÿ]/gi, '').length / 3)));
+    const scale = [74, 76, 79, 81, 84, 86];
+    for (let i = 0; i < syl; i++) mallet(scale[(i * 3 + text.length) % scale.length], i * .075, .035, .12);
+  },
+  say(text, mood = 'talk', ms = 2200) {
+    const av = $('#host-av'), bubble = $('#host-bubble');
+    $('#host-text').textContent = text;
+    bubble.classList.remove('is-pop'); void bubble.offsetWidth; bubble.classList.add('is-pop');
+    this.render(mood === 'talk' ? 'happy' : mood);
+    av.classList.remove('is-bounce'); void av.offsetWidth; av.classList.add('is-bounce');
+    av.classList.add('is-talking');
+    this.voice(text);
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => av.classList.remove('is-talking'), Math.min(ms, 280 + text.length * 38));
+  },
+};
+const say = (...a) => host.say(...a);
+const HOST_LINES = {
+  start: n => pickOne([`Manche ${n} ! Tends l’oreille…`, 'Attention, ça démarre !', 'Voilà le prochain extrait !', 'Tu la connais, celle-là ?']),
+  last: () => 'Dernière manche, tout se joue maintenant !',
+  hurry: () => pickOne(['Plus que 5 secondes !', 'Vite, vite !', 'Le temps file…']),
+  right: (combo, fast) => combo >= 3 ? `Combo ×${combo} ! Tu es en feu 🔥` : fast ? pickOne(['Réflexe de DJ !', 'Trop rapide !', 'Instantané !']) : pickOne(['Bien joué !', 'Exactement !', `Bravo ${displayName()} !`, 'Oreille d’or !']),
+  wrong: s => pickOne(['Aïe, raté…', 'Pas cette fois !', 'Presque !']) + ` C’était « ${s.title} ».`,
+  timeout: s => `Temps écoulé ! C’était « ${s.title} ».`,
+  hint: () => pickOne(['Un petit coup de pouce…', 'Je t’aide un peu !']),
+  end: ratio => ratio >= .8 ? 'Quelle partie, bravo !' : ratio >= .5 ? 'Belle partie !' : 'On remet ça ?',
+};
+
+/* ================= PARTIE RAPIDE : écoute au doigt + stems ================= */
+const RAPID_MAX = 12;            // secondes d'écoute avant que la jauge soit pleine
+const STEMS = [
+  { id: 'voice', label: 'Voix', icon: '🎤', cost: 0 },
+  { id: 'guitar', label: 'Guitare', icon: '🎸', cost: 100 },
+  { id: 'drums', label: 'Batterie', icon: '🥁', cost: 100 },
+  { id: 'bass', label: 'Basse', icon: '🎚️', cost: 100 },
+  { id: 'full', label: 'Tout', icon: '🎶', cost: 150 },
+];
+const stemAudio = new Audio();
+stemAudio.crossOrigin = 'anonymous';
+stemAudio.preload = 'auto';
+let stemGraph = null;
+// Séparation approximative d'un mix stéréo : centre filtré = voix, côtés = guitares/mélodies,
+// aigus = batterie (cymbales), graves du centre = basse.
+function buildStemGraph() {
+  if (stemGraph || !actx) return stemGraph;
+  try {
+    const src = actx.createMediaElementSource(stemAudio);
+    const split = actx.createChannelSplitter(2);
+    src.connect(split);
+    const mid = actx.createGain(), side = actx.createGain(), inv = actx.createGain();
+    mid.gain.value = .5; side.gain.value = .5; inv.gain.value = -.5;
+    split.connect(mid, 0); split.connect(mid, 1);
+    split.connect(side, 0); split.connect(inv, 1); inv.connect(side);
+    const filt = (input, type, freq, q = .7, gain) => { const f = actx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; if (gain != null) f.gain.value = gain; input.connect(f); return f; };
+    const outG = actx.createGain();
+    outG.connect(actx.destination);
+    const stemGain = node => { const g = actx.createGain(); g.gain.value = 0; node.connect(g); g.connect(outG); return g; };
+    const voice = filt(filt(filt(mid, 'highpass', 220), 'lowpass', 4200), 'peaking', 1800, 1, 5);
+    const guitar = filt(filt(side, 'highpass', 180), 'lowpass', 7000);
+    const drums = filt(src, 'highpass', 4500);
+    const kick = filt(mid, 'bandpass', 65, 1.4);
+    const bass = filt(mid, 'lowpass', 190);
+    const full = actx.createGain(); src.connect(full);
+    stemGraph = {
+      voice: stemGain(voice), guitar: stemGain(guitar), drums: stemGain(drums), kick: stemGain(kick), bass: stemGain(bass), full: stemGain(full),
+    };
+    stemGraph.guitar.connect(outG);
+  } catch (e) { stemGraph = null; }
+  return stemGraph;
+}
+function setStemLevel(stage) {
+  if (!stemGraph) return;
+  const t = actx.currentTime, set = (g, v) => { g.gain.cancelScheduledValues(t); g.gain.linearRampToValueAtTime(v, t + .25); };
+  const fullOn = stage >= 4;
+  set(stemGraph.voice, fullOn ? 0 : 1.2);
+  set(stemGraph.guitar, fullOn ? 0 : stage >= 1 ? 1.4 : 0);
+  set(stemGraph.drums, fullOn ? 0 : stage >= 2 ? 1.3 : 0);
+  set(stemGraph.kick, fullOn ? 0 : stage >= 2 ? .8 : 0);
+  set(stemGraph.bass, fullOn ? 0 : stage >= 3 ? 1.1 : 0);
+  set(stemGraph.full, fullOn ? 1 : 0);
+}
+// Charge l'extrait pour les stems ; si le serveur refuse le CORS, on retombe sur l'écoute complète.
+function loadStemAudio(url) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = ok => { if (done) return; done = true; stemAudio.removeEventListener('canplay', onOk); stemAudio.removeEventListener('error', onErr); resolve(ok); };
+    const onOk = () => finish(true), onErr = () => finish(false);
+    stemAudio.addEventListener('canplay', onOk);
+    stemAudio.addEventListener('error', onErr);
+    stemAudio.src = url;
+    stemAudio.load();
+    setTimeout(() => finish(stemAudio.readyState >= 2), 4000);
+  });
+}
+async function startRapidRound(token, song, pv) {
+  G.heard = 0; G.stem = 0; G.holding = false; G.maxed = false;
+  G.rapidSrc = null;
+  if (pv) {
+    unlockAudio();
+    const ok = await loadStemAudio(pv.url);
+    if (token !== G.token) return;
+    if (ok && buildStemGraph()) { G.rapidSrc = 'stems'; setStemLevel(0); }
+    else { G.rapidSrc = 'plain'; player.src = pv.url; }
+  }
+  if (!G.rapidSrc) {
+    G.rapidSrc = 'beat';
+    $('#clues').hidden = false;
+    $('#clues').innerHTML = `<span class="clue">${song.emoji || '🎵'}</span><span class="clue">Année <b>${song.year}</b></span><span class="clue">${esc(song.genre)}</span>`;
+  }
+  renderStems();
+  $('#rapid').hidden = false;
+  $('#hold-hint').textContent = 'Maintiens le disque pour écouter';
+  $('#stage-status').textContent = `${fmt(rapidPoints())} pts en jeu`;
+  G.phase = 'playing';
+  G.t0 = performance.now();
+  G.lastTick = G.t0;
+  setTimer(1, RAPID_MAX);
+  $$('.choice').forEach(b => { b.disabled = false; });
+  rapidLoop(token);
+}
+function renderStems() {
+  const avail = G.rapidSrc === 'stems';
+  $('#stems').innerHTML = STEMS.map((s, i) => {
+    const on = i <= G.stem, next = i === G.stem + 1;
+    return `<button class="stem${on ? ' is-on' : ''}${next ? ' is-next' : ''}" type="button" data-stem="${i}" ${!next || !avail || G.phase === 'reveal' ? 'disabled' : ''}>
+      <span aria-hidden="true">${s.icon}</span><b>${s.label}</b>${next ? `<small>−${s.cost}</small>` : ''}</button>`;
+  }).join('');
+  $('#stems').hidden = !avail;
+}
+function addStem() {
+  if (G.phase !== 'playing' || G.stem >= STEMS.length - 1) return;
+  G.stem++;
+  setStemLevel(G.stem);
+  const s = STEMS[G.stem];
+  sfx.tap(); buzz(20);
+  say(s.id === 'full' ? 'Et voilà le morceau complet !' : `Et voilà ${s.id === 'drums' ? 'la batterie' : s.id === 'bass' ? 'la basse' : 'la guitare'} !`, 'wink');
+  renderStems();
+  $('#stage-status').textContent = `${fmt(rapidPoints())} pts en jeu`;
+}
+function rapidPoints() {
+  const cost = STEMS.slice(1, G.stem + 1).reduce((a, s) => a + s.cost, 0);
+  return Math.max(50, Math.round((1000 * (1 - G.heard / RAPID_MAX) - cost) / 10) * 10);
+}
+function holdStart() {
+  if (G.phase !== 'playing' || G.cfg.mode !== 'stems' || G.holding || G.maxed) return;
+  G.holding = true;
+  G.lastTick = performance.now();
+  $('#disc').classList.add('is-spinning');
+  $('#hold').classList.add('is-held');
+  $('#hold-hint').textContent = 'Écoute… relâche pour réfléchir';
+  if (G.rapidSrc === 'stems') { if (actx?.state === 'suspended') actx.resume(); stemAudio.play().catch(() => {}); }
+  else if (G.rapidSrc === 'plain') player.play().catch(() => {});
+  else startBeat(G.song.bpm);
+}
+function holdEnd() {
+  if (!G.holding) return;
+  G.holding = false;
+  $('#disc').classList.remove('is-spinning');
+  $('#hold').classList.remove('is-held');
+  if (G.phase === 'playing') $('#hold-hint').textContent = G.maxed ? 'Plus d’écoute : choisis ta réponse !' : 'Maintiens le disque pour écouter';
+  try { stemAudio.pause(); } catch (e) {}
+  try { player.pause(); } catch (e) {}
+  stopBeat();
+}
+function rapidLoop(token) {
+  if (token !== G.token || G.phase !== 'playing') return;
+  const now = performance.now();
+  if (G.holding) {
+    G.heard = Math.min(RAPID_MAX, G.heard + (now - G.lastTick) / 1000);
+    const left = RAPID_MAX - G.heard;
+    setTimer(left / RAPID_MAX, left);
+    $('#stage-status').textContent = `${fmt(rapidPoints())} pts en jeu`;
+    const sec = Math.ceil(left);
+    if (sec !== G.lastSec) { G.lastSec = sec; if (sec <= 3 && sec > 0) sfx.tick(sec === 1); }
+    if (G.heard >= RAPID_MAX) {
+      G.maxed = true;
+      holdEnd();
+      say('Plus d’écoute ! Fais ton choix…', 'wow');
+    }
+  }
+  G.lastTick = now;
+  requestAnimationFrame(() => rapidLoop(token));
 }
 
 /* ----- Réponses ----- */
@@ -1146,6 +1376,7 @@ function useHint() {
   if (G.phase !== 'playing' || G.hint) return;
   G.hint = 1;
   G.hintUsed = true;
+  say(HOST_LINES.hint(), 'wink');
   $('#btn-hint').disabled = true;
   sfx.tap();
   if (G.cfg.mode === 'type') {
@@ -1194,8 +1425,8 @@ function endGame() {
   const after = levelOf(store.xp);
 
   const ratio = n ? found / n : 0;
-  $('#res-char').innerHTML = charHTML(mySkin(), { mood: record ? 'wow' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'wink' : 'sad' });
-  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : '4 choix'}`;
+  $('#res-char').innerHTML = meHTML({ mood: record ? 'wow' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'wink' : 'sad' });
+  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'partie rapide' : '4 choix'}`;
   $('#res-record').hidden = !record;
   $('#res-line').textContent = G.cfg.daily
     ? (found ? `Trouvé en ${plural(G.tries + 1, 'essai', 'essais')} !` : 'Pas cette fois… reviens demain !')
@@ -1284,6 +1515,18 @@ function share() {
 /* ================= BOOSTERS ================= */
 let BO = null;
 
+// Un booster peut contenir un accessoire à la place d'un vinyle.
+const ACC_DROP = { std: .3, gold: .6 };
+function pickAccessory(rarity) {
+  const all = COSMETICS.acc, order = [rarity, 'rare', 'common', 'epic', 'legendary'];
+  for (const r of order) {
+    const pool = all.filter(a => a.rarity === r);
+    if (!pool.length) continue;
+    const fresh = pool.filter(a => !isOwned('acc', a.id));
+    return pickOne(fresh.length && Math.random() < .8 ? fresh : pool);
+  }
+  return all[0];
+}
 function makeBooster(kind = 'std') {
   const welcome = store.opened === 0;
   const cards = [], used = new Set();
@@ -1296,6 +1539,11 @@ function makeBooster(kind = 'std') {
     used.add(song.id);
     cards.push({ song, rarity });
   }
+  if (!welcome && Math.random() < ACC_DROP[kind]) {
+    const i = Math.random() < .5 ? 0 : 1;
+    const acc = pickAccessory(cards[i].rarity);
+    cards[i] = { acc, rarity: acc.rarity };
+  }
   return cards.sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
 }
 function commitBooster(cards, kind) {
@@ -1304,6 +1552,11 @@ function commitBooster(cards, kind) {
   store.opened++;
   let coins = 0;
   for (const c of cards) {
+    if (c.acc) {
+      c.isNew = !isOwned('acc', c.acc.id);
+      if (c.isNew) own('acc', c.acc.id); else { c.dupCoins = DUP_COINS[c.rarity]; coins += c.dupCoins; }
+      continue;
+    }
     const e = store.coll[c.song.id];
     c.isNew = !e;
     if (e) { e.n++; c.dupCoins = DUP_COINS[c.rarity]; coins += c.dupCoins; }
@@ -1323,7 +1576,7 @@ function openBooster() {
   const cards = makeBooster(kind);
   const best = cards[cards.length - 1].rarity;
   BO = { cards, idx: 0, state: 'pack', best, kind, welcome: store.opened === 0 && kind === 'std' };
-  cards.forEach(c => { c.art = knownArt(c.song.id); getArt(c.song).then(a => { if (a) c.art = a; }); });
+  cards.forEach(c => { if (!c.song) return; c.art = knownArt(c.song.id); getArt(c.song).then(a => { if (a) c.art = a; }); });
 
   const bo = $('#booster'), pack = $('#pack');
   bo.hidden = false;
@@ -1441,6 +1694,21 @@ function tearPack() {
 }
 
 function cardHTML(c, i) {
+  if (c.acc) {
+    const a = c.acc;
+    return `<div class="vc vc-acc r-${c.rarity}" data-i="${i}" role="button" tabindex="-1" aria-label="Carte ${i + 1} sur 3">
+    <div class="vc-flip">
+      <div class="vc-back"><span class="vc-back-logo">Pompe<span>lup</span></span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
+      <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { bust: true, mood: 'wow', accs: myAccs(a) })}</div></div>
+    </div>
+    <div class="vc-info">
+      <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]} · Accessoire</span>
+      <div class="vc-title">${esc(a.name)}</div>
+      <div class="vc-artist">${window.PompeChar.SLOTS[a.slot]} · se porte avec tous tes skins</div>
+      ${c.isNew ? '<span class="vc-tag is-new">Nouveau !</span>' : `<span class="vc-tag is-dup">Doublon · +${c.dupCoins} <i class="coin"></i></span>`}
+    </div>
+  </div>`;
+  }
   const s = c.song;
   return `<div class="vc r-${c.rarity}" data-i="${i}" style="--sc:${s.color || '#6D28D9'}" role="button" tabindex="-1" aria-label="Vinyle ${i + 1} sur 3">
     <div class="vc-flip">
@@ -1580,9 +1848,9 @@ function showSummary() {
   $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
   $('#bo-sum-grid').innerHTML = cards.map(c => `
     <div class="bs r-${c.rarity}">
-      <span class="bs-cover">${coverHTML(c.song, c.art)}</span>
+      <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { bust: true, accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
       <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]}</span>
-      <b>${esc(c.song.title)}</b>
+      <b>${esc(c.acc ? c.acc.name : c.song.title)}</b>
     </div>`).join('');
   const n = totalBoosters();
   $('#bo-next').textContent = n ? `Ouvrir le suivant (${n})` : 'Continuer';
@@ -1627,7 +1895,7 @@ function renderCollection() {
       <span class="nook-player" aria-hidden="true"><i></i></span>
       <span class="nook-lamp" aria-hidden="true"><i></i></span>
       <span class="nook-plant" aria-hidden="true"><i></i><i></i><i></i></span>
-      <button class="nook-char" id="nook-char" type="button" aria-label="Ton personnage">${charHTML(mySkin(), { mood: ids.length ? 'happy' : 'wow' })}</button>
+      <button class="nook-char" id="nook-char" type="button" aria-label="Ton personnage">${meHTML({ mood: ids.length ? 'happy' : 'wow' })}</button>
       <span class="nook-bubble" id="nook-bubble" hidden></span>
     </div>`;
   grid.innerHTML = nook + shown.map((id, i) => {
@@ -1721,7 +1989,7 @@ function packArt(id) {
   return pack('mp-1', 'Booster');
 }
 function itemCardHTML(kind, it, deal) {
-  const owned = isOwned(kind, it.id), eq = store.equip[kind] === it.id, locked = !owned && !it.price;
+  const owned = isOwned(kind, it.id), eq = isEquipped(kind, it.id), locked = !owned && !it.price;
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
   const price = isDeal ? deal.price : it.price;
   const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? '<span class="item-state">🔒 Succès</span>' : `<span class="item-price">${fmt(price)}<i class="coin"></i></span>`;
@@ -1782,9 +2050,9 @@ function openItem(kind, id) {
   $('#is-preview').innerHTML = itemPreviewHTML(kind, it);
   const pill = $('#is-rarity');
   pill.className = `rar-pill r-${it.rarity}`;
-  pill.textContent = `${R_ICON[it.rarity]} ${R_NAME[it.rarity]} · ${KIND_NAME[kind]}`;
+  pill.textContent = `${R_ICON[it.rarity]} ${R_NAME[it.rarity]} · ${kind === 'acc' ? `Accessoire ${window.PompeChar.SLOTS[it.slot].toLowerCase()}` : KIND_NAME[kind]}`;
   $('#is-name').textContent = it.name;
-  $('#is-desc').textContent = it.desc || '';
+  $('#is-desc').textContent = it.desc || (kind === 'acc' ? `Se porte avec tous les skins. Un seul accessoire par emplacement (${window.PompeChar.SLOTS[it.slot].toLowerCase()}).` : '');
   const lock = !isOwned(kind, id) && !it.price ? unlockInfo(kind, id) : null;
   $('#is-lock').hidden = !lock;
   if (lock) {
@@ -1798,7 +2066,8 @@ function openItem(kind, id) {
 function renderItemAction() {
   const { kind, id, price } = IS, btn = $('#is-action'), it = itemOf(kind, id);
   btn.disabled = false;
-  if (store.equip[kind] === id) { btn.textContent = 'Équipé ✓'; btn.disabled = true; }
+  if (kind === 'acc' && isEquipped(kind, id)) btn.textContent = 'Retirer';
+  else if (isEquipped(kind, id)) { btn.textContent = 'Équipé ✓'; btn.disabled = true; }
   else if (isOwned(kind, id)) btn.textContent = 'Équiper';
   else if (!it.price) btn.textContent = 'Voir mes succès';
   else if (store.coins < price) { btn.textContent = `Il te manque ${fmt(price - store.coins)} jetons`; btn.disabled = true; }
@@ -1806,7 +2075,11 @@ function renderItemAction() {
 }
 function itemAction() {
   const { kind, id, price } = IS, it = itemOf(kind, id);
-  if (isOwned(kind, id)) {
+  if (kind === 'acc' && isEquipped(kind, id)) {
+    store.equip.acc[it.slot] = null;
+    save(); applySkins(); sfx.tap();
+    toast(`${it.name} retiré`);
+  } else if (isOwned(kind, id)) {
     equipItem(kind, id);
     sfx.tap(); buzz(20);
     toast(`${it.name} équipé ✓`);
@@ -1967,7 +2240,7 @@ function renderAchPanel() {
   }).join('');
 }
 function renderSkinsPanel() {
-  const order = (kind, it) => (store.equip[kind] === it.id ? 0 : isOwned(kind, it.id) ? 1 : 2);
+  const order = (kind, it) => (isEquipped(kind, it.id) ? 0 : isOwned(kind, it.id) ? 1 : 2);
   $('#pf-skins').innerHTML = KINDS.map(kind => {
     const items = COSMETICS[kind].slice().sort((x, y) => order(kind, x) - order(kind, y));
     const have = items.filter(it => isOwned(kind, it.id)).length;
@@ -2191,6 +2464,13 @@ $('#suggest').addEventListener('click', e => {
   submitText(b.querySelector('b').textContent, b.dataset.id);
 });
 $('#btn-hint').addEventListener('click', useHint);
+const holdEl = $('#hold');
+holdEl.addEventListener('pointerdown', e => { if (G.cfg?.mode !== 'stems') return; e.preventDefault(); holdEl.setPointerCapture?.(e.pointerId); holdStart(); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => holdEl.addEventListener(ev, holdEnd));
+holdEl.addEventListener('contextmenu', e => { if (G.cfg?.mode === 'stems') e.preventDefault(); });
+$('#stems').addEventListener('click', e => { const b = e.target.closest('.stem'); if (b && !b.disabled) addStem(); });
+document.addEventListener('keydown', e => { if (e.code === 'Space' && G.cfg?.mode === 'stems' && G.phase === 'playing' && document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); holdStart(); } });
+document.addEventListener('keyup', e => { if (e.code === 'Space') holdEnd(); });
 $('#btn-next').addEventListener('click', nextRound);
 $('#btn-quit').addEventListener('click', () => {
   if (G.phase === 'done' || G.phase === 'idle') return show('home');
