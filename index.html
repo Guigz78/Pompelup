@@ -20,90 +20,61 @@
 <body>
 <div class="app" id="app">
 
-  <!-- ================= ACCUEIL ================= -->
+  <!-- ================= ACCUEIL (lobby) ================= -->
   <section class="screen is-active" id="screen-home" aria-label="Accueil">
-    <header class="home-head">
-      <div class="logo" aria-label="Pompelup">Pompe<span>lup</span><i></i></div>
-      <div class="chips">
-        <button class="chip chip-streak" id="home-streak" type="button" aria-label="Série de jours joués">
-          <span class="chip-ico" aria-hidden="true">🔥</span><b id="home-streak-n">0</b>
-        </button>
-        <button class="chip chip-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique">
-          <i class="coin" aria-hidden="true"></i><b class="coins-n" id="home-coins-n">0</b>
-        </button>
+    <header class="lobby-top">
+      <button class="me-pill" id="me-pill" type="button" aria-label="Mon profil">
+        <span class="me-head" id="me-head"></span>
+        <span class="me-txt"><b id="me-name">Joueur</b><span class="me-lvl"><i class="lvl-badge" id="home-level">1</i><span class="gauge"><span id="home-level-fill"></span></span></span></span>
+      </button>
+      <div class="wallet">
+        <button class="chip chip-streak" id="home-streak" type="button" aria-label="Série de jours joués"><span class="chip-ico" aria-hidden="true">🔥</span><b id="home-streak-n">0</b></button>
+        <button class="chip chip-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique"><i class="coin" aria-hidden="true"></i><b class="coins-n" id="home-coins-n">0</b></button>
       </div>
     </header>
 
-    <section class="bcard" id="booster-card" aria-label="Boosters de vinyles">
-      <div class="bcard-art" aria-hidden="true">
-        <div class="mini-pack mp-3"></div>
-        <div class="mini-pack mp-2"></div>
-        <div class="mini-pack mp-1"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span><span class="mp-name">Booster</span></div>
-      </div>
-      <div class="bcard-body">
-        <div class="bcard-kicker">Boosters de vinyles</div>
-        <div class="bcard-title" id="bcard-title">1 booster à ouvrir</div>
-        <div class="bcard-gauge">
-          <span class="gauge"><span id="bcard-gauge-fill"></span></span>
-          <small id="bcard-gauge-txt">0/6 bonnes réponses</small>
-        </div>
-        <button class="bcard-btn" id="btn-open-booster" type="button">Ouvrir</button>
-      </div>
-      <span class="bcard-badge" id="bcard-badge" aria-hidden="true">1</span>
-    </section>
+    <div class="lobby">
+      <div class="lobby-bg" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="lobby-spot" aria-hidden="true"></div>
+      <div class="lobby-podium" aria-hidden="true"><i></i></div>
+      <button class="lobby-char" id="lobby-char" type="button" aria-label="Changer de skin"></button>
+      <div class="lobby-tag" id="lobby-skin">Le Débutant</div>
 
-    <div class="bento">
-      <button class="daily-card" id="daily-card" type="button">
-        <span class="daily-tag">Défi du jour</span>
-        <span class="daily-title" id="daily-title">Chanson mystère</span>
-        <span class="daily-sub" id="daily-sub">3 essais · +1 booster</span>
-        <span class="daily-cta" id="daily-cta">Jouer →</span>
-        <span class="daily-disc" aria-hidden="true"></span>
+      <div class="side side-l">
+        <button class="side-btn sb-daily" id="daily-card" type="button">
+          <span class="sb-ico"><i class="sb-disc"></i></span><b>Défi</b><small id="daily-cta">Jouer</small><i class="sb-badge" id="daily-badge">!</i>
+        </button>
+        <button class="side-btn sb-mis" id="mis-card" type="button">
+          <span class="sb-ico"><i class="sb-target"></i></span><b>Missions</b><small><span id="mis-done">0</span>/3</small><i class="sb-badge" id="mis-badge" hidden>!</i>
+        </button>
+        <button class="side-btn sb-story" id="story-card" type="button">
+          <span class="sb-ico" id="story-card-art"></span><b>Histoire</b><small id="story-card-sub">0/8</small>
+        </button>
+      </div>
+      <div class="side side-r">
+        <button class="side-btn sb-boost" id="booster-card" type="button">
+          <span class="sb-ico"><span class="sb-pack" id="sb-pack"></span></span><b>Boosters</b><small id="bcard-title">0</small><i class="sb-badge" id="bcard-badge" hidden>0</i>
+        </button>
+        <button class="side-btn sb-gift" id="gift-side" type="button">
+          <span class="sb-ico"><i class="gift-box"></i></span><b>Cadeau</b><small id="gift-side-sub">Gratuit</small><i class="sb-badge" id="gift-badge" hidden>!</i>
+        </button>
+      </div>
+
+      <div class="lobby-gauge" id="booster-gauge" aria-label="Jauge booster">
+        <span class="mini-booster" aria-hidden="true"></span>
+        <span class="gauge"><span id="bcard-gauge-fill"></span></span>
+        <small id="bcard-gauge-txt">0/6</small>
+      </div>
+    </div>
+
+    <div class="play-row">
+      <button class="mode-btn" id="mode-btn" type="button" aria-label="Choisir le mode">
+        <span class="mode-thumb" id="mode-thumb"></span>
+        <span class="mode-txt"><small id="mode-kind">4 choix</small><b id="play-sub">Tout mélangé</b></span>
+        <span class="mode-caret" aria-hidden="true">▾</span>
       </button>
-      <button class="mis-card" id="mis-card" type="button">
-        <span class="mis-tag">Missions du jour</span>
-        <span class="mis-num"><b id="mis-done">0</b><small>/3</small></span>
-        <span class="mis-dots" id="mis-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="mis-next" id="mis-next">Trouve 10 chansons</span>
-        <span class="mis-badge" id="mis-badge" hidden>!</span>
-      </button>
+      <button class="btn-go" id="btn-play" type="button"><span>Jouer</span></button>
     </div>
-
-    <button class="story-card" id="story-card" type="button">
-      <span class="story-card-art" id="story-card-art" aria-hidden="true"></span>
-      <span class="story-card-txt"><span class="story-tag">Mode Histoire</span><b>Découvre les légendes</b><small id="story-card-sub">8 artistes · écoute, anecdotes, quiz</small></span>
-      <span class="story-card-go" aria-hidden="true">→</span>
-    </button>
-
-    <div class="block">
-      <div class="block-label">Catégorie</div>
-      <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
-    </div>
-
-    <div class="block two-col">
-      <div>
-        <div class="block-label">Mode</div>
-        <div class="seg" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
-          <button type="button" role="radio" data-mode="choice" aria-checked="true">4 choix</button>
-          <button type="button" role="radio" data-mode="type" aria-checked="false">Saisie <small>×1,5</small></button>
-          <button type="button" role="radio" data-mode="stems" aria-checked="false">Rapide <small>⚡</small></button>
-        </div>
-      </div>
-      <div>
-        <div class="block-label">Manches</div>
-        <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
-          <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
-          <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
-          <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
-        </div>
-      </div>
-    </div>
-
-    <button class="play-card" id="btn-play" type="button">
-      <span class="play-card-disc" aria-hidden="true"><span>▶</span></span>
-      <span class="play-card-txt"><b>Lancer la partie</b><small id="play-sub">Tout mélangé · 10 manches</small></span>
-      <span class="play-card-go" aria-hidden="true">→</span>
-    </button>
   </section>
 
   <!-- ================= PARTIE ================= -->
@@ -119,7 +90,7 @@
 
     <div class="host" id="host">
       <span class="host-av" id="host-av" aria-hidden="true"></span>
-      <div class="host-bubble" id="host-bubble" aria-live="polite"><b>Lulu</b><span id="host-text">Salut ! Prêt·e pour le blind test ?</span></div>
+      <div class="host-bubble" id="host-bubble" aria-live="polite"><b>DJ Patator</b><span id="host-text">Salut ! Prêt·e pour le blind test ?</span></div>
     </div>
 
     <div class="stage" id="stage">
@@ -216,10 +187,19 @@
     </header>
     <span class="gauge gauge-lg room-gauge"><span id="coll-fill"></span></span>
     <div class="rar-filter" id="rar-filter" role="radiogroup" aria-label="Rareté"></div>
-    <div class="room" id="room">
-      <div class="wall" id="coll-grid"></div>
-      <div class="room-floor" aria-hidden="true"></div>
+    <div class="house" id="room">
+      <div class="house-wall">
+        <div class="house-window" aria-hidden="true"><i></i><i></i></div>
+        <div class="house-frames" id="coll-top"></div>
+      </div>
+      <button class="house-living" id="nook-char" type="button" aria-label="Ton personnage dans le salon">
+        <span class="house-living-img" id="living-img"></span>
+        <span class="nook-bubble" id="nook-bubble" hidden></span>
+      </button>
+      <div class="house-floor" aria-hidden="true"></div>
     </div>
+    <div class="shelf-title" id="shelf-title" hidden>Sur les étagères</div>
+    <div class="wall" id="coll-grid"></div>
     <div class="coll-empty" id="coll-empty" hidden>
       <b>Ton mur est vide</b>
       <p>Chaque booster contient 3 vinyles. Gagne-en en trouvant des chansons !</p>
@@ -414,6 +394,27 @@
     </div>
   </div>
 
+  <div class="overlay overlay-sheet" id="mode-sheet" hidden>
+    <div class="sheet mode-sheet" role="dialog" aria-modal="true" aria-labelledby="mode-title">
+      <div class="sheet-title" id="mode-title">Choisis ta partie</div>
+      <div class="block-label">Mode</div>
+      <div class="mode-cards" id="mode-seg" role="radiogroup" aria-label="Mode de jeu">
+        <button type="button" role="radio" data-mode="choice" aria-checked="true"><span class="mc-ico">🎯</span><b>4 choix</b><small>Tape la bonne réponse</small></button>
+        <button type="button" role="radio" data-mode="type" aria-checked="false"><span class="mc-ico">⌨️</span><b>Saisie</b><small>Écris le titre · ×1,5</small></button>
+        <button type="button" role="radio" data-mode="stems" aria-checked="false"><span class="mc-ico">⚡</span><b>Rapide</b><small>Voix, guitare, batterie…</small></button>
+      </div>
+      <div class="block-label">Catégorie</div>
+      <div class="cat-grid" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
+      <div class="block-label">Manches</div>
+      <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
+        <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
+        <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
+        <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
+      </div>
+      <button class="btn-go btn-go-wide" id="mode-go" type="button"><span>Jouer</span></button>
+    </div>
+  </div>
+
   <div class="overlay overlay-sheet" id="quit-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="quit-title">
       <div class="sheet-title" id="quit-title">Quitter la partie ?</div>
@@ -510,9 +511,11 @@
 </div>
 
 <audio id="player" preload="auto"></audio>
+<script src="vendor/three.min.js"></script>
 <script src="songs.js"></script>
 <script src="story-data.js"></script>
 <script src="character.js"></script>
+<script src="avatar3d.js"></script>
 <script src="quiz.js"></script>
 </body>
 </html>
