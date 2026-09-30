@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FFF4EA">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="description" content="Pompelup — le blind test musical. Devine les titres, gagne des boosters et collectionne des vinyles.">
 <title>Pompelup — Blind test</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -13,8 +13,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Pompelup">
-<link rel="preload" href="fonts/bebas-neue.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/baloo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="quiz.css">
 </head>
 <body>
@@ -22,132 +22,145 @@
 
   <!-- ================= ACCUEIL ================= -->
   <section class="screen is-active" id="screen-home" aria-label="Accueil">
-    <header class="home-head">
-      <div class="logo" aria-label="Pompelup">Pompe<span>lup</span><i></i></div>
-      <div class="chips">
-        <button class="chip chip-streak" id="home-streak" type="button" aria-label="Série de jours joués">
-          <span class="chip-ico" aria-hidden="true">🔥</span><b id="home-streak-n">0</b>
+    <header class="topbar">
+      <div class="logo" aria-label="Pompelup">pompelup</div>
+      <div class="counters">
+        <button class="counter c-streak" id="home-streak" type="button" aria-label="Série de jours joués">
+          <svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><b id="home-streak-n">0</b>
         </button>
-        <button class="chip chip-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique">
-          <i class="coin" aria-hidden="true"></i><b class="coins-n" id="home-coins-n">0</b>
+        <button class="counter c-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique">
+          <svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n" id="home-coins-n">0</b>
+        </button>
+        <button class="counter c-boost" id="home-boosters" type="button" aria-label="Boosters à ouvrir">
+          <svg class="ico" aria-hidden="true"><use href="#i-booster"/></svg><b id="home-boosters-n">0</b>
         </button>
       </div>
     </header>
 
-    <section class="bcard" id="booster-card" aria-label="Boosters de vinyles">
-      <div class="bcard-art" aria-hidden="true">
-        <div class="mini-pack mp-3"></div>
-        <div class="mini-pack mp-2"></div>
-        <div class="mini-pack mp-1"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span><span class="mp-name">Booster</span></div>
-      </div>
-      <div class="bcard-body">
-        <div class="bcard-kicker">Boosters de vinyles</div>
-        <div class="bcard-title" id="bcard-title">1 booster à ouvrir</div>
-        <div class="bcard-gauge">
-          <span class="gauge"><span id="bcard-gauge-fill"></span></span>
-          <small id="bcard-gauge-txt">0/6 bonnes réponses</small>
+    <div class="scroll">
+      <section class="hero hero-booster" id="booster-card" aria-label="Boosters de vinyles">
+        <div class="hero-txt">
+          <div class="hero-kicker">Boosters de vinyles</div>
+          <div class="hero-title" id="bcard-title">1 booster à ouvrir</div>
+          <div class="hero-gauge">
+            <span class="bar bar-sm bar-light"><span id="bcard-gauge-fill"></span></span>
+            <small id="bcard-gauge-txt">0/6 bonnes réponses</small>
+          </div>
+          <button class="btn btn-white" id="btn-open-booster" type="button">Ouvrir</button>
         </div>
-        <button class="bcard-btn" id="btn-open-booster" type="button">Ouvrir</button>
-      </div>
-      <span class="bcard-badge" id="bcard-badge" aria-hidden="true">1</span>
-    </section>
+        <div class="hero-art" aria-hidden="true">
+          <svg class="ico hero-pack hp-3"><use href="#i-booster"/></svg>
+          <svg class="ico hero-pack hp-2"><use href="#i-booster"/></svg>
+          <svg class="ico hero-pack hp-1" id="hero-pack"><use href="#i-booster"/></svg>
+        </div>
+        <span class="hero-badge" id="bcard-badge" aria-hidden="true">1</span>
+      </section>
 
-    <div class="bento">
-      <button class="daily-card" id="daily-card" type="button">
-        <span class="daily-tag">Défi du jour</span>
-        <span class="daily-title" id="daily-title">Chanson mystère</span>
-        <span class="daily-sub" id="daily-sub">3 essais · +1 booster</span>
-        <span class="daily-cta" id="daily-cta">Jouer →</span>
-        <span class="daily-disc" aria-hidden="true"></span>
+      <div class="duo">
+        <button class="card-btn daily" id="daily-card" type="button">
+          <svg class="ico daily-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
+          <span class="daily-tag">Défi du jour</span>
+          <span class="daily-title" id="daily-title">Chanson mystère</span>
+          <span class="daily-sub" id="daily-sub">3 essais · +1 booster</span>
+          <span class="daily-cta" id="daily-cta">Jouer</span>
+        </button>
+        <button class="card-btn quests" id="mis-card" type="button">
+          <svg class="ico quests-ico" aria-hidden="true"><use href="#i-chest"/></svg>
+          <span class="quests-tag">Missions du jour</span>
+          <span class="quests-num"><b id="mis-done">0</b><small>/3</small></span>
+          <span class="quests-dots" id="mis-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="quests-next" id="mis-next">Trouve 10 chansons</span>
+          <span class="dot-badge" id="mis-badge" hidden>!</span>
+        </button>
+      </div>
+
+      <button class="card-btn story-card" id="story-card" type="button">
+        <span class="story-card-art" id="story-card-art" aria-hidden="true"></span>
+        <span class="story-card-txt"><span class="story-tag">Mode histoire</span><b>Découvre les légendes</b><small id="story-card-sub">8 artistes · écoute, anecdotes, quiz</small></span>
+        <svg class="ico story-card-go" aria-hidden="true"><use href="#i-g-chevron"/></svg>
       </button>
-      <button class="mis-card" id="mis-card" type="button">
-        <span class="mis-tag">Missions du jour</span>
-        <span class="mis-num"><b id="mis-done">0</b><small>/3</small></span>
-        <span class="mis-dots" id="mis-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="mis-next" id="mis-next">Trouve 10 chansons</span>
-        <span class="mis-badge" id="mis-badge" hidden>!</span>
-      </button>
-    </div>
 
-    <button class="story-card" id="story-card" type="button">
-      <span class="story-card-art" id="story-card-art" aria-hidden="true"></span>
-      <span class="story-card-txt"><span class="story-tag">Mode Histoire</span><b>Découvre les légendes</b><small id="story-card-sub">8 artistes · écoute, anecdotes, quiz</small></span>
-      <span class="story-card-go" aria-hidden="true">→</span>
-    </button>
+      <section class="play-sec" aria-label="Lancer une partie">
+        <h2 class="sec-title">Choisis ta playlist</h2>
+        <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
 
-    <div class="block">
-      <div class="block-label">Catégorie</div>
-      <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
-    </div>
-
-    <div class="block two-col">
-      <div>
-        <div class="block-label">Mode</div>
-        <div class="seg" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
-          <button type="button" role="radio" data-mode="choice" aria-checked="true">4 choix</button>
-          <button type="button" role="radio" data-mode="type" aria-checked="false">Saisie <small>×1,5</small></button>
-          <button type="button" role="radio" data-mode="stems" aria-checked="false">Rapide <small>⚡</small></button>
+        <h2 class="sec-title">Mode de jeu</h2>
+        <div class="modes" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
+          <button class="mode" type="button" role="radio" data-mode="choice" aria-checked="true">
+            <span class="mode-ico m-listen"><svg class="ico"><use href="#i-g-headphones"/></svg></span>
+            <span class="mode-txt"><b>4 choix</b><small>Écoute et choisis le bon titre</small></span>
+            <span class="mode-radio" aria-hidden="true"></span>
+          </button>
+          <button class="mode" type="button" role="radio" data-mode="type" aria-checked="false">
+            <span class="mode-ico m-type"><svg class="ico"><use href="#i-g-keyboard"/></svg></span>
+            <span class="mode-txt"><b>Saisie <em>×1,5</em></b><small>Écris le titre, plus de points</small></span>
+            <span class="mode-radio" aria-hidden="true"></span>
+          </button>
+          <button class="mode" type="button" role="radio" data-mode="stems" aria-checked="false">
+            <span class="mode-ico m-rapid"><svg class="ico"><use href="#i-g-bolt"/></svg></span>
+            <span class="mode-txt"><b>Rapide</b><small>Voix, puis guitare, batterie… maintiens pour écouter</small></span>
+            <span class="mode-radio" aria-hidden="true"></span>
+          </button>
         </div>
-      </div>
-      <div>
-        <div class="block-label">Manches</div>
-        <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
-          <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
-          <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
-          <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
-        </div>
-      </div>
-    </div>
 
-    <button class="play-card" id="btn-play" type="button">
-      <span class="play-card-disc" aria-hidden="true"><span>▶</span></span>
-      <span class="play-card-txt"><b>Lancer la partie</b><small id="play-sub">Tout mélangé · 10 manches</small></span>
-      <span class="play-card-go" aria-hidden="true">→</span>
-    </button>
+        <div class="rounds-row">
+          <h2 class="sec-title">Manches</h2>
+          <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
+            <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
+            <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
+            <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
+          </div>
+        </div>
+
+        <button class="btn btn-green btn-block btn-play" id="btn-play" type="button">
+          <span>Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small>
+        </button>
+      </section>
+    </div>
   </section>
 
   <!-- ================= PARTIE ================= -->
   <section class="screen screen-game" id="screen-game" aria-label="Partie">
     <header class="game-head">
-      <button class="icon-btn" id="btn-quit" type="button" aria-label="Quitter la partie">✕</button>
-      <div class="game-round" id="game-round">Manche 1/10</div>
-      <div class="game-right">
-        <span class="game-gauge" id="game-gauge" aria-label="Jauge booster">🎁 <b id="game-gauge-n">0/6</b></span>
-        <div class="game-score" aria-live="polite"><span id="game-score">0</span><small>pts</small></div>
-      </div>
+      <button class="icon-btn" id="btn-quit" type="button" aria-label="Quitter la partie"><svg class="ico"><use href="#i-g-close"/></svg></button>
+      <span class="bar bar-lesson" aria-hidden="true"><span id="game-prog"></span></span>
+      <span class="game-combo" id="game-combo" hidden><svg class="ico"><use href="#i-flame"/></svg><b id="game-combo-n">2</b></span>
+      <span class="game-gauge" id="game-gauge" aria-label="Jauge booster"><svg class="ico"><use href="#i-booster"/></svg><b id="game-gauge-n">0/6</b></span>
     </header>
+    <div class="game-meta">
+      <span class="game-round" id="game-round">Manche 1/10</span>
+      <span class="game-score" aria-live="polite"><svg class="ico"><use href="#i-xp"/></svg><span id="game-score">0</span></span>
+    </div>
+    <h1 class="game-title" id="game-title">Quelle est cette chanson ?</h1>
 
     <div class="host" id="host">
       <span class="host-av" id="host-av" aria-hidden="true"></span>
-      <div class="host-bubble" id="host-bubble" aria-live="polite"><b>DJ Patator</b><span id="host-text">Salut ! Prêt·e pour le blind test ?</span></div>
+      <div class="host-bubble" id="host-bubble" aria-live="polite">
+        <button class="speaker" id="btn-replay-audio" type="button" aria-label="Réécouter l’extrait"><svg class="ico"><use href="#i-g-speaker"/></svg></button>
+        <span class="host-say"><b>DJ Patator</b><span id="host-text">Salut ! Prêt·e pour le blind test ?</span></span>
+      </div>
     </div>
 
     <div class="stage" id="stage">
-      <div class="stage-status" id="stage-status">On chauffe les platines…</div>
       <div class="disc-wrap" id="hold">
         <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
           <circle class="ring-bg" cx="50" cy="50" r="47"></circle>
           <circle class="ring-fg" id="ring-fg" cx="50" cy="50" r="47" pathLength="100"></circle>
         </svg>
         <div class="disc" id="disc">
-          <div class="disc-label" id="disc-label"><span class="disc-p" id="disc-emoji">P</span></div>
+          <div class="disc-label" id="disc-label"><span class="disc-q" id="disc-emoji">?</span></div>
           <img class="disc-art" id="disc-art" alt="">
         </div>
         <div class="tonearm" id="tonearm" aria-hidden="true"><i class="ta-base"></i><i class="ta-rod"></i><i class="ta-head"></i></div>
         <div class="timer-num" id="timer-num" aria-live="off">20</div>
       </div>
+      <div class="stage-status" id="stage-status">On chauffe les platines…</div>
       <div class="rapid" id="rapid" hidden>
         <div class="hold-hint" id="hold-hint">Maintiens le disque pour écouter</div>
         <div class="stems" id="stems" role="group" aria-label="Pistes"></div>
       </div>
       <div class="clues" id="clues" hidden></div>
       <div class="combo" id="combo" aria-live="polite"></div>
-
-      <div class="reveal" id="reveal" hidden>
-        <div class="reveal-verdict" id="reveal-verdict"></div>
-        <div class="reveal-title" id="reveal-title"></div>
-        <div class="reveal-artist" id="reveal-artist"></div>
-      </div>
     </div>
 
     <div class="answer" id="answer">
@@ -156,17 +169,26 @@
       <form class="type-box" id="type-box" autocomplete="off" hidden>
         <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions"></div>
         <div class="attempts" id="attempts" hidden></div>
-        <div class="type-row">
-          <input id="type-input" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
-                 autocorrect="off" spellcheck="false" placeholder="Titre de la chanson…" aria-label="Ta réponse">
-          <button class="btn-send" type="submit" aria-label="Valider">→</button>
-        </div>
+        <input id="type-input" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="Écris le titre…" aria-label="Ta réponse">
+        <button class="btn btn-green btn-block btn-send" type="submit">Vérifier</button>
       </form>
 
       <div class="answer-foot">
-        <button class="btn-ghost" id="btn-hint" type="button">💡 <span id="hint-label">Indice</span></button>
-        <button class="btn-next" id="btn-next" type="button" hidden><span>Suivant</span><i id="next-progress"></i></button>
+        <button class="btn btn-outline btn-hint" id="btn-hint" type="button"><svg class="ico"><use href="#i-bulb"/></svg><span id="hint-label">Indice</span></button>
       </div>
+    </div>
+
+    <div class="feedback" id="reveal" hidden>
+      <div class="fb-row">
+        <span class="fb-ico" aria-hidden="true"><svg class="ico fb-ok"><use href="#i-g-check"/></svg><svg class="ico fb-ko"><use href="#i-g-close"/></svg></span>
+        <div class="fb-txt">
+          <div class="reveal-verdict" id="reveal-verdict"></div>
+          <div class="reveal-title" id="reveal-title"></div>
+          <div class="reveal-artist" id="reveal-artist"></div>
+        </div>
+      </div>
+      <button class="btn btn-block btn-next" id="btn-next" type="button" hidden><span>Continuer</span><i id="next-progress"></i></button>
     </div>
   </section>
 
@@ -174,186 +196,188 @@
   <section class="screen" id="screen-results" aria-label="Résultats">
     <div class="res-hero">
       <div class="res-char" id="res-char" aria-hidden="true"></div>
-      <div class="res-kicker" id="res-kicker">Partie terminée</div>
-      <div class="res-score" id="res-score">0</div>
-      <div class="res-record" id="res-record" hidden>🏆 Nouveau record !</div>
+      <h1 class="res-title" id="res-title">Partie terminée !</h1>
+      <div class="res-kicker" id="res-kicker">Tout mélangé · 4 choix</div>
       <div class="res-line" id="res-line">0/10 trouvées</div>
+      <div class="res-record" id="res-record" hidden><svg class="ico"><use href="#i-trophy"/></svg>Nouveau record !</div>
     </div>
-    <div class="res-stats">
-      <div class="stat"><b id="res-combo">0</b><span>Combo max</span></div>
-      <div class="stat"><b id="res-time">–</b><span>Temps moyen</span></div>
-      <div class="stat stat-coins"><b id="res-coins">+0</b><span>Jetons</span></div>
+    <div class="rcards">
+      <div class="rcard rc-gold"><div class="rc-head">Score</div><div class="rc-body"><svg class="ico"><use href="#i-xp"/></svg><b id="res-score">0</b></div></div>
+      <div class="rcard rc-green"><div class="rc-head" id="res-acc-label">Précision</div><div class="rc-body"><svg class="ico"><use href="#i-target"/></svg><b id="res-acc">0 %</b></div></div>
+      <div class="rcard rc-blue"><div class="rc-head" id="res-speed-label">Rapidité</div><div class="rc-body"><svg class="ico"><use href="#i-clock"/></svg><b id="res-time">–</b></div></div>
     </div>
-    <div class="res-booster" id="res-booster">
-      <div class="rb-art" aria-hidden="true"><div class="mini-pack mp-1 mp-sm"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span></div></div>
+    <div class="panel res-rows">
+      <div class="res-level">
+        <span class="lvl-badge" id="res-level">1</span>
+        <span class="res-level-txt"><b>Niveau <span id="res-level-2">1</span></b><small class="res-xp" id="res-xp">+0 XP</small></span>
+        <span class="bar"><span id="res-level-fill"></span></span>
+      </div>
+      <div class="res-mini">
+        <span><svg class="ico"><use href="#i-coin"/></svg><b id="res-coins">+0</b> jetons</span>
+        <span><svg class="ico"><use href="#i-flame"/></svg>Combo <b id="res-combo">×0</b></span>
+      </div>
+    </div>
+    <div class="panel res-booster" id="res-booster">
+      <svg class="ico rb-ico" aria-hidden="true"><use href="#i-booster"/></svg>
       <div class="rb-body">
         <b id="rb-title">Jauge booster</b>
-        <span class="gauge gauge-lg"><span id="rb-fill"></span></span>
+        <span class="bar bar-sm bar-purple"><span id="rb-fill"></span></span>
         <small id="rb-txt">0/6 bonnes réponses</small>
       </div>
-      <button class="btn-primary rb-btn" id="rb-open" type="button" hidden>Ouvrir</button>
+      <button class="btn btn-purple rb-btn" id="rb-open" type="button" hidden>Ouvrir</button>
     </div>
-    <div class="res-level">
-      <span>Niveau <b id="res-level">1</b> <small class="res-xp" id="res-xp">+0 XP</small></span>
-      <span class="gauge gauge-lg"><span id="res-level-fill"></span></span>
-    </div>
+    <h2 class="sec-title">Les extraits de la partie</h2>
     <ol class="recap" id="recap"></ol>
     <div class="res-actions">
-      <button class="btn-secondary" id="btn-share" type="button">Partager</button>
-      <button class="btn-secondary" id="btn-home" type="button">Accueil</button>
-      <button class="btn-primary" id="btn-replay" type="button">Rejouer</button>
+      <button class="btn btn-ghost" id="btn-share" type="button"><svg class="ico"><use href="#i-g-share"/></svg>Partager</button>
+      <button class="btn btn-outline" id="btn-replay" type="button">Rejouer</button>
+      <button class="btn btn-green" id="btn-home" type="button">Continuer</button>
     </div>
   </section>
 
   <!-- ================= SALON (collection) ================= -->
   <section class="screen" id="screen-collection" aria-label="Mon salon de vinyles">
-    <header class="sub-head room-head">
+    <header class="page-head">
       <div>
-        <div class="sub-title">Mon salon</div>
+        <h1 class="page-title">Mon salon</h1>
         <small class="room-count"><b id="coll-n">0</b> <span id="coll-of">/ 1000 vinyles</span> · <em id="coll-pct">0 %</em></small>
       </div>
-      <button class="chip chip-boost" id="coll-open" type="button" aria-label="Ouvrir un booster"><i class="mini-booster" aria-hidden="true"></i> <b id="coll-boosters">0</b></button>
+      <button class="counter c-boost" id="coll-open" type="button" aria-label="Ouvrir un booster"><svg class="ico" aria-hidden="true"><use href="#i-booster"/></svg><b id="coll-boosters">0</b></button>
     </header>
-    <span class="gauge gauge-lg room-gauge"><span id="coll-fill"></span></span>
-    <div class="rar-filter" id="rar-filter" role="radiogroup" aria-label="Rareté"></div>
-    <div class="house" id="room">
-      <div class="house-wall">
-        <div class="house-window" aria-hidden="true"><i></i><i></i></div>
-        <div class="house-frames" id="coll-top"></div>
+    <div class="scroll">
+      <span class="bar room-gauge"><span id="coll-fill"></span></span>
+      <div class="chips-row" id="rar-filter" role="radiogroup" aria-label="Rareté"></div>
+      <div class="house" id="room">
+        <div class="house-wall">
+          <div class="house-frames" id="coll-top"></div>
+        </div>
+        <button class="house-living" id="nook-char" type="button" aria-label="Ton personnage dans le salon">
+          <span class="house-living-img" id="living-img"></span>
+          <span class="nook-bubble" id="nook-bubble" hidden></span>
+        </button>
       </div>
-      <button class="house-living" id="nook-char" type="button" aria-label="Ton personnage dans le salon">
-        <span class="house-living-img" id="living-img"></span>
-        <span class="nook-bubble" id="nook-bubble" hidden></span>
-      </button>
-      <div class="house-floor" aria-hidden="true"></div>
-    </div>
-    <div class="shelf-title" id="shelf-title" hidden>Sur les étagères</div>
-    <div class="wall" id="coll-grid"></div>
-    <div class="coll-empty" id="coll-empty" hidden>
-      <b>Ton mur est vide</b>
-      <p>Chaque booster contient 3 vinyles. Gagne-en en trouvant des chansons !</p>
-      <button class="btn-primary" id="coll-empty-play" type="button">Jouer une partie</button>
+      <h2 class="sec-title" id="shelf-title" hidden>Sur les étagères</h2>
+      <div class="wall" id="coll-grid"></div>
+      <div class="coll-empty" id="coll-empty" hidden>
+        <svg class="ico coll-empty-ico" aria-hidden="true"><use href="#i-vinyl"/></svg>
+        <b>Ton mur est vide</b>
+        <p>Chaque booster contient 3 vinyles. Gagne-en en trouvant des chansons !</p>
+        <button class="btn btn-green" id="coll-empty-play" type="button">Jouer une partie</button>
+      </div>
     </div>
   </section>
 
-  <!-- ================= HISTOIRE ================= -->
+  <!-- ================= HISTOIRE (parcours) ================= -->
   <section class="screen" id="screen-story" aria-label="Mode Histoire">
-    <header class="sub-head">
-      <button class="icon-btn icon-btn-light" id="story-back" type="button" aria-label="Retour">←</button>
-      <div class="sub-title">Histoire</div>
-      <span class="chip story-prog" id="story-prog">0/8</span>
+    <header class="topbar">
+      <div class="page-title">Histoire</div>
+      <div class="counters">
+        <span class="counter c-story"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><b id="story-prog">0/8</b></span>
+        <span class="counter c-coins"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n">0</b></span>
+      </div>
     </header>
-    <p class="story-intro">Découvre les artistes qui ont marqué la musique : écoute leurs tubes, apprends leur histoire, réponds à la question finale.</p>
-    <div class="story-list" id="story-list"></div>
+    <div class="path-wrap" id="story-list"></div>
+    <button class="icon-btn path-up" id="story-back" type="button" aria-label="Revenir à l’étape en cours"><svg class="ico"><use href="#i-g-arrow-up"/></svg></button>
   </section>
 
   <!-- ================= BOUTIQUE ================= -->
   <section class="screen" id="screen-shop" aria-label="Boutique">
-    <header class="sub-head">
-      <div class="sub-title">Boutique</div>
-      <span class="chip chip-coins" aria-label="Tes jetons"><i class="coin" aria-hidden="true"></i><b class="coins-n" id="shop-coins-n">0</b></span>
+    <header class="topbar">
+      <div class="page-title">Boutique</div>
+      <div class="counters">
+        <span class="counter c-coins" aria-label="Tes jetons"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n" id="shop-coins-n">0</b></span>
+      </div>
     </header>
-
-    <div class="shop-top">
-      <button class="gift-card" id="gift-card" type="button">
-        <span class="gift-ico" aria-hidden="true"><i class="gift-box"></i></span>
-        <span class="gift-txt"><b id="gift-title">Cadeau du jour</b><small id="gift-sub">50 jetons offerts</small></span>
-        <span class="gift-cta" id="gift-cta">Récupérer</span>
-      </button>
-      <button class="deal-card" id="deal-card" type="button">
-        <span class="deal-tag">Offre du jour <em id="deal-off">−40 %</em></span>
+    <div class="scroll">
+      <button class="hero hero-deal" id="deal-card" type="button">
         <span class="deal-preview" id="deal-preview"></span>
-        <span class="deal-name" id="deal-name">—</span>
-        <span class="deal-price"><s id="deal-old">0</s> <b id="deal-new">0</b><i class="coin" aria-hidden="true"></i></span>
-        <span class="deal-timer" id="deal-timer">⏳ 00:00:00</span>
+        <span class="deal-body">
+          <span class="deal-tag">Offre du jour <em id="deal-off">−40 %</em></span>
+          <span class="deal-name" id="deal-name">—</span>
+          <span class="deal-price"><s id="deal-old">0</s> <b id="deal-new">0</b><i class="coin" aria-hidden="true"></i></span>
+          <span class="deal-timer" id="deal-timer">00:00:00</span>
+        </span>
       </button>
-    </div>
 
-    <div class="shop-sec">
-      <div class="block-label">Boosters</div>
-      <div class="pack-row" id="shop-packs"></div>
-    </div>
-    <div class="shop-sec">
-      <div class="block-label">Skins <small>— ton personnage</small></div>
+      <h2 class="shop-h">Cadeaux</h2>
+      <button class="row" id="gift-card" type="button">
+        <span class="row-art"><svg class="ico gift-ico" aria-hidden="true"><use href="#i-chest"/></svg></span>
+        <span class="row-txt"><b id="gift-title">Coffre du jour</b><small id="gift-sub">50 jetons offerts</small></span>
+        <span class="btn btn-sm btn-green row-cta" id="gift-cta">Récupérer</span>
+      </button>
+
+      <h2 class="shop-h">Boosters</h2>
+      <div class="rows" id="shop-packs"></div>
+
+      <h2 class="shop-h">Skins <small>ton personnage</small></h2>
       <div class="item-grid" id="shop-skin"></div>
-    </div>
-    <div class="shop-sec">
-      <div class="block-label">Accessoires <small>— aussi dans les boosters</small></div>
-      <div class="item-grid" id="shop-acc"></div>
-    </div>
-    <div class="shop-sec">
-      <div class="block-label">Vinyles de platine <small>— le disque en partie</small></div>
-      <div class="item-grid" id="shop-disc"></div>
-    </div>
-    <div class="shop-sec">
-      <div class="block-label">Scènes <small>— le fond de la partie</small></div>
-      <div class="item-grid" id="shop-theme"></div>
-    </div>
-    <div class="shop-sec">
-      <div class="block-label">Effets de victoire <small>— quand tu trouves</small></div>
-      <div class="item-grid" id="shop-fx"></div>
+
+      <h2 class="shop-h">Accessoires <small>aussi dans les boosters</small></h2>
+      <div class="item-grid item-grid-3" id="shop-acc"></div>
+
+      <h2 class="shop-h">Vinyles de platine <small>le disque en partie</small></h2>
+      <div class="item-grid item-grid-3" id="shop-disc"></div>
+
+      <h2 class="shop-h">Scènes <small>le fond de la partie</small></h2>
+      <div class="item-grid item-grid-3" id="shop-theme"></div>
+
+      <h2 class="shop-h">Effets de victoire <small>quand tu trouves</small></h2>
+      <div class="item-grid item-grid-3" id="shop-fx"></div>
     </div>
   </section>
 
   <!-- ================= PROFIL ================= -->
   <section class="screen" id="screen-profile" aria-label="Profil">
-    <div class="pf-card">
-      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer de skin"><span id="pf-avatar-emoji"></span></button>
+    <div class="pf-band">
+      <button class="icon-btn pf-gear" id="pf-gear" type="button" aria-label="Réglages"><svg class="ico"><use href="#i-g-gear"/></svg></button>
+      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer de skin"><span id="pf-avatar-emoji"></span><span class="pf-edit" aria-hidden="true"><svg class="ico"><use href="#i-g-pencil"/></svg></span></button>
+    </div>
+    <div class="scroll pf-scroll">
       <div class="pf-id">
         <input class="pf-name" id="pf-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
         <span class="pf-title" id="pf-title">Apprenti mélomane</span>
       </div>
       <div class="pf-level">
         <span class="lvl-badge" id="pf-level">1</span>
-        <span class="gauge"><span id="pf-level-fill"></span></span>
+        <span class="bar"><span id="pf-level-fill"></span></span>
         <small id="pf-level-txt">0 / 300 XP</small>
       </div>
-      <div class="pf-wallet">
-        <span><i class="coin" aria-hidden="true"></i><b class="coins-n" id="pf-coins-n">0</b></span>
-        <span><i class="mini-booster" aria-hidden="true"></i><b id="pf-boosters">0</b></span>
-        <span>💿 <b id="pf-vinyls">0</b></span>
+      <h2 class="sec-title">Statistiques</h2>
+      <div class="pf-stats">
+        <div class="pstat"><svg class="ico"><use href="#i-flame"/></svg><span><b id="pf-streak">0</b><small>Jours de série</small></span></div>
+        <div class="pstat"><svg class="ico"><use href="#i-xp"/></svg><span><b id="pf-xp">0</b><small>XP total</small></span></div>
+        <div class="pstat"><svg class="ico"><use href="#i-coin"/></svg><span><b class="coins-n" id="pf-coins-n">0</b><small>Jetons</small></span></div>
+        <div class="pstat"><svg class="ico"><use href="#i-vinyl"/></svg><span><b id="pf-vinyls">0</b><small>Vinyles</small></span></div>
+        <div class="pstat"><svg class="ico"><use href="#i-booster"/></svg><span><b id="pf-boosters">0</b><small>Boosters</small></span></div>
+        <div class="pstat"><svg class="ico"><use href="#i-trophy"/></svg><span><b id="pf-best">0</b><small>Record</small></span></div>
       </div>
-    </div>
-    <div class="seg pf-tabs" id="pf-tabs" role="tablist">
-      <button type="button" role="tab" data-pt="ach" aria-selected="true">Succès <i class="seg-badge" id="pt-badge" hidden></i></button>
-      <button type="button" role="tab" data-pt="skins" aria-selected="false">Skins</button>
-      <button type="button" role="tab" data-pt="stats" aria-selected="false">Stats</button>
-      <button type="button" role="tab" data-pt="settings" aria-selected="false">Réglages</button>
-    </div>
-    <div class="pf-panel" id="pf-ach"></div>
-    <div class="pf-panel" id="pf-skins" hidden></div>
-    <div class="pf-panel" id="pf-stats" hidden></div>
-    <div class="pf-panel" id="pf-settings" hidden>
-      <div class="set-list">
-        <label class="set-row"><span><b>Effets sonores</b><small>Bips, jingles et fanfares</small></span><input type="checkbox" id="set-sound" class="switch"></label>
-        <label class="set-row"><span><b>Vibrations</b><small>Retour haptique sur mobile</small></span><input type="checkbox" id="set-haptics" class="switch"></label>
-        <button class="set-row set-danger" id="set-reset" type="button"><span><b>Réinitialiser ma progression</b><small>Efface jetons, vinyles, skins et succès</small></span><span aria-hidden="true">→</span></button>
+      <div class="seg pf-tabs" id="pf-tabs" role="tablist">
+        <button type="button" role="tab" data-pt="ach" aria-selected="true">Succès <i class="seg-badge" id="pt-badge" hidden></i></button>
+        <button type="button" role="tab" data-pt="skins" aria-selected="false">Skins</button>
+        <button type="button" role="tab" data-pt="stats" aria-selected="false">Stats</button>
+        <button type="button" role="tab" data-pt="settings" aria-selected="false">Réglages</button>
       </div>
-      <p class="set-foot">Pompelup · ta progression est enregistrée sur cet appareil.<br>Personnages en velours dessinés pour Pompelup.</p>
+      <div class="pf-panel" id="pf-ach"></div>
+      <div class="pf-panel" id="pf-skins" hidden></div>
+      <div class="pf-panel" id="pf-stats" hidden></div>
+      <div class="pf-panel" id="pf-settings" hidden>
+        <div class="panel set-list">
+          <label class="set-row"><span><b>Effets sonores</b><small>Bips, jingles et fanfares</small></span><input type="checkbox" id="set-sound" class="switch"></label>
+          <label class="set-row"><span><b>Vibrations</b><small>Retour haptique sur mobile</small></span><input type="checkbox" id="set-haptics" class="switch"></label>
+          <button class="set-row set-danger" id="set-reset" type="button"><span><b>Réinitialiser ma progression</b><small>Efface jetons, vinyles, skins et succès</small></span><svg class="ico" aria-hidden="true"><use href="#i-g-chevron"/></svg></button>
+        </div>
+        <p class="set-foot">Pompelup · ta progression est enregistrée sur cet appareil.<br>Personnages en velours dessinés pour Pompelup.</p>
+      </div>
     </div>
   </section>
 
   <!-- ================= BARRE DE NAVIGATION ================= -->
   <nav class="tabbar" id="tabbar" aria-label="Navigation">
-    <button class="tab is-active" type="button" data-tab="home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
-      <span>Accueil</span>
-    </button>
-    <button class="tab" type="button" data-tab="collection">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5"/></svg>
-      <span>Vinyles</span><i class="tab-badge" id="tb-coll" hidden></i>
-    </button>
-    <button class="tab-play" id="nav-play" type="button" aria-label="Jouer une partie">
-      <span class="tab-play-btn" aria-hidden="true">▶</span><span class="tab-play-lbl">Jouer</span>
-    </button>
-    <button class="tab" type="button" data-tab="shop">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>
-      <span>Boutique</span><i class="tab-badge" id="tb-shop" hidden></i>
-    </button>
-    <button class="tab" type="button" data-tab="profile">
-      <span class="tab-avatar" id="tab-avatar" aria-hidden="true"></span>
-      <span>Profil</span><i class="tab-badge" id="tb-prof" hidden></i>
-    </button>
+    <button class="tab is-active" type="button" data-tab="home" aria-label="Accueil"><svg class="ico"><use href="#i-house"/></svg></button>
+    <button class="tab" type="button" data-tab="story" aria-label="Histoire"><svg class="ico"><use href="#i-book"/></svg><i class="tab-badge" id="tb-story" hidden></i></button>
+    <button class="tab" type="button" data-tab="collection" aria-label="Vinyles"><svg class="ico"><use href="#i-vinyl"/></svg><i class="tab-badge" id="tb-coll" hidden></i></button>
+    <button class="tab" type="button" data-tab="shop" aria-label="Boutique"><svg class="ico"><use href="#i-shop"/></svg><i class="tab-badge" id="tb-shop" hidden></i></button>
+    <button class="tab" type="button" data-tab="profile" aria-label="Profil"><span class="tab-avatar" id="tab-avatar" aria-hidden="true"></span><i class="tab-badge" id="tb-prof" hidden></i></button>
   </nav>
 
   <!-- ================= SURCOUCHES ================= -->
@@ -365,8 +389,8 @@
       <div class="vs-meta" id="vs-meta"></div>
       <div class="vs-own" id="vs-own"></div>
       <div class="sheet-actions">
-        <button class="btn-secondary" id="vs-close" type="button">Fermer</button>
-        <button class="btn-primary" id="vs-play" type="button">▶ Écouter</button>
+        <button class="btn btn-outline" id="vs-close" type="button">Fermer</button>
+        <button class="btn btn-blue" id="vs-play" type="button">Écouter</button>
       </div>
     </div>
   </div>
@@ -375,7 +399,7 @@
     <div class="bo-rays" aria-hidden="true"></div>
     <div class="bo-glow" aria-hidden="true"></div>
     <header class="bo-head">
-      <button class="icon-btn" id="bo-close" type="button" aria-label="Fermer">✕</button>
+      <button class="icon-btn icon-btn-dark" id="bo-close" type="button" aria-label="Fermer"><svg class="ico"><use href="#i-g-close"/></svg></button>
       <div class="bo-count" id="bo-count">Booster</div>
       <span class="bo-left" id="bo-left"></span>
     </header>
@@ -390,7 +414,7 @@
             <div class="sc-out">
               <div class="sc-art" aria-hidden="true"><i></i><i></i><i></i></div>
               <div class="pack-foil"></div>
-              <div class="pack-logo">Pompe<span>lup</span></div>
+              <div class="pack-logo">pompelup</div>
               <div class="pack-name">Booster<br>vinyle</div>
               <div class="pack-sub">3 vinyles · 1 rare garanti</div>
               <span class="sc-sticker">3<small>vinyles</small></span>
@@ -401,39 +425,40 @@
       </div>
       <div class="vstack" id="vstack"></div>
     </div>
-    <div class="bo-hint" id="bo-hint">Glisse sur le haut du booster pour le déchirer</div>
+    <div class="bo-hint" id="bo-hint">Glisse sur le booster pour l’ouvrir</div>
     <div class="bo-summary" id="bo-summary" hidden>
       <div class="bo-sum-title" id="bo-sum-title">Nouveaux vinyles !</div>
       <div class="bo-sum-grid" id="bo-sum-grid"></div>
       <div class="bo-sum-actions">
-        <button class="btn-secondary" id="bo-to-coll" type="button">Ma collection</button>
-        <button class="btn-primary" id="bo-next" type="button">Continuer</button>
+        <button class="btn btn-outline-dark" id="bo-to-coll" type="button">Ma collection</button>
+        <button class="btn btn-green" id="bo-next" type="button">Continuer</button>
       </div>
     </div>
     <div class="bo-fx" id="bo-fx" aria-hidden="true"></div>
   </div>
 
-  <div class="overlay" id="streak-overlay" hidden>
+  <div class="overlay overlay-full" id="streak-overlay" hidden>
     <div class="streak-pop">
-      <div class="flame" aria-hidden="true">🔥</div>
+      <svg class="ico flame" aria-hidden="true"><use href="#i-flame"/></svg>
       <div class="streak-n" id="streak-n">1</div>
-      <div class="streak-label" id="streak-label">jour d'affilée</div>
+      <div class="streak-label" id="streak-label">jour de série</div>
+      <div class="streak-week" id="streak-week" aria-hidden="true"></div>
       <p class="streak-msg" id="streak-msg">Reviens demain pour garder ta série !</p>
-      <button class="btn-primary" id="streak-ok" type="button">Trop bien</button>
+      <button class="btn btn-green btn-block" id="streak-ok" type="button">Continuer</button>
     </div>
   </div>
 
   <div class="overlay overlay-sheet" id="quit-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="quit-title">
-      <div class="sheet-title" id="quit-title">Quitter la partie ?</div>
+      <div class="sheet-char" id="quit-char" aria-hidden="true"></div>
+      <div class="sheet-title" id="quit-title">Attends, ne pars pas !</div>
       <p>Ta progression sur cette partie sera perdue.</p>
-      <div class="sheet-actions">
-        <button class="btn-secondary" id="quit-cancel" type="button">Continuer</button>
-        <button class="btn-danger" id="quit-confirm" type="button">Quitter</button>
+      <div class="sheet-stack">
+        <button class="btn btn-blue btn-block" id="quit-cancel" type="button">Continuer à jouer</button>
+        <button class="btn btn-ghost-red btn-block" id="quit-confirm" type="button">Quitter</button>
       </div>
     </div>
   </div>
-
 
   <div class="overlay overlay-sheet" id="item-sheet" hidden>
     <div class="sheet isheet" role="dialog" aria-modal="true" aria-labelledby="is-name">
@@ -441,42 +466,50 @@
       <span class="rar-pill" id="is-rarity"></span>
       <div class="is-name" id="is-name"></div>
       <p class="is-desc" id="is-desc"></p>
-      <div class="is-lock" id="is-lock" hidden><span id="is-lock-txt"></span><span class="gauge gauge-lg"><span id="is-lock-fill"></span></span></div>
+      <div class="is-lock" id="is-lock" hidden><span id="is-lock-txt"></span><span class="bar bar-sm bar-gold"><span id="is-lock-fill"></span></span></div>
       <div class="sheet-actions">
-        <button class="btn-secondary" id="is-close" type="button">Fermer</button>
-        <button class="btn-primary" id="is-action" type="button">Acheter</button>
+        <button class="btn btn-outline" id="is-close" type="button">Fermer</button>
+        <button class="btn btn-green" id="is-action" type="button">Acheter</button>
       </div>
     </div>
   </div>
 
   <div class="overlay overlay-sheet" id="missions-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ms-title">
-      <div class="sheet-title" id="ms-title">Missions du jour</div>
-      <p id="ms-sub">Nouvelles missions dans 00:00:00</p>
+      <div class="ms-head">
+        <div>
+          <div class="sheet-title" id="ms-title">Missions du jour</div>
+          <p id="ms-sub">Nouvelles missions dans 00:00:00</p>
+        </div>
+        <svg class="ico ms-head-ico" aria-hidden="true"><use href="#i-chest"/></svg>
+      </div>
       <div class="ms-list" id="ms-list"></div>
       <button class="ms-bonus" id="ms-bonus" type="button" disabled>
-        <i class="mini-booster" aria-hidden="true"></i><span><b>Bonus : 1 booster</b><small id="ms-bonus-txt">Termine les 3 missions</small></span>
+        <svg class="ico" aria-hidden="true"><use href="#i-booster"/></svg><span><b>Bonus : 1 booster</b><small id="ms-bonus-txt">Termine les 3 missions</small></span>
       </button>
-      <div class="sheet-actions sheet-actions-1"><button class="btn-secondary" id="ms-close" type="button">Fermer</button></div>
+      <div class="sheet-stack"><button class="btn btn-outline btn-block" id="ms-close" type="button">Fermer</button></div>
     </div>
   </div>
 
   <div class="overlay overlay-story" id="story-step" hidden>
     <div class="sstep" role="dialog" aria-modal="true" aria-labelledby="ss-title">
       <header class="ss-head">
-        <button class="icon-btn" id="ss-close" type="button" aria-label="Fermer">✕</button>
-        <div class="ss-dots" id="ss-dots"></div>
+        <button class="icon-btn" id="ss-close" type="button" aria-label="Fermer"><svg class="ico"><use href="#i-g-close"/></svg></button>
+        <span class="bar bar-lesson"><span id="ss-fill"></span></span>
+        <div class="ss-dots" id="ss-dots" hidden></div>
         <span class="ss-count" id="ss-count">1/4</span>
       </header>
-      <div class="ss-portrait" id="ss-portrait"></div>
-      <div class="ss-kicker" id="ss-kicker"></div>
-      <div class="ss-title" id="ss-title"></div>
-      <div class="ss-body" id="ss-body"></div>
+      <div class="ss-content">
+        <div class="ss-portrait" id="ss-portrait"></div>
+        <div class="ss-kicker" id="ss-kicker"></div>
+        <div class="ss-title" id="ss-title"></div>
+        <div class="ss-body" id="ss-body"></div>
+      </div>
       <div class="ss-actions" id="ss-actions"></div>
     </div>
   </div>
 
-  <div class="overlay" id="reward-overlay" hidden>
+  <div class="overlay overlay-full" id="reward-overlay" hidden>
     <div class="reward-pop" role="dialog" aria-modal="true" aria-labelledby="rw-title">
       <div class="rw-rays" aria-hidden="true"></div>
       <div class="rw-kicker" id="rw-kicker">Succès débloqué</div>
@@ -484,21 +517,24 @@
       <div class="rw-title" id="rw-title">Récompense</div>
       <div class="rw-sub" id="rw-sub"></div>
       <div class="rw-actions">
-        <button class="btn-secondary" id="rw-later" type="button">Plus tard</button>
-        <button class="btn-primary" id="rw-ok" type="button">Super !</button>
+        <button class="btn btn-outline" id="rw-later" type="button">Plus tard</button>
+        <button class="btn btn-green" id="rw-ok" type="button">Super !</button>
       </div>
     </div>
   </div>
 
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+      <div class="wl-host">
+        <span class="wl-host-av" id="wl-host" aria-hidden="true"></span>
+        <div class="wl-bubble"><b>DJ Patator</b>Salut ! Choisis ton perso et ton pseudo, un booster t’attend.</div>
+      </div>
       <div class="sheet-title" id="wl-title">Bienvenue sur Pompelup !</div>
-      <p>Choisis ton personnage et ton pseudo. Un booster de vinyles t’attend.</p>
       <div class="wl-avatars" id="wl-avatars" role="radiogroup" aria-label="Personnage"></div>
       <input class="wl-name" id="wl-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
-      <div class="sheet-actions">
-        <button class="btn-secondary" id="wl-skip" type="button">Plus tard</button>
-        <button class="btn-primary" id="wl-go" type="button">C’est parti !</button>
+      <div class="sheet-stack">
+        <button class="btn btn-green btn-block" id="wl-go" type="button">C’est parti !</button>
+        <button class="btn btn-ghost btn-block" id="wl-skip" type="button">Plus tard</button>
       </div>
     </div>
   </div>
@@ -507,9 +543,9 @@
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rs-title">
       <div class="sheet-title" id="rs-title">Tout effacer ?</div>
       <p>Tes jetons, vinyles, skins, succès et ta série seront perdus. Impossible d’annuler.</p>
-      <div class="sheet-actions">
-        <button class="btn-secondary" id="rs-cancel" type="button">Annuler</button>
-        <button class="btn-danger" id="rs-confirm" type="button">Effacer</button>
+      <div class="sheet-stack">
+        <button class="btn btn-red btn-block" id="rs-confirm" type="button">Effacer</button>
+        <button class="btn btn-outline btn-block" id="rs-cancel" type="button">Annuler</button>
       </div>
     </div>
   </div>
@@ -519,7 +555,9 @@
 </div>
 
 <audio id="player" preload="auto"></audio>
+<script src="icons.js"></script>
 <script src="songs.js"></script>
+<script src="covers.js"></script>
 <script src="story-data.js"></script>
 <script src="vendor/three.min.js"></script>
 <script src="character.js"></script>

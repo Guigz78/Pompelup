@@ -7,6 +7,7 @@
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const ico = (n, c) => window.ico(n, c);
 const SONGS = window.SONGS || [];
 const SONG = new Map(SONGS.map(s => [s.id, s]));
 const REDUCED = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -116,10 +117,9 @@ const RARITIES = ['common', 'rare', 'epic', 'legendary'];
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const R_NAME = { common: 'Commune', rare: 'Rare', epic: 'Épique', legendary: 'Légendaire' };
 const R_NAMES = { common: 'Communes', rare: 'Rares', epic: 'Épiques', legendary: 'Légendaires' };
-const R_COLOR = { common: '#B9B3C4', rare: '#38BDF8', epic: '#C084FC', legendary: '#FBBF24' };
-const R_GLOW = { common: 'rgba(185,179,196,.28)', rare: 'rgba(56,189,248,.42)', epic: 'rgba(192,132,252,.5)', legendary: 'rgba(251,191,36,.62)' };
-const R_RAY = { common: 'rgba(255,255,255,.05)', rare: 'rgba(56,189,248,.14)', epic: 'rgba(192,132,252,.18)', legendary: 'rgba(251,191,36,.24)' };
-const R_ICON = { common: '●', rare: '◆', epic: '✦', legendary: '★' };
+const R_COLOR = { common: '#AFAFAF', rare: '#1CB0F6', epic: '#CE82FF', legendary: '#FFC800' };
+const R_GLOW = { common: 'rgba(175,175,175,.28)', rare: 'rgba(28,176,246,.55)', epic: 'rgba(206,130,255,.6)', legendary: 'rgba(255,200,0,.7)' };
+const R_RAY = { common: 'rgba(255,255,255,.05)', rare: 'rgba(28,176,246,.14)', epic: 'rgba(206,130,255,.18)', legendary: 'rgba(255,200,0,.24)' };
 const DUP_COINS = { common: 15, rare: 40, epic: 100, legendary: 250 };
 const LEGENDARY_IDS = new Set(['s3', 's2', 's1', 's16', 's15', 's211', 's286', 's4', 's6', 's29', 's331', 's76', 's5', 's39', 's186', 's156', 's661', 's11', 's490', 's894', 's75', 's12', 's157', 's868', 's188', 's53', 's27', 's14']);
 const EPIC_IDS = new Set(['s52', 's9', 's7', 's8', 's13', 's91', 's38', 's37', 's200', 's49', 's195', 's487', 's78', 's496', 's352', 's34', 's48', 's10', 's462', 's453', 's71', 's35', 's68', 's246', 's280', 's17', 's21', 's23', 's121', 's359', 's673', 's167', 's851', 's206', 's187', 's189']);
@@ -162,10 +162,10 @@ const COSMETICS = {
     { id: 'aurora', name: 'Aurore boréale', rarity: 'legendary', unlock: 'streak', desc: 'Le ciel du Grand Nord en fond de scène.' },
   ],
   fx: [
-    { id: 'sparks', name: 'Étincelles', rarity: 'common', price: 0, glyphs: ['✦', '✧', '★'], desc: 'Une gerbe d’étoiles dorées.' },
-    { id: 'notes', name: 'Notes de musique', rarity: 'rare', price: 300, glyphs: ['♪', '♫', '♬'], desc: 'Des notes qui s’envolent.' },
-    { id: 'hearts', name: 'Cœurs', rarity: 'rare', price: 300, glyphs: ['💜', '💖', '❤️'], desc: 'Pour les coups de cœur musicaux.' },
-    { id: 'flames', name: 'Flammes', rarity: 'epic', price: 550, glyphs: ['🔥'], desc: 'Tu es en feu, et ça se voit.' },
+    { id: 'sparks', name: 'Étincelles', rarity: 'common', price: 0, glyphs: ['sparkle', 'star', 'sparkle'], desc: 'Une gerbe d’étoiles dorées.' },
+    { id: 'notes', name: 'Notes de musique', rarity: 'rare', price: 300, glyphs: ['note', 'note', 'note'], desc: 'Des notes qui s’envolent.' },
+    { id: 'hearts', name: 'Cœurs', rarity: 'rare', price: 300, glyphs: ['heart', 'heart', 'heart'], desc: 'Pour les coups de cœur musicaux.' },
+    { id: 'flames', name: 'Flammes', rarity: 'epic', price: 550, glyphs: ['flame'], desc: 'Tu es en feu, et ça se voit.' },
     { id: 'coins', name: 'Pluie de jetons', rarity: 'legendary', unlock: 'combo', glyphs: ['coin'], desc: 'Chaque bonne réponse fait pleuvoir des jetons.' },
   ],
   skin: window.PompeChar.SKINS,
@@ -194,7 +194,7 @@ function discPrevHTML(id) { return `<span class="disc-prev skin-${id}"></span>`;
 function itemPreviewHTML(kind, it) {
   if (kind === 'disc') return discPrevHTML(it.id);
   if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
-  if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
+  if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${ico(g)}</i>`).join('')}</span>`;
   if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { accs: myAccs(it) })}</span>`;
   return `<span class="char-prev">${charHTML(it)}</span>`;
 }
@@ -204,9 +204,8 @@ function applySkins() {
   disc.classList.add(`skin-${store.equip.disc}`);
   [...game.classList].filter(c => c.startsWith('theme-')).forEach(c => game.classList.remove(c));
   game.classList.add(`theme-${store.equip.theme}`);
-  $$('.play-card-disc').forEach(el => { el.className = `play-card-disc skin-${store.equip.disc}`; });
   $('#tab-avatar').innerHTML = meHTML({ head: true });
-  $('#pf-avatar-emoji').innerHTML = meHTML({ head: true });
+  $('#pf-avatar-emoji').innerHTML = meHTML({ mood: 'happy' });
 }
 function equipItem(kind, id) {
   if (!isOwned(kind, id)) return;
@@ -240,30 +239,30 @@ function spendCoins(n) {
 
 /* Succès à paliers */
 const ACHS = [
-  { id: 'games', icon: '🎮', name: 'Habitué', label: n => `Joue ${plural(n, 'partie', 'parties')}`, val: () => store.games,
+  { id: 'games', icon: 'g-play', color: 'blue', name: 'Habitué', label: n => `Joue ${plural(n, 'partie', 'parties')}`, val: () => store.games,
     tiers: [[1, { coins: 50 }], [10, { coins: 100, boosters: 1 }], [50, { coins: 300 }], [200, { coins: 500, gold: 1 }]] },
-  { id: 'found', icon: '🎵', name: 'Mélomane', label: n => `Trouve ${n} chansons`, val: () => store.found,
+  { id: 'found', icon: 'g-note', color: 'purple', name: 'Mélomane', label: n => `Trouve ${n} chansons`, val: () => store.found,
     tiers: [[25, { coins: 60 }], [100, { coins: 150 }], [500, { coins: 400 }], [2000, { coins: 1000, gold: 1 }]] },
-  { id: 'combo', icon: '🔥', name: 'En feu', label: n => `Atteins un combo ×${n}`, val: () => store.stats.bestCombo,
+  { id: 'combo', icon: 'g-bolt', color: 'red', name: 'En feu', label: n => `Atteins un combo ×${n}`, val: () => store.stats.bestCombo,
     tiers: [[3, { coins: 40 }], [5, { coins: 100, item: 'skin:neon' }], [8, { item: 'fx:coins' }], [12, { gold: 1 }]] },
-  { id: 'fast', icon: '⚡', name: 'Oreille d’or', label: n => `Trouve ${n} chansons en moins de 3 s`, val: () => store.stats.fast,
+  { id: 'fast', icon: 'g-clock', color: 'blue2', name: 'Oreille d’or', label: n => `Trouve ${n} chansons en moins de 3 s`, val: () => store.stats.fast,
     tiers: [[5, { coins: 60 }], [25, { coins: 150 }], [100, { coins: 400 }]] },
-  { id: 'perfect', icon: '💯', name: 'Sans faute', label: n => `Termine ${plural(n, 'partie', 'parties')} sans faute (5 manches min.)`, val: () => store.stats.perfect,
+  { id: 'perfect', icon: 'g-target', color: 'green', name: 'Sans faute', label: n => `Termine ${plural(n, 'partie', 'parties')} sans faute (5 manches min.)`, val: () => store.stats.perfect,
     tiers: [[1, { coins: 100 }], [3, { item: 'theme:club' }], [10, { gold: 1 }]] },
-  { id: 'coll', icon: '💿', name: 'Collectionneur', label: n => `Possède ${n} vinyles`, val: () => ownedIds().length,
+  { id: 'coll', icon: 'g-vinyl', color: 'teal', name: 'Collectionneur', label: n => `Possède ${n} vinyles`, val: () => ownedIds().length,
     tiers: [[10, { coins: 80 }], [50, { coins: 200 }], [150, { coins: 500 }], [400, { coins: 1000 }]] },
-  { id: 'legend', icon: '⭐', name: 'Légendes', label: n => `Possède ${plural(n, 'vinyle légendaire', 'vinyles légendaires')}`, val: () => ownedIds().filter(id => RARITY.get(id) === 'legendary').length,
+  { id: 'legend', icon: 'g-star', color: 'gold', name: 'Légendes', label: n => `Possède ${plural(n, 'vinyle légendaire', 'vinyles légendaires')}`, val: () => ownedIds().filter(id => RARITY.get(id) === 'legendary').length,
     tiers: [[1, { coins: 100 }], [5, { item: 'disc:holo' }], [10, { item: 'skin:gold' }], [15, { coins: 1000, gold: 1 }]] },
-  { id: 'streak', icon: '📅', name: 'Fidèle', label: n => `Joue ${n} jours d’affilée`, val: () => store.stats.bestStreak,
+  { id: 'streak', icon: 'g-flame', color: 'orange', name: 'Fidèle', label: n => `Joue ${n} jours d’affilée`, val: () => store.stats.bestStreak,
     tiers: [[3, { boosters: 1 }], [7, { item: 'theme:aurora' }], [30, { coins: 1500, gold: 1 }]] },
-  { id: 'daily', icon: '🕵️', name: 'Détective', label: n => `Réussis ${plural(n, 'défi du jour', 'défis du jour')}`, val: () => store.stats.dailyWins,
+  { id: 'daily', icon: 'g-eye', color: 'blue2', name: 'Détective', label: n => `Réussis ${plural(n, 'défi du jour', 'défis du jour')}`, val: () => store.stats.dailyWins,
     tiers: [[1, { coins: 50 }], [7, { boosters: 1, item: 'skin:dj' }], [30, { coins: 500 }]] },
-  { id: 'opened', icon: '🎁', name: 'Ouvreur', label: n => `Ouvre ${plural(n, 'booster', 'boosters')}`, val: () => store.opened,
+  { id: 'opened', icon: 'g-chest', color: 'purple', name: 'Ouvreur', label: n => `Ouvre ${plural(n, 'booster', 'boosters')}`, val: () => store.opened,
     tiers: [[5, { coins: 80 }], [25, { gold: 1 }], [100, { coins: 600 }]] },
-  { id: 'level', icon: '👑', name: 'Légende vivante', label: n => `Atteins le niveau ${n}`, val: () => levelOf(store.xp).lvl,
+  { id: 'level', icon: 'g-crown', color: 'gold', name: 'Légende vivante', label: n => `Atteins le niveau ${n}`, val: () => levelOf(store.xp).lvl,
     tiers: [[5, { coins: 300 }], [10, { item: 'skin:astro' }], [15, { item: 'disc:gold' }], [20, { coins: 1000, gold: 1 }]] },
 ];
-const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const ACH_COLORS = { blue: ['#1CB0F6', '#1899D6'], blue2: ['#2B70C9', '#1453A3'], purple: ['#CE82FF', '#A568CC'], red: ['#FF4B4B', '#EA2B2B'], green: ['#58CC02', '#58A700'], teal: ['#00CD9C', '#00A47D'], gold: ['#FFC800', '#E5A500'], orange: ['#FF9600', '#CD7900'] };
 function achState(a) {
   const claimed = store.ach[a.id] || 0, v = a.val();
   const reached = a.tiers.filter(([n]) => v >= n).length;
@@ -285,7 +284,7 @@ function rewardParts(r) {
   return parts;
 }
 function rewardInline(r) {
-  if (r.item) { const [k, id] = r.item.split(':'); return k === 'skin' ? `<span class="rw-mini">${charHTML(itemOf(k, id), { head: true })}</span>` : '🎨'; }
+  if (r.item) { const [k, id] = r.item.split(':'); return k === 'skin' ? `<span class="rw-mini">${charHTML(itemOf(k, id), { head: true })}</span>` : ico('palette'); }
   if (r.gold) return '<i class="mini-booster mp-gold"></i>';
   if (r.boosters) return '<i class="mini-booster"></i>';
   return `<i class="coin"></i>${fmt(r.coins)}`;
@@ -305,7 +304,7 @@ function claimAch(id) {
   store.ach[a.id] = st.claimed + 1;
   grantReward(r);
   sfx.fanfare(); buzz([30, 40, 60]);
-  showReward({ kicker: `Succès · ${a.name} ${ROMAN[st.claimed]}`, title: a.label(n), reward: r });
+  showReward({ kicker: `Succès · ${a.name} niveau ${st.claimed + 1}`, title: a.label(n), reward: r });
   renderBadges();
 }
 // Signale une seule fois chaque palier atteint.
@@ -314,7 +313,7 @@ function checkAchievements() {
     const st = achState(a), seen = store.achSeen[a.id] || 0;
     if (st.reached > seen) {
       store.achSeen[a.id] = st.reached;
-      toast(`🏆 Succès « ${a.name} ${ROMAN[st.reached - 1]} » — récompense dans ton profil`);
+      toast(`Succès « ${a.name} » niveau ${st.reached} : récompense dans ton profil`);
     }
   });
   save();
@@ -359,7 +358,7 @@ function missionEvent(ev, val = 1, extra) {
     if (m.ev !== ev || m.p >= m.target) return;
     if (m.cat && m.cat !== extra) return;
     m.p = Math.min(m.target, m.max ? Math.max(m.p, val) : m.p + val);
-    if (m.p >= m.target) toast(`🎯 Mission accomplie : ${m.text} — récupère +${m.reward} jetons`);
+    if (m.p >= m.target) toast(`Mission accomplie : ${m.text} — récupère +${m.reward} jetons`);
   });
   save();
 }
@@ -434,11 +433,16 @@ function judge(input, song) {
 }
 
 /* ---------------- Extraits & pochettes (iTunes) ---------------- */
-const ART_KEY = 'pompelup_art_v1';
+const ART_KEY = 'pompelup_art_v2';
+try { localStorage.removeItem('pompelup_art_v1'); } catch (e) {}
 const artCache = (() => { try { return JSON.parse(localStorage.getItem(ART_KEY) || '{}'); } catch (e) { return {}; } })();
 let artSaveTimer;
+// Catalogue de pochettes pré-construit (covers.js) : fiable, sans appel réseau de recherche.
+const COVERS = window.COVERS || {};
+const catalogArt = id => { const c = COVERS[id]; return !c ? null : c.startsWith('d:') ? `https://e-cdns-images.dzcdn.net/images/cover/${c.slice(2)}/500x500-000000-80-0-0.jpg` : c; };
 function rememberArt(id, url) {
-  artCache[id] = url || '';
+  if (!url) return;   // un échec (réseau, quota) ne doit jamais bloquer les essais suivants
+  artCache[id] = url;
   clearTimeout(artSaveTimer);
   artSaveTimer = setTimeout(() => { try { localStorage.setItem(ART_KEY, JSON.stringify(artCache)); } catch (e) {} }, 400);
 }
@@ -485,15 +489,16 @@ function fetchPreview(song) {
     try { r = await searchItunes(song); } catch (e) {}
     if (!r || !r.art) { try { const d = await searchDeezer(song); if (d) r = r ? Object.assign({}, r, { art: r.art || d.art }) : d; } catch (e) {} }
     if (!r) { previewCache.delete(song.id); return null; }
+    if (catalogArt(song.id)) r = Object.assign({}, r, { art: catalogArt(song.id) });
     rememberArt(song.id, r.art);
     return r;
   })();
   previewCache.set(song.id, p);
   return p;
 }
-const knownArt = id => (artCache[id] || null);
+const knownArt = id => catalogArt(id) || artCache[id] || null;
 async function getArt(song) {
-  if (song.id in artCache) return artCache[song.id] || null;
+  if (knownArt(song.id)) return knownArt(song.id);
   const p = await fetchPreview(song);
   return p?.art || null;
 }
@@ -702,11 +707,11 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
-const TAB_SCREENS = ['home', 'collection', 'shop', 'profile', 'story'];
+const TAB_SCREENS = ['home', 'story', 'collection', 'shop', 'profile'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
-  $('meta[name="theme-color"]')?.setAttribute('content', id === 'game' ? '#1C1230' : '#FFF4EA');
-  window.PompeNative?.post('theme', id === 'game' ? 'dark' : 'light');
+  $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
+  window.PompeNative?.post('theme', 'light');
   $('#tabbar').hidden = !TAB_SCREENS.includes(id);
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
@@ -714,7 +719,7 @@ function show(id) {
   if (id === 'collection') { renderCollection(); ambience.start(); } else ambience.stop();
   if (id === 'shop') renderShop();
   if (id === 'profile') renderProfile();
-  if (id === 'story') renderStory();
+  if (id === 'story') { renderStory(); requestAnimationFrame(() => scrollToCurrent(false)); }
   renderBadges();
 }
 function renderBadges() {
@@ -722,6 +727,7 @@ function renderBadges() {
   const setBadge = (el, v) => { el.hidden = !v; el.textContent = v === true ? '!' : v; };
   setBadge($('#tb-coll'), unseen > 9 ? '9+' : unseen);
   setBadge($('#tb-shop'), store.gift !== dayKey() ? true : 0);
+  setBadge($('#tb-story'), chestReady() ? true : 0);
   setBadge($('#tb-prof'), claimableAchs());
   $('#pt-badge').hidden = !claimableAchs();
 }
@@ -754,14 +760,14 @@ function winFx(el) {
   for (let i = 0; i < 16; i++) {
     const g = it.glyphs[i % it.glyphs.length], p = document.createElement('i'), a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 120;
     p.className = g === 'coin' ? 'wfx coin' : 'wfx';
-    if (g !== 'coin') p.textContent = g;
+    if (g !== 'coin') p.innerHTML = ico(g);
     p.style.left = `${x}px`;
     p.style.top = `${y}px`;
     p.style.setProperty('--s', `${14 + Math.random() * 16}px`);
     p.style.setProperty('--dx', `${Math.cos(a) * d}px`);
     p.style.setProperty('--dy', `${Math.sin(a) * d - 40}px`);
     p.style.setProperty('--rot', `${(Math.random() - .5) * 120}deg`);
-    p.style.setProperty('--c', ['#FBBF24', '#FFFFFF', '#F97316'][i % 3]);
+
     layer.appendChild(p);
     setTimeout(() => p.remove(), 1000);
   }
@@ -775,7 +781,7 @@ function flyPoints(text, el) {
   $('#fx-layer').appendChild(d);
   setTimeout(() => d.remove(), 1200);
 }
-function confetti(n = 60, colors = ['#F97316', '#FBBF24', '#6D28D9', '#16A34A', '#EC4899', '#3B82F6']) {
+function confetti(n = 60, colors = ['#58CC02', '#1CB0F6', '#FFC800', '#FF4B4B', '#CE82FF', '#FF9600']) {
   if (REDUCED) return;
   const layer = $('#fx-layer');
   for (let i = 0; i < n; i++) {
@@ -799,6 +805,11 @@ function renderHome() {
   $('#home-streak-n').textContent = streak;
   $('#home-streak').classList.toggle('is-cold', !playedToday());
   $('#home-streak').setAttribute('aria-label', `Série : ${plural(streak, 'jour', 'jours')}${playedToday() ? '' : ' — joue aujourd’hui pour la garder'}`);
+  const nb = totalBoosters(), hb = $('#home-boosters');
+  $('#home-boosters-n').textContent = nb;
+  hb.classList.toggle('is-empty', !nb);
+  hb.classList.toggle('has-boosters', nb > 0);
+  hb.querySelector('use').setAttribute('href', store.goldBoosters ? '#i-booster-gold' : '#i-booster');
   renderCoins();
 
   const list = $('#cat-list');
@@ -825,14 +836,13 @@ const totalBoosters = () => store.boosters + store.goldBoosters;
 function renderBoosterCard() {
   const n = totalBoosters(), card = $('#booster-card');
   card.classList.toggle('is-empty', n === 0);
-  $('.mp-1', card).classList.toggle('mp-gold', store.goldBoosters > 0);
-  $('.mp-1 .mp-name', card).textContent = store.goldBoosters > 0 ? 'Booster Or' : 'Booster';
-  $('.mp-2', card).hidden = n < 2;
-  $('.mp-3', card).hidden = n < 3;
-  $('#bcard-badge').hidden = n === 0;
+  $$('.hero-pack use', card).forEach(u => u.setAttribute('href', store.goldBoosters ? '#i-booster-gold' : '#i-booster'));
+  $('.hp-2', card).style.display = n < 2 ? 'none' : '';
+  $('.hp-3', card).style.display = n < 3 ? 'none' : '';
+  $('#bcard-badge').hidden = n < 2;
   $('#bcard-badge').textContent = n;
   const welcome = store.opened === 0 && n > 0;
-  $('.bcard-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : store.goldBoosters ? 'Booster Or disponible !' : 'Boosters de vinyles';
+  $('.hero-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : store.goldBoosters ? 'Booster Or disponible !' : 'Boosters de vinyles';
   $('#bcard-title').textContent = welcome ? '1 booster offert !' : n ? `${plural(n, 'booster', 'boosters')} à ouvrir` : 'Prochain booster';
   $('#bcard-gauge-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
   $('#bcard-gauge-txt').textContent = n
@@ -847,7 +857,7 @@ function renderMissionsCard() {
   $$('#mis-dots i').forEach((d, i) => { const m = M.list[i]; d.className = m?.claimed ? 'is-claimed' : m && m.p >= m.target ? 'is-done' : ''; });
   const next = M.list.find(m => m.p < m.target);
   const claim = missionsClaimable();
-  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer →` : next ? `${next.text} (${next.max ? fmt(next.p) : next.p}/${next.max ? fmt(next.target) : next.target})` : 'Toutes les missions sont faites ✓';
+  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer` : next ? `${next.text} (${next.max ? fmt(next.p) : next.p}/${next.max ? fmt(next.target) : next.target})` : 'Toutes les missions sont faites !';
   $('#mis-badge').hidden = !claim;
 }
 function dailyToday() { return store.daily && store.daily.date === dayKey() ? store.daily : null; }
@@ -857,12 +867,12 @@ function renderDaily() {
   if (!d) {
     $('#daily-title').textContent = 'Chanson mystère';
     $('#daily-sub').textContent = '3 essais · +1 booster';
-    $('#daily-cta').textContent = 'Jouer →';
+    $('#daily-cta').textContent = 'Jouer';
     return;
   }
   $('#daily-title').textContent = d.won ? 'Défi réussi !' : 'Raté !';
   $('#daily-sub').textContent = d.title ? `« ${d.title} »` : 'Défi abandonné';
-  $('#daily-cta').textContent = `⏳ ${hms(msToMidnight())}`;
+  $('#daily-cta').textContent = hms(msToMidnight());
 }
 function dailySongCandidates() {
   const h = hashStr(`pompelup-${dayKey()}`), out = [];
@@ -889,6 +899,8 @@ function startGame(cfg) {
   $('#game-score').dataset.v = 0;
   $('#game-gauge').hidden = !!cfg.daily;
   $('.game-score').hidden = !!cfg.daily;
+  $('#game-combo').hidden = true;
+  $('#game-prog').style.width = '0';
   updateGameGauge();
   applySkins();
   host.mood = null;
@@ -943,9 +955,12 @@ async function startRound() {
   img.classList.remove('has-src');
   img.removeAttribute('src');
   $('#reveal').hidden = true;
+  $('#screen-game').classList.remove('is-reveal');
   $('#clues').hidden = true;
   $('#rapid').hidden = true;
   $('#btn-next').hidden = true;
+  $('#game-prog').style.width = `${G.i / G.songs.length * 100}%`;
+  $('#game-title').textContent = G.cfg.daily ? 'Chanson mystère du jour' : G.cfg.mode === 'type' ? 'Écris le titre de cette chanson' : G.cfg.mode === 'stems' ? 'Maintiens le disque pour écouter' : 'Quelle est cette chanson ?';
   G.holding = false;
   if (!G.cfg.daily) say(G.i === G.songs.length - 1 && G.i > 0 ? HOST_LINES.last() : HOST_LINES.start(G.i + 1));
   else say('Le défi du jour : 3 essais, pas un de plus !');
@@ -964,8 +979,10 @@ async function startRound() {
   G.song = song;
   G.pv = pv;
   if (G.songs[G.i + 1]) fetchPreview(G.songs[G.i + 1]);
-  if (pv?.art) { img.onload = () => img.classList.add('has-src'); img.src = pv.art; }
+  const art = pv?.art || knownArt(song.id);
+  if (art) { img.onload = () => img.classList.add('has-src'); img.src = art; }
   $('#disc-label').style.background = song.color || 'var(--orange)';
+  $('#btn-replay-audio').hidden = G.cfg.mode === 'stems';
 
   if (G.cfg.mode === 'type') {
     $('#type-box').hidden = false;
@@ -1009,14 +1026,17 @@ async function startRound() {
   loop(token);
 }
 
+// Anneau du minuteur : bleu, puis orange sous 10 s, rouge sous 5 s
 function setTimer(frac, secs) {
-  const low = secs <= 5;
+  const low = secs <= 5 && secs > 0, mid = secs <= 10 && !low && secs > 0;
   const ring = $('#ring-fg');
   ring.style.strokeDashoffset = String(100 * (1 - Math.max(0, Math.min(1, frac))));
-  ring.classList.toggle('is-low', low && secs > 0);
+  ring.classList.toggle('is-low', low);
+  ring.classList.toggle('is-mid', mid);
   const num = $('#timer-num');
   num.textContent = Math.max(0, Math.ceil(secs));
-  num.classList.toggle('is-low', low && secs > 0);
+  num.classList.toggle('is-low', low);
+  num.classList.toggle('is-mid', mid);
 }
 
 function loop(token) {
@@ -1071,8 +1091,10 @@ function finishRound(ok, reason, sourceEl) {
     if (G.cfg.mode === 'type') missionEvent('typeFound');
     if (G.combo >= 2) {
       const c = $('#combo');
-      c.textContent = `🔥 COMBO ×${G.combo}`;
+      c.innerHTML = `${ico('flame')} COMBO ×${G.combo}`;
       c.classList.remove('is-on'); void c.offsetWidth; c.classList.add('is-on');
+      $('#game-combo').hidden = false;
+      $('#game-combo-n').textContent = G.combo;
     }
     animateScore();
     if (!G.cfg.daily) {
@@ -1083,16 +1105,17 @@ function finishRound(ok, reason, sourceEl) {
       gg.classList.remove('is-hit'); void gg.offsetWidth; gg.classList.add('is-hit');
       if (won) {
         G.boostersWon += won;
-        setTimeout(() => { sfx.booster(); buzz([30, 50, 30]); toast('🎁 Booster gagné ! Ouvre-le à la fin de la partie'); }, 450);
+        setTimeout(() => { sfx.booster(); buzz([30, 50, 30]); toast('Booster gagné ! Ouvre-le à la fin de la partie'); }, 450);
       }
     }
   } else {
-    if (G.combo >= 3) toast(`Combo ×${G.combo} cassé 💔`);
+    if (G.combo >= 3) toast(`Combo ×${G.combo} cassé…`);
     G.combo = 0;
+    $('#game-combo').hidden = true;
     reason === 'timeout' ? sfx.timeout() : sfx.wrong();
     buzz([50, 40, 50]);
   }
-  G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || null });
+  G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || knownArt(song.id) });
 
   $('#disc').classList.remove('is-spinning');
   $('#disc').classList.add('is-revealed');
@@ -1118,19 +1141,23 @@ function finishRound(ok, reason, sourceEl) {
   $('#timer-num').classList.remove('is-low');
   $('#ring-fg').classList.remove('is-low');
 
+  // Feuille de verdict en bas de l'écran, verte ou rouge
   const v = $('#reveal-verdict');
   v.className = `reveal-verdict ${ok ? 'ok' : 'ko'}`;
-  v.textContent = ok ? (G.combo >= 3 ? 'En feu !' : pickOne(['Bien joué !', 'Trouvé !', 'Imparable !', 'Oreille d’or !']))
-    : reason === 'timeout' ? 'Temps écoulé' : 'Raté !';
-  $('#reveal-title').textContent = song.title;
-  $('#reveal-artist').textContent = `${song.artist} · ${song.year}`;
+  v.textContent = ok ? (G.combo >= 3 ? `${G.combo} d’affilée !` : pickOne(['Excellent !', 'Bien joué !', 'Trop fort !', 'Parfait !']))
+    : reason === 'timeout' ? 'Temps écoulé !' : 'Presque !';
+  $('#reveal-title').textContent = ok ? song.title : `Réponse : ${song.title}`;
+  $('#reveal-artist').textContent = `${song.artist} · ${song.year}${ok && pts ? ` · +${fmt(pts)} pts` : ''}`;
+  $('#reveal').className = `feedback ${ok ? 'is-ok' : 'is-ko'}`;
   $('#reveal').hidden = false;
+  $('#screen-game').classList.add('is-reveal');
+  $('#game-prog').style.width = `${(G.i + 1) / G.songs.length * 100}%`;
   $('#clues').hidden = true;
   $('#stage-status').textContent = '';
 
   const last = G.i >= G.songs.length - 1;
   const next = $('#btn-next');
-  next.querySelector('span').textContent = last ? 'Voir les résultats' : 'Suivant';
+  next.querySelector('span').textContent = last ? 'Voir les résultats' : 'Continuer';
   next.hidden = false;
   const bar = $('#next-progress');
   const wait = G.cfg.daily ? 4200 : 3600;
@@ -1189,7 +1216,7 @@ const HOST_LINES = {
   start: n => pickOne([`Manche ${n} ! Tends l’oreille…`, 'Attention, ça démarre !', 'Voilà le prochain extrait !', 'Tu la connais, celle-là ?']),
   last: () => 'Dernière manche, tout se joue maintenant !',
   hurry: () => pickOne(['Plus que 5 secondes !', 'Vite, vite !', 'Le temps file…']),
-  right: (combo, fast) => combo >= 3 ? `Combo ×${combo} ! Tu es en feu 🔥` : fast ? pickOne(['Réflexe de DJ !', 'Trop rapide !', 'Instantané !']) : pickOne(['Bien joué !', 'Exactement !', `Bravo ${displayName()} !`, 'Oreille d’or !']),
+  right: (combo, fast) => combo >= 3 ? `Combo ×${combo} ! Tu es en feu !` : fast ? pickOne(['Réflexe de DJ !', 'Trop rapide !', 'Instantané !']) : pickOne(['Bien joué !', 'Exactement !', `Bravo ${displayName()} !`, 'Oreille d’or !']),
   wrong: s => pickOne(['Aïe, raté…', 'Pas cette fois !', 'Presque !']) + ` C’était « ${s.title} ».`,
   timeout: s => `Temps écoulé ! C’était « ${s.title} ».`,
   hint: () => pickOne(['Un petit coup de pouce…', 'Je t’aide un peu !']),
@@ -1199,11 +1226,11 @@ const HOST_LINES = {
 /* ================= PARTIE RAPIDE : écoute au doigt + stems ================= */
 const RAPID_MAX = 12;            // secondes d'écoute avant que la jauge soit pleine
 const STEMS = [
-  { id: 'voice', label: 'Voix', icon: '🎤', cost: 0 },
-  { id: 'guitar', label: 'Guitare', icon: '🎸', cost: 100 },
-  { id: 'drums', label: 'Batterie', icon: '🥁', cost: 100 },
-  { id: 'bass', label: 'Basse', icon: '🎚️', cost: 100 },
-  { id: 'full', label: 'Tout', icon: '🎶', cost: 150 },
+  { id: 'voice', label: 'Voix', icon: 'g-mic', cost: 0 },
+  { id: 'guitar', label: 'Guitare', icon: 'g-guitar', cost: 100 },
+  { id: 'drums', label: 'Batterie', icon: 'g-drum', cost: 100 },
+  { id: 'bass', label: 'Basse', icon: 'g-bass', cost: 100 },
+  { id: 'full', label: 'Tout', icon: 'g-sliders', cost: 150 },
 ];
 const stemAudio = new Audio();
 stemAudio.crossOrigin = 'anonymous';
@@ -1293,7 +1320,7 @@ function renderStems() {
   $('#stems').innerHTML = STEMS.map((s, i) => {
     const on = i <= G.stem, next = i === G.stem + 1;
     return `<button class="stem${on ? ' is-on' : ''}${next ? ' is-next' : ''}" type="button" data-stem="${i}" ${!next || !avail || G.phase === 'reveal' ? 'disabled' : ''}>
-      <span aria-hidden="true">${s.icon}</span><b>${s.label}</b>${next ? `<small>−${s.cost}</small>` : ''}</button>`;
+      ${ico(s.icon)}<b>${s.label}</b>${next ? `<small>−${s.cost}</small>` : ''}</button>`;
   }).join('');
   $('#stems').hidden = !avail;
 }
@@ -1362,18 +1389,18 @@ function onChoice(btn) {
 function renderAttempts() {
   if (!G.cfg.daily) return;
   const max = G.cfg.attempts, left = max - G.tries;
-  $('#attempts').textContent = `${'●'.repeat(left)}${'○'.repeat(max - left)}  ${plural(left, 'essai restant', 'essais restants')}`;
+  $('#attempts').innerHTML = `<span class="att-dots">${'<i class="is-on"></i>'.repeat(left)}${'<i></i>'.repeat(max - left)}</span>${plural(left, 'essai restant', 'essais restants')}`;
 }
 function submitText(text, pickedId) {
   if (G.phase !== 'playing') return;
   if (!text.trim() && !pickedId) return;
   const input = $('#type-input');
-  if (!pickedId && cleanTitle(text).length < 2) { toast('Un peu court… tape le titre 😉'); input.focus(); return; }
+  if (!pickedId && cleanTitle(text).length < 2) { toast('Un peu court… tape le titre'); input.focus(); return; }
   const picked = pickedId && SONG.get(pickedId);
   const verdict = picked ? (picked.id === G.song.id || cleanTitle(picked.title) === cleanTitle(G.song.title) ? 'title' : null) : judge(text, G.song);
   if (verdict === 'title') return finishRound(true, 'right', input);
   if (verdict === 'artist' && !picked) {
-    toast('Bon artiste ! Et le titre ? 👀');
+    toast('Bon artiste ! Et le titre ?');
     input.select();
     return;
   }
@@ -1456,30 +1483,35 @@ function endGame() {
 
   const ratio = n ? found / n : 0;
   $('#res-char').innerHTML = meHTML({ mood: record ? 'grin' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'smirk' : 'sad' });
+  $('#res-title').textContent = G.cfg.daily ? (found ? 'Défi réussi !' : 'Défi raté…') : found === n && n > 0 ? 'Partie parfaite !' : ratio >= .5 ? 'Partie terminée !' : 'On remet ça ?';
   $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'partie rapide' : '4 choix'}`;
   $('#res-record').hidden = !record;
+  $('#res-acc').textContent = `${Math.round(ratio * 100)} %`;
+  $('#res-acc-label').textContent = ratio === 1 ? 'Parfait' : ratio >= .8 ? 'Génial' : ratio >= .5 ? 'Bien' : 'Précision';
   $('#res-line').textContent = G.cfg.daily
     ? (found ? `Trouvé en ${plural(G.tries + 1, 'essai', 'essais')} !` : 'Pas cette fois… reviens demain !')
     : `${found}/${n} trouvée${found > 1 ? 's' : ''}${found === n && n > 0 ? ' — sans faute !' : ''}`;
   $('#res-combo').textContent = `×${G.bestCombo}`;
-  const okTimes = G.results.filter(r => r.ok).map(r => r.time);
-  $('#res-time').textContent = okTimes.length ? `${(okTimes.reduce((a, b) => a + b, 0) / okTimes.length).toFixed(1).replace('.', ',')} s` : '–';
+  const okTimes = G.results.filter(r => r.ok).map(r => r.time), avg = okTimes.length ? okTimes.reduce((a, b) => a + b, 0) / okTimes.length : 0;
+  $('#res-time').textContent = okTimes.length ? `${avg.toFixed(1).replace('.', ',')} s` : '–';
+  $('#res-speed-label').textContent = !okTimes.length ? 'Rapidité' : avg < 3 ? 'Éclair' : avg < 6 ? 'Rapide' : 'Appliqué';
   $('#res-xp').textContent = `+${xp} XP`;
-  $('#res-coins').innerHTML = `+${fmt(coins)}<i class="coin"></i>`;
+  $('#res-coins').textContent = `+${fmt(coins)}`;
   $('#res-level').textContent = after.lvl;
+  $('#res-level-2').textContent = after.lvl;
   $('#res-level-fill').style.width = '0';
   $('#recap').innerHTML = G.results.map((r, i) => `
     <li class="${r.ok ? 'ok' : 'ko'}" style="animation-delay:${.15 + i * .05}s">
       <span class="recap-art">${coverHTML(r.song, r.art)}</span>
       <span class="recap-txt"><b>${esc(r.song.title)}</b><span>${esc(r.song.artist)} · ${r.song.year}</span></span>
-      <span class="recap-pts">${r.ok ? (G.cfg.daily ? '✓' : `+${fmt(r.pts)}`) : '—'}</span>
+      <span class="recap-pts">${r.ok ? (G.cfg.daily ? 'Trouvé' : `+${fmt(r.pts)}`) : '—'}</span>
     </li>`).join('');
-  $('#btn-replay').textContent = G.cfg.daily ? 'Jouer' : 'Rejouer';
+  $('#btn-replay').textContent = G.cfg.daily ? 'Accueil' : 'Rejouer';
   renderResBooster();
   show('results');
 
   const el = $('#res-score');
-  if (G.cfg.daily) el.textContent = found ? '+150 XP' : 'Raté';
+  if (G.cfg.daily) el.textContent = found ? '+150' : '0';
   else {
     const target = G.score, t0 = performance.now();
     const step = t => { const k = Math.min(1, (t - t0) / 900); el.textContent = fmt(target * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(step); };
@@ -1495,7 +1527,7 @@ function endGame() {
 function renderResBooster() {
   const box = $('#res-booster'), won = G.boostersWon || 0, n = totalBoosters();
   box.classList.toggle('is-earned', won > 0);
-  $('#rb-title').textContent = won ? `🎁 +${plural(won, 'booster', 'boosters')} !` : 'Jauge booster';
+  $('#rb-title').textContent = won ? `+${plural(won, 'booster', 'boosters')} !` : 'Jauge booster';
   $('#rb-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
   $('#rb-txt').textContent = `${store.gauge}/${GAUGE_MAX} bonnes réponses${n ? ` · ${plural(n, 'booster', 'boosters')} en stock` : ''}`;
   const btn = $('#rb-open');
@@ -1506,7 +1538,11 @@ function renderResBooster() {
 function showStreak() {
   const n = store.streak.count;
   $('#streak-n').textContent = n;
-  $('#streak-label').textContent = n > 1 ? 'jours d’affilée' : 'jour de série';
+  $('#streak-label').textContent = n > 1 ? 'jours de série !' : 'jour de série !';
+  // Les 7 derniers jours : les jours joués de la série s'allument
+  const days = [];
+  for (let k = 6; k >= 0; k--) { const d = new Date(); d.setDate(d.getDate() - k); days.push({ k, d }); }
+  $('#streak-week').innerHTML = days.map(({ k, d }) => `<span class="sw-day${k < n ? ' is-on' : ''}${k === 0 ? ' is-today' : ''}"><i>${k < n ? ico('g-check') : ''}</i>${'DLMMJVS'[d.getDay()]}</span>`).join('');
   $('#streak-msg').textContent = n > 1 ? 'Ta série continue. Reviens demain pour l’allonger !' : 'Série lancée ! Reviens demain pour la garder.';
   $('#streak-overlay').hidden = false;
   sfx.fanfare();
@@ -1529,14 +1565,14 @@ function quitGame() {
 
 function share() {
   const found = G.results.filter(r => r.ok).length;
-  const grid = G.results.map(r => (r.ok ? '🟩' : '🟥')).join('');
+  const grid = G.results.map(r => (r.ok ? '■' : '□')).join('');
   const text = G.cfg.daily
-    ? `🎵 Pompelup — Défi du ${new Date().toLocaleDateString('fr-FR')} : ${found ? `trouvé en ${plural(G.tries + 1, 'essai', 'essais')} 🔥` : 'raté 😭'}`
-    : `🎵 Pompelup — ${fmt(G.score)} pts · ${found}/${G.results.length} ${grid}\nMeilleur combo ×${G.bestCombo}. Tu fais mieux ?`;
+    ? `Pompelup — Défi du ${new Date().toLocaleDateString('fr-FR')} : ${found ? `trouvé en ${plural(G.tries + 1, 'essai', 'essais')} !` : 'raté…'}`
+    : `Pompelup — ${fmt(G.score)} pts · ${found}/${G.results.length} ${grid}\nMeilleur combo ×${G.bestCombo}. Tu fais mieux ?`;
   const url = location.href.split(/[?#]/)[0];
   const copy = () => {
     if (!navigator.clipboard) { toast('Partage indisponible ici'); return; }
-    navigator.clipboard.writeText(`${text}\n${url}`).then(() => toast('Copié ! Colle-le à tes potes 📋'), () => toast('Partage indisponible ici'));
+    navigator.clipboard.writeText(`${text}\n${url}`).then(() => toast('Copié ! Colle-le à tes potes'), () => toast('Partage indisponible ici'));
   };
   if (navigator.share) navigator.share({ title: 'Pompelup', text, url }).catch(e => { if (e?.name !== 'AbortError') copy(); });
   else copy();
@@ -1598,7 +1634,7 @@ function commitBooster(cards, kind) {
 }
 
 function openBooster() {
-  if (totalBoosters() <= 0) { toast('Pas de booster… trouve des chansons ou passe à la boutique ! 🎁'); return; }
+  if (totalBoosters() <= 0) { toast('Pas de booster… trouve des chansons ou passe à la boutique !'); return; }
   unlockAudio();
   stopMusic();
   try { listen.pause(); } catch (e) {}
@@ -1611,7 +1647,7 @@ function openBooster() {
   const bo = $('#booster'), pack = $('#pack');
   bo.hidden = false;
   bo.className = 'bo';
-  bo.style.setProperty('--glow', 'rgba(249,115,22,.32)');
+  bo.style.setProperty('--glow', 'rgba(206,130,255,.32)');
   bo.style.setProperty('--ray', 'rgba(255,255,255,.05)');
   pack.className = kind === 'gold' ? 'pack is-gold' : 'pack';
   pack.hidden = false;
@@ -1728,11 +1764,11 @@ function cardHTML(c, i) {
     const a = c.acc;
     return `<div class="vc vc-acc r-${c.rarity}" data-i="${i}" role="button" tabindex="-1" aria-label="Carte ${i + 1} sur 3">
     <div class="vc-flip">
-      <div class="vc-back"><span class="vc-back-logo">Pompe<span>lup</span></span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
+      <div class="vc-back"><span class="vc-back-logo">pompelup</span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
       <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { mood: 'wow', accs: myAccs(a) })}</div></div>
     </div>
     <div class="vc-info">
-      <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]} · Accessoire</span>
+      <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]} · Accessoire</span>
       <div class="vc-title">${esc(a.name)}</div>
       <div class="vc-artist">${window.PompeChar.SLOTS[a.slot]} · se porte avec tous tes skins</div>
       ${c.isNew ? '<span class="vc-tag is-new">Nouveau !</span>' : `<span class="vc-tag is-dup">Doublon · +${c.dupCoins} <i class="coin"></i></span>`}
@@ -1742,14 +1778,14 @@ function cardHTML(c, i) {
   const s = c.song;
   return `<div class="vc r-${c.rarity}" data-i="${i}" style="--sc:${s.color || '#6D28D9'}" role="button" tabindex="-1" aria-label="Vinyle ${i + 1} sur 3">
     <div class="vc-flip">
-      <div class="vc-back"><span class="vc-back-logo">Pompe<span>lup</span></span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
+      <div class="vc-back"><span class="vc-back-logo">pompelup</span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
       <div class="vc-front">
         <div class="vc-disc"><div class="vc-disc-spin"><div class="vc-label">${c.art ? `<img src="${esc(c.art)}" alt="">` : ''}</div></div></div>
         <div class="vc-sleeve">${coverHTML(s, c.art)}</div>
       </div>
     </div>
     <div class="vc-info">
-      <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]}</span>
+      <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]}</span>
       <div class="vc-title">${esc(s.title)}</div>
       <div class="vc-artist">${esc(s.artist)} · ${s.year}</div>
       ${c.isNew ? '<span class="vc-tag is-new">Nouveau !</span>' : `<span class="vc-tag is-dup">Doublon · +${c.dupCoins} <i class="coin"></i></span>`}
@@ -1827,7 +1863,7 @@ function rarityImpact(r) {
     bo.classList.add('is-flash', 'is-shake');
     setTimeout(() => bo.classList.remove('is-flash', 'is-shake'), 750);
     buzz([80, 40, 160]);
-    confetti(70, ['#FBBF24', '#FDE68A', '#F59E0B', '#FFFFFF']);
+    confetti(70, ['#FFC800', '#FFE066', '#FF9600', '#FFFFFF']);
   } else if (r === 'epic') {
     bo.classList.remove('is-shake'); void bo.offsetWidth;
     bo.classList.add('is-shake');
@@ -1842,7 +1878,7 @@ function burst(n, color, top = '44%', stars = false) {
     const s = document.createElement('i'), a = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 190;
     const star = stars && i % 3 === 0;
     s.className = `spark${star ? ' is-star' : ''}`;
-    if (star) s.textContent = '✦';
+    if (star) s.innerHTML = ico('sparkle');
     s.style.top = top;
     s.style.setProperty('--c', i % 4 === 0 ? '#fff' : color);
     s.style.setProperty('--s', `${4 + Math.random() * 8}px`);
@@ -1861,7 +1897,7 @@ function nextCard() {
   sfx.whoosh();
   BO.idx++;
   const bo = $('#booster');
-  bo.style.setProperty('--glow', 'rgba(249,115,22,.28)');
+  bo.style.setProperty('--glow', 'rgba(206,130,255,.28)');
   bo.style.setProperty('--ray', 'rgba(255,255,255,.05)');
   bo.classList.remove('is-hot');
   if (BO.idx >= BO.cards.length) { BO.state = 'summary'; setTimeout(showSummary, 380); return; }
@@ -1875,7 +1911,7 @@ function showSummary() {
   const cards = BO.cards, best = BO.best, fresh = cards.filter(c => c.isNew).length;
   $('#bo-stage').hidden = true;
   $('#bo-hint').hidden = true;
-  $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
+  $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire !' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
   $('#bo-sum-grid').innerHTML = cards.map(c => `
     <div class="bs r-${c.rarity}">
       <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
@@ -1901,9 +1937,10 @@ function renderCollection() {
   $('#coll-of').textContent = `/ ${total} vinyles`;
   $('#coll-pct').textContent = `${(ids.length / total * 100).toFixed(1).replace('.', ',')} %`;
   $('#coll-fill').style.width = `${Math.max(ids.length ? 1.5 : 0, ids.length / total * 100)}%`;
-  const nb = store.boosters, ob = $('#coll-open');
+  const nb = totalBoosters(), ob = $('#coll-open');
   $('#coll-boosters').textContent = nb;
   ob.classList.toggle('has-boosters', nb > 0);
+  ob.classList.toggle('is-empty', !nb);
 
   const counts = Object.fromEntries(RARITIES.map(r => [r, 0]));
   ids.forEach(id => counts[RARITY.get(id)]++);
@@ -1963,7 +2000,7 @@ function renderCollection() {
 const CHAR_LINES = [
   n => n ? `${plural(n, 'vinyle', 'vinyles')} au mur, pas mal !` : 'Mon mur est tout vide…',
   () => `Encore ${fmt(SONGS.length - ownedIds().length)} vinyles à trouver !`,
-  () => totalBoosters() ? `Tu as ${plural(totalBoosters(), 'booster', 'boosters')} à ouvrir 🎁` : 'On se fait une partie ?',
+  () => totalBoosters() ? `Tu as ${plural(totalBoosters(), 'booster', 'boosters')} à ouvrir !` : 'On se fait une partie ?',
   () => `J’adore ${pickOne(ownedIds().map(id => SONG.get(id).artist).concat(['le disco', 'le vinyle']))} !`,
 ];
 let chatIdx = 0, chatTimer;
@@ -1988,11 +2025,11 @@ function openVinyl(id) {
   vis.innerHTML = `<div class="vs-disc"><div class="vs-label">${art ? `<img src="${esc(art)}" alt="">` : ''}</div></div><div class="vs-sleeve">${coverHTML(s, art)}</div>`;
   const pill = $('#vs-rarity');
   pill.className = `rar-pill r-${r}`;
-  pill.textContent = `${R_ICON[r]} ${R_NAME[r]}`;
+  pill.textContent = R_NAME[r];
   $('#vs-title').textContent = s.title;
   $('#vs-meta').textContent = `${s.artist} · ${s.year} · ${s.genre}`;
   $('#vs-own').textContent = `${plural(e.n, 'exemplaire', 'exemplaires')} · obtenu le ${new Date(e.t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
-  $('#vs-play').textContent = '▶ Écouter';
+  $('#vs-play').textContent = 'Écouter';
   $('#vinyl-sheet').hidden = false;
   if (!art) getArt(s).then(a => { if (a && vsSong === s) { fillCover(vis, a); $('.vs-label', vis).innerHTML = `<img src="${esc(a)}" alt="">`; } });
   kbFocus($('#vs-close'));
@@ -2004,31 +2041,28 @@ function closeVinyl() {
 }
 async function toggleListen() {
   const btn = $('#vs-play'), vis = $('#vs-visual');
-  if (!listen.paused) { listen.pause(); btn.textContent = '▶ Écouter'; vis.classList.remove('is-playing'); return; }
+  if (!listen.paused) { listen.pause(); btn.textContent = 'Écouter'; vis.classList.remove('is-playing'); return; }
   const s = vsSong;
   btn.textContent = 'Chargement…';
   const pv = await fetchPreview(s);
   if (vsSong !== s) return;
-  if (!pv) { btn.textContent = '▶ Écouter'; toast('Extrait indisponible pour ce vinyle'); return; }
+  if (!pv) { btn.textContent = 'Écouter'; toast('Extrait indisponible pour ce vinyle'); return; }
   listen.src = pv.url;
   listen.currentTime = 0;
-  listen.play().then(() => { btn.textContent = '⏸ Pause'; vis.classList.add('is-playing'); }, () => { btn.textContent = '▶ Écouter'; toast('Lecture impossible'); });
+  listen.play().then(() => { btn.textContent = 'Pause'; vis.classList.add('is-playing'); }, () => { btn.textContent = 'Écouter'; toast('Lecture impossible'); });
 }
-listen.addEventListener('ended', () => { $('#vs-play').textContent = '▶ Écouter'; $('#vs-visual').classList.remove('is-playing'); });
+listen.addEventListener('ended', () => { $('#vs-play').textContent = 'Écouter'; $('#vs-visual').classList.remove('is-playing'); });
 
 /* ================= BOUTIQUE ================= */
 let shopTicker = null;
 function packArt(id) {
-  const pack = (cls, name) => `<div class="mini-pack ${cls}"><div class="mp-foil"></div><div class="mp-disc"></div><span class="mp-logo">Pompe<b>lup</b></span><span class="mp-name">${name}</span></div>`;
-  if (id === 'gold') return pack('mp-1 mp-gold', 'Or');
-  if (id === 'bundle') return `<div class="mini-pack mp-3"></div><div class="mini-pack mp-2"></div>${pack('mp-1', '×5')}`;
-  return pack('mp-1', 'Booster');
+  return `<span class="row-art">${ico(id === 'gold' ? 'booster-gold' : 'booster')}</span>`;
 }
 function itemCardHTML(kind, it, deal) {
   const owned = isOwned(kind, it.id), eq = isEquipped(kind, it.id), locked = !owned && !it.price;
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
   const price = isDeal ? deal.price : it.price;
-  const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? '<span class="item-state">🔒 Succès</span>' : `<span class="item-price">${fmt(price)}<i class="coin"></i></span>`;
+  const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? `<span class="item-state">${ico('g-lock')}Succès</span>` : `<span class="item-price"><i class="coin"></i>${fmt(price)}</span>`;
   const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
   const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
   return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
@@ -2036,15 +2070,16 @@ function itemCardHTML(kind, it, deal) {
 function renderShopTimers() {
   const t = hms(msToMidnight());
   if (store.gift === dayKey()) $('#gift-sub').textContent = `Prochain cadeau dans ${t}`;
-  $('#deal-timer').textContent = `⏳ Encore ${t}`;
+  $('#deal-timer').textContent = `Encore ${t}`;
 }
 function renderShop() {
   renderCoins();
   const claimed = store.gift === dayKey();
   $('#gift-card').classList.toggle('is-claimed', claimed);
-  $('#gift-title').textContent = claimed ? 'Cadeau récupéré' : 'Cadeau du jour';
+  $('#gift-title').textContent = claimed ? 'Coffre récupéré' : 'Coffre du jour';
   $('#gift-sub').textContent = '50 jetons offerts chaque jour';
-  $('#gift-cta').textContent = claimed ? '✓ Pris' : 'Récupérer';
+  $('#gift-cta').textContent = claimed ? 'Pris' : 'Ouvrir';
+  $('#gift-card .gift-ico use').setAttribute('href', claimed ? '#i-chest-open' : '#i-chest');
   const d = dealOfTheDay(), dc = $('#deal-card');
   dc.hidden = !d;
   if (d) {
@@ -2057,20 +2092,20 @@ function renderShop() {
   }
   renderShopTimers();
   $('#shop-packs').innerHTML = PACKS.map(p => `
-    <button class="pk" type="button" data-pack="${p.id}">${p.tag ? `<span class="pk-tag">${p.tag}</span>` : ''}
-      <span class="pk-art">${packArt(p.id)}</span><b>${p.name}</b><small>${p.short}</small>
-      <span class="pk-price">${fmt(p.price)}<i class="coin"></i></span>
+    <button class="row pk" type="button" data-pack="${p.id}">${p.tag ? `<span class="row-tag">${p.tag}</span>` : ''}
+      ${packArt(p.id)}<span class="row-txt"><b>${p.name}</b><small>${p.desc}</small></span>
+      <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
     </button>`).join('');
   for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
   clearInterval(shopTicker);
   shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
 }
 function claimGift() {
-  if (store.gift === dayKey()) { toast(`Prochain cadeau dans ${hms(msToMidnight())} 🎁`); return; }
+  if (store.gift === dayKey()) { toast(`Prochain coffre dans ${hms(msToMidnight())}`); return; }
   store.gift = dayKey();
   grantReward({ coins: 50 });
   sfx.booster(); buzz([30, 40, 30]);
-  showReward({ kicker: 'Cadeau du jour', title: 'Merci d’être là !', reward: { coins: 50 } });
+  showReward({ kicker: 'Coffre du jour', title: 'Merci d’être là !', reward: { coins: 50 } });
   renderShop();
   renderBadges();
 }
@@ -2086,13 +2121,13 @@ function openItem(kind, id) {
   $('#is-preview').innerHTML = itemPreviewHTML(kind, it);
   const pill = $('#is-rarity');
   pill.className = `rar-pill r-${it.rarity}`;
-  pill.textContent = `${R_ICON[it.rarity]} ${R_NAME[it.rarity]} · ${kind === 'acc' ? `Accessoire ${window.PompeChar.SLOTS[it.slot].toLowerCase()}` : KIND_NAME[kind]}`;
+  pill.textContent = `${R_NAME[it.rarity]} · ${kind === 'acc' ? `Accessoire ${window.PompeChar.SLOTS[it.slot].toLowerCase()}` : KIND_NAME[kind]}`;
   $('#is-name').textContent = it.name;
   $('#is-desc').textContent = it.desc || (kind === 'acc' ? `Se porte avec tous les skins. Un seul accessoire par emplacement (${window.PompeChar.SLOTS[it.slot].toLowerCase()}).` : '');
   const lock = !isOwned(kind, id) && !it.price ? unlockInfo(kind, id) : null;
   $('#is-lock').hidden = !lock;
   if (lock) {
-    $('#is-lock-txt').textContent = `🔒 Succès « ${lock.ach.name} » : ${lock.text} (${fmt(lock.v)}/${fmt(lock.n)})`;
+    $('#is-lock-txt').textContent = `Succès « ${lock.ach.name} » : ${lock.text} (${fmt(lock.v)}/${fmt(lock.n)})`;
     $('#is-lock-fill').style.width = `${lock.v / lock.n * 100}%`;
   }
   renderItemAction();
@@ -2103,11 +2138,11 @@ function renderItemAction() {
   const { kind, id, price } = IS, btn = $('#is-action'), it = itemOf(kind, id);
   btn.disabled = false;
   if (kind === 'acc' && isEquipped(kind, id)) btn.textContent = 'Retirer';
-  else if (isEquipped(kind, id)) { btn.textContent = 'Équipé ✓'; btn.disabled = true; }
+  else if (isEquipped(kind, id)) { btn.textContent = 'Équipé'; btn.disabled = true; }
   else if (isOwned(kind, id)) btn.textContent = 'Équiper';
   else if (!it.price) btn.textContent = 'Voir mes succès';
   else if (store.coins < price) { btn.textContent = `Il te manque ${fmt(price - store.coins)} jetons`; btn.disabled = true; }
-  else btn.innerHTML = `Acheter · ${fmt(price)} <i class="coin"></i>`;
+  else btn.innerHTML = `Acheter · <i class="coin"></i>${fmt(price)}`;
 }
 function itemAction() {
   const { kind, id, price } = IS, it = itemOf(kind, id);
@@ -2118,7 +2153,7 @@ function itemAction() {
   } else if (isOwned(kind, id)) {
     equipItem(kind, id);
     sfx.tap(); buzz(20);
-    toast(`${it.name} équipé ✓`);
+    toast(`${it.name} équipé`);
   } else if (!it.price) {
     closeItem();
     PF_TAB = 'ach';
@@ -2130,7 +2165,7 @@ function itemAction() {
     equipItem(kind, id);
     sfx.reveal(it.rarity); buzz([30, 40, 60]);
     confetti(50);
-    toast(`${it.name} acheté et équipé ! 🎉`);
+    toast(`${it.name} acheté et équipé !`);
   }
   renderItemAction();
   refreshScreen();
@@ -2139,17 +2174,17 @@ function closeItem() { $('#item-sheet').hidden = true; IS = null; }
 function openPack(id) {
   const p = PACKS.find(x => x.id === id);
   IS = { pack: p };
-  $('#is-preview').innerHTML = `<span class="pk-art">${packArt(p.id)}</span>`;
+  $('#is-preview').innerHTML = packArt(p.id);
   const pill = $('#is-rarity');
-  pill.className = `rar-pill r-${p.id === 'gold' ? 'legendary' : 'rare'}`;
-  pill.textContent = p.id === 'gold' ? '★ Premium' : '◆ Booster';
+  pill.className = `rar-pill r-${p.id === 'gold' ? 'legendary' : 'epic'}`;
+  pill.textContent = p.id === 'gold' ? 'Premium' : 'Booster';
   $('#is-name').textContent = p.name;
   $('#is-desc').textContent = p.desc;
   $('#is-lock').hidden = true;
   const btn = $('#is-action');
   btn.disabled = store.coins < p.price;
   if (btn.disabled) btn.textContent = `Il te manque ${fmt(p.price - store.coins)} jetons`;
-  else btn.innerHTML = `Acheter · ${fmt(p.price)} <i class="coin"></i>`;
+  else btn.innerHTML = `Acheter · <i class="coin"></i>${fmt(p.price)}`;
   $('#item-sheet').hidden = false;
 }
 function buyPack() {
@@ -2178,9 +2213,9 @@ function nextReward() {
   if (r.item) {
     const [k, id] = r.item.split(':');
     visual = itemPreviewHTML(k, itemOf(k, id));
-    action = { label: 'Équiper', run: () => { equipItem(k, id); toast('Équipé ✓'); refreshScreen(); } };
+    action = { label: 'Équiper', run: () => { equipItem(k, id); toast('Équipé !'); refreshScreen(); } };
   } else if (r.gold || r.boosters) {
-    visual = `<span class="pk-art">${packArt(r.gold ? 'gold' : 'std')}</span>`;
+    visual = packArt(r.gold ? 'gold' : 'std');
     action = { label: 'Ouvrir', run: () => openBooster() };
   }
   RW.action = action;
@@ -2192,7 +2227,7 @@ function nextReward() {
   $('.rw-actions').classList.toggle('is-single', !action);
   $('#rw-ok').textContent = action ? action.label : 'Super !';
   ov.hidden = false;
-  confetti(40, ['#FBBF24', '#FDE68A', '#F97316', '#FFFFFF']);
+  confetti(40, ['#FFC800', '#58CC02', '#1CB0F6', '#FF9600']);
   kbFocus($('#rw-ok'));
 }
 function closeReward(run) {
@@ -2214,6 +2249,7 @@ function refreshScreen() {
 }
 
 /* ================= MISSIONS ================= */
+const MISSION_ICON = { found: 'note', combo: 'flame', fast5: 'clock', typeFound: 'keyboard', game: 'headphones', score: 'xp', catGame: 'target', noHint: 'bulb', dailyWin: 'mystery', opened: 'booster' };
 let misTicker = null;
 function renderMissionsSheet() {
   const M = ensureMissions();
@@ -2221,14 +2257,15 @@ function renderMissionsSheet() {
   $('#ms-list').innerHTML = M.list.map((m, i) => {
     const done = m.p >= m.target, pct = Math.round(m.p / m.target * 100);
     return `<div class="ms-item${m.claimed ? ' is-claimed' : done ? ' is-done' : ''}">
-      <div><b>${esc(m.text)}</b><span class="gauge"><span style="width:${pct}%"></span></span><small>${m.max ? fmt(m.p) : m.p} / ${m.max ? fmt(m.target) : m.target}</small></div>
-      ${m.claimed ? '<span class="ach-reward">✓ Récupéré</span>' : done ? `<button class="ach-claim ms-claim" type="button" data-i="${i}">+${m.reward} <i class="coin"></i></button>` : `<span class="ach-reward">+${m.reward} <i class="coin"></i></span>`}
+      ${ico(MISSION_ICON[m.ev] || 'xp', 'ms-ico')}
+      <div><b>${esc(m.text)}</b><span class="ms-bar"><span class="bar"><span style="width:${pct}%"></span></span><small>${m.max ? fmt(m.p) : m.p} / ${m.max ? fmt(m.target) : m.target}</small></span></div>
+      ${m.claimed ? ico('chest-open', 'ms-chest') : done ? `<button class="btn btn-sm btn-green ms-claim" type="button" data-i="${i}"><i class="coin"></i>+${m.reward}</button>` : ico('chest', 'ms-chest')}
     </div>`;
   }).join('');
   const allClaimed = M.list.every(m => m.claimed), bonus = $('#ms-bonus');
   bonus.disabled = !allClaimed || M.bonus;
   bonus.classList.toggle('is-ready', allClaimed && !M.bonus);
-  $('#ms-bonus-txt').textContent = M.bonus ? 'Bonus récupéré ✓' : allClaimed ? 'Touche pour récupérer ton booster !' : `Récupère les 3 missions (${M.list.filter(m => m.claimed).length}/3)`;
+  $('#ms-bonus-txt').textContent = M.bonus ? 'Bonus récupéré' : allClaimed ? 'Touche pour récupérer ton booster !' : `Récupère les 3 missions (${M.list.filter(m => m.claimed).length}/3)`;
 }
 function openMissions() {
   renderMissionsSheet();
@@ -2251,6 +2288,9 @@ function renderProfile() {
   renderCoins();
   $('#pf-boosters').textContent = totalBoosters();
   $('#pf-vinyls').textContent = ownedIds().length;
+  $('#pf-streak').textContent = currentStreak();
+  $('#pf-xp').textContent = fmt(store.xp);
+  $('#pf-best').textContent = fmt(store.best);
   $$('#pf-tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.pt === PF_TAB)));
   for (const t of ['ach', 'skins', 'stats', 'settings']) $(`#pf-${t}`).hidden = t !== PF_TAB;
   if (PF_TAB === 'ach') renderAchPanel();
@@ -2264,13 +2304,14 @@ function renderAchPanel() {
   $('#pf-ach').innerHTML = rows.map(({ a, st }) => {
     const [n, r] = st.max ? a.tiers[a.tiers.length - 1] : a.tiers[st.claimed];
     const pct = Math.min(100, st.v / n * 100);
-    const tier = st.max ? '<em>MAX</em>' : `<em>${ROMAN[st.claimed]}</em>`;
-    const right = st.claimable ? `<button class="ach-claim" type="button" data-ach="${a.id}">Récupérer</button>`
-      : st.max ? '<span class="ach-reward">Terminé ✓</span>' : `<span class="ach-reward">${rewardInline(r)}</span>`;
+    const tier = st.max ? 'MAX' : `NIV. ${st.claimed + 1}`;
+    const right = st.claimable ? `<button class="btn btn-sm btn-green ach-claim" type="button" data-ach="${a.id}">Prendre</button>`
+      : st.max ? `<span class="ach-reward">${ico('g-check')}</span>` : `<span class="ach-reward">${rewardInline(r)}</span>`;
+    const [c, lip] = ACH_COLORS[a.color] || ACH_COLORS.blue;
     return `<div class="ach${st.claimable ? ' is-claimable' : ''}${st.max ? ' is-max' : ''}">
-      <span class="ach-ico" aria-hidden="true">${a.icon}</span>
-      <div class="ach-body"><b>${esc(a.name)} ${tier}</b><small>${esc(a.label(n))}</small>
-        <span class="gauge"><span style="width:${pct}%"></span></span><small class="ach-prog">${fmt(Math.min(st.v, n))} / ${fmt(n)}</small></div>
+      <span class="ach-badge" style="--ab:${c};--ab-lip:${lip}" aria-hidden="true">${ico(a.icon)}<em>${tier}</em></span>
+      <div class="ach-body"><b>${esc(a.name)}</b><small>${esc(a.label(n))}</small>
+        <span class="ach-prog-row"><span class="bar bar-sm bar-gold"><span style="width:${pct}%"></span></span><small class="ach-prog">${fmt(Math.min(st.v, n))} / ${fmt(n)}</small></span></div>
       ${right}
     </div>`;
   }).join('');
@@ -2304,6 +2345,7 @@ function maybeWelcome() {
   wlAvatar = store.equip.skin;
   $('#wl-avatars').innerHTML = COSMETICS.skin.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}" aria-label="${esc(a.name)}">${charHTML(a)}<b>${esc(a.name)}</b></button>`).join('');
   $('#wl-name').value = store.name;
+  $('#wl-host').innerHTML = charHTML(HOST, { head: true, mood: 'happy' });
   $('#welcome-sheet').hidden = false;
 }
 function finishWelcome(keep) {
@@ -2317,54 +2359,132 @@ function finishWelcome(keep) {
   $('#welcome-sheet').hidden = true;
   applySkins();
   renderHome();
-  if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue 🎁` : 'Ouvre ton booster de bienvenue 🎁');
+  if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue` : 'Ouvre ton booster de bienvenue');
 }
 
-/* ================= MODE HISTOIRE ================= */
+/* ================= MODE HISTOIRE : le parcours ================= */
 const ARTISTS = window.STORY_ARTISTS || [];
 const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
 const artistById = id => ARTISTS.find(a => a.id === id);
 const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { shape: 'dome', color: a.color });
-const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
-// L'intro (bio) est la première étape de chaque parcours.
+// L'intro (bio) est la première étape de chaque parcours ; un coffre clôt chaque artiste.
 const stepsOf = a => [{ type: 'intro' }, ...a.steps];
+const storySt = a => store.story[a.id] || (store.story[a.id] = { step: 0 });
+const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
+const UNIT_COLORS = [['#58CC02', '#58A700'], ['#CE82FF', '#A568CC'], ['#00CD9C', '#00A47D'], ['#1CB0F6', '#1899D6'], ['#FF9600', '#CD7900'], ['#FF4B4B', '#EA2B2B'], ['#2B70C9', '#1453A3'], ['#FF86D0', '#E05FAF']];
+const NODE_X = [0, -46, -72, -46, 0, 46, 72, 46];
+const STEP_ICON = { intro: 'g-star', listen: 'g-headphones', fact: 'g-book', mcq: 'g-trophy' };
+// Ordre du parcours : chapitres puis artistes ; un artiste s'ouvre quand le précédent est terminé.
+const pathOrder = () => CHAPTERS.flatMap(c => c.artists.map(id => ({ a: artistById(id), c })).filter(x => x.a));
+function artistAccess() {
+  const lvl = levelOf(store.xp).lvl, out = new Map();
+  let prevDone = true;
+  for (const { a, c } of pathOrder()) {
+    const st = store.story[a.id] || {}, levelOk = lvl >= c.minLevel;
+    out.set(a.id, levelOk && (st.done || (st.step || 0) > 0 || prevDone));
+    prevDone = !!st.done;
+  }
+  return out;
+}
+const chestReady = () => ARTISTS.some(a => { const st = store.story[a.id]; return st && !st.done && st.step >= stepsOf(a).length; });
+function stepLabel(a, step) {
+  if (step.type === 'intro') return `Rencontre ${a.name}`;
+  if (step.type === 'listen') return `Écoute : ${SONG.get(step.songId)?.title || 'un tube'}`;
+  if (step.type === 'fact') return 'Le savais-tu ?';
+  return 'Question finale';
+}
 function renderStoryCard() {
   const art = $('#story-card-art');
   art.innerHTML = ARTISTS.slice(0, 3).map(a => `<span style="background:${a.color}">${charHTML(artistLook(a), { head: true })}</span>`).join('');
   const d = storyDone();
-  $('#story-card-sub').textContent = d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes · écoute, anecdotes, quiz`;
+  $('#story-card-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes · écoute, anecdotes, quiz`;
 }
+let POP = null;
 function renderStory() {
-  const lvl = levelOf(store.xp).lvl;
+  const lvl = levelOf(store.xp).lvl, access = artistAccess();
   $('#story-prog').textContent = `${storyDone()}/${ARTISTS.length}`;
+  renderCoins();
+  let unitIdx = 0, current = null;
   $('#story-list').innerHTML = CHAPTERS.map(c => {
     const locked = lvl < c.minLevel;
-    return `<section class="chapter${locked ? ' is-locked' : ''}">
-      <div class="chapter-head" style="background:${c.gradient}">
-        <span class="chapter-num">Chapitre ${c.num}</span><b>${esc(c.title)}</b><small>${locked ? `🔒 Débloqué au niveau ${c.minLevel}` : esc(c.subtitle)}</small>
-      </div>
-      <div class="artist-grid">${c.artists.map(id => {
-        const a = artistById(id); if (!a) return '';
-        const st = store.story[a.id] || {}, total = stepsOf(a).length, prog = st.done ? total : st.step || 0;
-        return `<button class="artist-card${st.done ? ' is-done' : ''}" type="button" data-artist="${a.id}" ${locked ? 'disabled' : ''} style="--ac:${a.color}">
-          <span class="ac-portrait">${charHTML(artistLook(a))}</span>
-          <span class="ac-name">${esc(a.name)}</span>
-          <span class="ac-meta">${esc(a.genre)}</span>
-          <span class="ac-dots">${Array.from({ length: total }, (_, i) => `<i class="${i < prog ? 'is-on' : ''}"></i>`).join('')}</span>
-          <span class="ac-cta">${locked ? '🔒' : st.done ? 'Découvert ✓' : prog ? 'Continuer' : 'Commencer'}</span>
-        </button>`;
-      }).join('')}</div>
-    </section>`;
+    const units = c.artists.map(id => {
+      const a = artistById(id); if (!a) return '';
+      const u = unitIdx++, [col, lip] = UNIT_COLORS[u % UNIT_COLORS.length];
+      const st = store.story[a.id] || {}, steps = stepsOf(a), N = steps.length, done = st.done ? N : Math.min(N, st.step || 0);
+      const open = access.get(a.id);
+      const nodes = steps.map((stp, k) => {
+        const state = k < done ? 'is-done' : open && k === done ? 'is-current' : 'is-locked';
+        if (state === 'is-current' && !current) current = `${a.id}:${k}`;
+        const isCur = state === 'is-current' && current === `${a.id}:${k}`;
+        return `<div class="node-row" style="--x:${NODE_X[k % NODE_X.length] * (u % 2 ? -1 : 1)}px">
+          ${isCur ? `<span class="node-ring" style="--p:${(done / N).toFixed(3)}"></span><span class="node-start">${done ? 'Continuer' : 'Commencer'}</span>` : ''}
+          <button class="node ${state}" type="button" data-artist="${a.id}" data-k="${k}" aria-label="${esc(stepLabel(a, stp))}">${ico(state === 'is-locked' ? 'g-lock' : state === 'is-done' ? 'g-check' : STEP_ICON[stp.type])}</button>
+        </div>`;
+      }).join('');
+      const chestState = st.done ? 'is-open' : open && done >= N ? 'is-ready' : 'is-locked';
+      if (chestState === 'is-ready' && !current) current = `${a.id}:${N}`;
+      const chest = `<div class="node-row" style="--x:${NODE_X[N % NODE_X.length] * (u % 2 ? -1 : 1)}px">
+          <button class="node node-chest ${chestState}" type="button" data-artist="${a.id}" data-k="${N}" aria-label="Coffre de ${esc(a.name)}">${ico(st.done ? 'chest-open' : 'chest')}</button>
+        </div>`;
+      const side = u % 2 ? -1 : 1;
+      return `<section class="unit${open ? '' : ' is-locked'}" style="--u:${open ? col : '#E5E5E5'};--u-lip:${open ? lip : '#B7B7B7'}" data-unit="${a.id}">
+        <header class="unit-banner">
+          <div><small>Chapitre ${c.num} · ${esc(a.genre)}</small><b>${esc(a.name)}</b><span class="unit-meta">${esc(a.origin)} · ${esc(a.active)}</span></div>
+          <span class="unit-av">${charHTML(artistLook(a), { head: true })}</span>
+        </header>
+        <div class="path">
+          ${nodes}${chest}
+          <span class="path-mascot" style="top:${2 * 86 + 56}px;left:calc(50% + ${side * 96}px - 59px)">${charHTML(artistLook(a), { mood: st.done ? 'grin' : 'happy' })}</span>
+        </div>
+      </section>`;
+    }).join('');
+    return `<div class="chapter-sep${locked ? ' is-locked' : ''}">${locked ? ico('lock') : ''}<span>Chapitre ${c.num} · ${esc(c.title)}${locked ? ` · niveau ${c.minLevel}` : ''}</span></div>${units}`;
   }).join('');
+  POP = null;
+  $('#story-back').hidden = !current;
+  STORY_CURRENT = current;
+}
+let STORY_CURRENT = null;
+function scrollToCurrent(smooth) {
+  if (!STORY_CURRENT) return;
+  const [id, k] = STORY_CURRENT.split(':');
+  const el = $(`#story-list .node[data-artist="${id}"][data-k="${k}"]`);
+  el?.scrollIntoView({ behavior: smooth && !REDUCED ? 'smooth' : 'auto', block: 'center' });
+}
+function closePopover() { $('#story-list .popover')?.remove(); POP = null; }
+function openPopover(node) {
+  const id = node.dataset.artist, k = +node.dataset.k;
+  if (POP && POP.id === id && POP.k === k) { closePopover(); return; }
+  closePopover();
+  const a = artistById(id), steps = stepsOf(a), N = steps.length, st = store.story[id] || {};
+  const locked = node.classList.contains('is-locked'), isChest = k === N;
+  let cls = '', title, sub, btn;
+  if (isChest) {
+    title = `Coffre de ${a.name}`;
+    if (st.done) { cls = 'is-done'; sub = 'Déjà ouvert : ton vinyle est au mur.'; btn = '<button class="btn btn-white" type="button" disabled>Ouvert</button>'; }
+    else if (locked) { cls = 'is-locked'; sub = `Termine le parcours de ${a.name} pour l’ouvrir.`; btn = '<button class="btn btn-outline" type="button" disabled>Verrouillé</button>'; }
+    else { sub = 'Jetons, XP et un vinyle de l’artiste.'; btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Ouvrir</button>`; }
+  } else {
+    title = stepLabel(a, steps[k]);
+    sub = `Étape ${k + 1} sur ${N}`;
+    if (locked) { cls = 'is-locked'; sub += ' · termine les étapes précédentes'; btn = '<button class="btn btn-outline" type="button" disabled>Verrouillé</button>'; }
+    else if (node.classList.contains('is-done')) { cls = 'is-done'; btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Revoir</button>`; }
+    else btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Commencer +10 XP</button>`;
+  }
+  node.insertAdjacentHTML('afterend', `<div class="popover ${cls}" role="dialog"><b>${esc(title)}</b><small>${esc(sub)}</small>${btn}</div>`);
+  POP = { id, k };
+  sfx.tap();
 }
 
 let ST = null;
-function openArtist(id) {
+function openStep(id, k) {
   const a = artistById(id); if (!a) return;
+  const steps = stepsOf(a);
+  if (k >= steps.length) return openChest(a);
+  closePopover();
   unlockAudio();
-  const st = store.story[a.id] || {};
-  ST = { a, i: st.done ? 0 : st.step || 0, answered: false, firstTry: true };
-  $('#ss-portrait').innerHTML = `<span style="background:${a.color}">${charHTML(artistLook(a), { mood: 'happy' })}</span>`;
+  ST = { a, i: k, answered: false, firstTry: true };
+  $('#ss-portrait').innerHTML = `<span>${charHTML(artistLook(a), { mood: 'happy' })}</span>`;
   $('#story-step').hidden = false;
   renderStep();
 }
@@ -2379,10 +2499,11 @@ function renderStep() {
   const { a } = ST, steps = stepsOf(a), step = steps[ST.i];
   try { listen.pause(); } catch (e) {}
   ST.answered = false;
-  $('#ss-dots').innerHTML = steps.map((_, i) => `<i class="${i < ST.i ? 'is-on' : i === ST.i ? 'is-cur' : ''}"></i>`).join('');
+  $('#ss-fill').style.width = `${ST.i / steps.length * 100}%`;
   $('#ss-count').textContent = `${ST.i + 1}/${steps.length}`;
   const body = $('#ss-body'), actions = $('#ss-actions');
-  const nextBtn = (label = 'Suivant') => `<button class="btn-primary ss-next" id="ss-next" type="button">${label}</button>`;
+  const nextBtn = (label = 'Continuer') => `<button class="btn btn-green ss-next" id="ss-next" type="button">${label}</button>`;
+  $('#ss-portrait').hidden = step.type === 'fact';
   if (step.type === 'intro') {
     $('#ss-kicker').textContent = `${a.origin} · ${a.active}`;
     $('#ss-title').textContent = a.name;
@@ -2394,29 +2515,32 @@ function renderStep() {
     $('#ss-title').textContent = s.title;
     body.innerHTML = `<div class="ss-listen"><span class="ss-sleeve">${coverHTML(s)}</span><span class="ss-disc" id="ss-disc"></span></div><p>${esc(step.label)} · ${s.year}</p>`;
     getArt(s).then(art => { if (art && ST) fillCover(body, art); });
-    actions.innerHTML = `<button class="btn-secondary" id="ss-play" type="button">▶ Écouter</button>${nextBtn()}`;
+    actions.innerHTML = `<button class="btn btn-blue" id="ss-play" type="button">${ico('g-play')}<span>Écouter</span></button>${nextBtn()}`;
   } else if (step.type === 'fact') {
     $('#ss-kicker').textContent = 'Le savais-tu ?';
-    $('#ss-title').textContent = step.emoji || '💡';
+    $('#ss-title').innerHTML = ico('bulb');
     body.innerHTML = `<p class="ss-fact">${esc(step.text)}</p>`;
     actions.innerHTML = nextBtn();
   } else if (step.type === 'mcq') {
     $('#ss-kicker').textContent = 'Question finale';
     $('#ss-title').textContent = step.question;
-    body.innerHTML = `<div class="ss-opts">${step.opts.map((o, k) => `<button class="choice ss-opt" type="button" data-k="${k}"><span class="choice-key">${'ABCD'[k]}</span><span class="choice-txt"><span class="choice-title">${esc(o)}</span></span></button>`).join('')}</div>`;
+    body.innerHTML = `<div class="ss-opts">${step.opts.map((o, k) => `<button class="choice ss-opt" type="button" data-k="${k}"><span class="choice-key">${k + 1}</span><span class="choice-txt"><span class="choice-title">${esc(o)}</span></span></button>`).join('')}</div>`;
     actions.innerHTML = '';
   }
-  $('#ss-title').classList.toggle('is-emoji', step.type === 'fact');
+}
+function setListenBtn(playing) {
+  const b = $('#ss-play'); if (!b) return;
+  b.innerHTML = `${ico(playing ? 'g-pause' : 'g-play')}<span>${playing ? 'Pause' : 'Écouter'}</span>`;
 }
 async function storyListen() {
   const step = stepsOf(ST.a)[ST.i], s = SONG.get(step.songId), btn = $('#ss-play');
-  if (!listen.paused) { listen.pause(); btn.textContent = '▶ Écouter'; $('#ss-disc')?.classList.remove('is-playing'); return; }
-  btn.textContent = 'Chargement…';
+  if (!listen.paused) { listen.pause(); setListenBtn(false); $('#ss-disc')?.classList.remove('is-playing'); return; }
+  btn.innerHTML = '<span>Chargement…</span>';
   const pv = await fetchPreview(s);
   if (!ST || !$('#ss-play')) return;
-  if (!pv) { btn.textContent = '▶ Écouter'; toast('Extrait indisponible pour le moment'); return; }
+  if (!pv) { setListenBtn(false); toast('Extrait indisponible pour le moment'); return; }
   listen.src = pv.url;
-  listen.play().then(() => { btn.textContent = '⏸ Pause'; $('#ss-disc')?.classList.add('is-playing'); }, () => { btn.textContent = '▶ Écouter'; });
+  listen.play().then(() => { setListenBtn(true); $('#ss-disc')?.classList.add('is-playing'); }, () => setListenBtn(false));
 }
 function storyAnswer(k) {
   if (ST.answered) return;
@@ -2424,6 +2548,7 @@ function storyAnswer(k) {
   const opts = $$('.ss-opt');
   if (!ok) {
     ST.firstTry = false;
+    opts[k].classList.remove('is-wrong'); void opts[k].offsetWidth;
     opts[k].classList.add('is-wrong');
     sfx.wrong(); buzz(40);
     return;
@@ -2433,57 +2558,59 @@ function storyAnswer(k) {
   opts.forEach(o => { o.disabled = true; });
   sfx.right(3); buzz(30);
   winFx(opts[k]);
-  $('#ss-actions').innerHTML = '<button class="btn-primary ss-next" id="ss-next" type="button">Terminer</button>';
+  $('#ss-actions').innerHTML = `<div class="ss-good"><b>${ico('check-circle')}${pickOne(['Excellent !', 'Bravo !', 'Parfait !'])}</b><button class="btn btn-green ss-next" id="ss-next" type="button">Continuer</button></div>`;
 }
+// Étape terminée : on avance dans le parcours et on revient au chemin
 function storyNext() {
-  const steps = stepsOf(ST.a);
-  if (ST.i < steps.length - 1) {
-    ST.i++;
-    store.story[ST.a.id] = Object.assign(store.story[ST.a.id] || {}, { step: ST.i });
+  const a = ST.a, steps = stepsOf(a), st = storySt(a);
+  const fresh = !st.done && ST.i === (st.step || 0);
+  if (fresh) {
+    st.step = ST.i + 1;
+    if (!ST.firstTry) st.miss = true;
+    addXP(10);
     save();
-    sfx.tap();
-    renderStep();
-    return;
   }
-  finishArtist();
+  $('#ss-fill').style.width = `${(ST.i + 1) / steps.length * 100}%`;
+  sfx.tap();
+  setTimeout(() => {
+    closeArtist();
+    if (fresh && st.step >= steps.length) { toast(`Coffre de ${a.name} débloqué !`); sfx.booster(); }
+    requestAnimationFrame(() => scrollToCurrent(true));
+  }, 220);
 }
-function finishArtist() {
-  const a = ST.a, st = store.story[a.id] || {};
-  const first = !st.done;
-  store.story[a.id] = { step: 0, done: true };
-  if (first) {
-    const vinyl = a.steps.find(s => s.songId)?.songId;
-    const coins = ST.firstTry ? 150 : 100;
-    if (vinyl && !store.coll[vinyl]) store.coll[vinyl] = { n: 1, t: Date.now(), seen: false };
-    store.coins += coins;
-    addXP(80);
-    save();
-    renderCoins(true);
-    const s = SONG.get(vinyl);
-    closeArtist();
-    showReward({ kicker: 'Artiste découvert', title: a.name, reward: { coins }, extra: s ? `+ le vinyle « ${s.title} » sur ton mur` : '' });
-    checkAchievements();
-  } else {
-    save();
-    closeArtist();
-    toast(`${a.name} : parcours revu ✓`);
-  }
+function openChest(a) {
+  const st = storySt(a);
+  if (st.done || st.step < stepsOf(a).length) return;
+  closePopover();
+  st.done = true;
+  const vinyl = a.steps.find(s => s.songId)?.songId;
+  const coins = st.miss ? 100 : 150;
+  if (vinyl && !store.coll[vinyl]) store.coll[vinyl] = { n: 1, t: Date.now(), seen: false };
+  store.coins += coins;
+  addXP(30);
+  save();
+  renderCoins(true);
+  const s = SONG.get(vinyl);
+  sfx.fanfare(); buzz([30, 60, 30]);
+  showReward({ kicker: 'Artiste découvert', title: a.name, reward: { coins }, extra: s ? `+ le vinyle « ${s.title} » sur ton mur` : '' });
+  renderStory();
+  checkAchievements();
 }
 
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
-$('#nav-play').addEventListener('click', quickPlay);
+$('#home-boosters').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 $('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); sfx.tap(); show(t.dataset.tab); } });
 $('#home-coins').addEventListener('click', () => show('shop'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', () => {
-  if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())} ⏳`); return; }
+  if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())}`); return; }
   startGame({ daily: true, mode: 'type', rounds: 1, attempts: 3, candidates: dailySongCandidates() });
 });
 $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
-  toast(playedToday() ? `🔥 ${plural(s, 'jour', 'jours')} d’affilée — bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} 🔥` : 'Joue une partie pour lancer ta série 🔥');
+  toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
 });
 $('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat'); if (!b) return; store.prefs.cat = b.dataset.cat; save(); renderHome(); });
 $('#mode-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); renderHome(); });
@@ -2500,6 +2627,15 @@ $('#suggest').addEventListener('click', e => {
   submitText(b.querySelector('b').textContent, b.dataset.id);
 });
 $('#btn-hint').addEventListener('click', useHint);
+// Réécouter l'extrait depuis la bulle du présentateur
+$('#btn-replay-audio').addEventListener('click', () => {
+  if (!G.pv || G.cfg?.mode === 'stems' || (G.phase !== 'playing' && G.phase !== 'reveal')) return;
+  unlockAudio();
+  try { player.currentTime = 0; player.play().catch(() => {}); } catch (e) {}
+  const b = $('#btn-replay-audio');
+  b.classList.remove('is-playing'); void b.offsetWidth; b.classList.add('is-playing');
+  setTimeout(() => b.classList.remove('is-playing'), 1600);
+});
 const holdEl = $('#hold');
 holdEl.addEventListener('pointerdown', e => { if (G.cfg?.mode !== 'stems') return; e.preventDefault(); holdEl.setPointerCapture?.(e.pointerId); holdStart(); });
 ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => holdEl.addEventListener(ev, holdEnd));
@@ -2510,6 +2646,7 @@ document.addEventListener('keyup', e => { if (e.code === 'Space') holdEnd(); });
 $('#btn-next').addEventListener('click', nextRound);
 $('#btn-quit').addEventListener('click', () => {
   if (G.phase === 'done' || G.phase === 'idle') return show('home');
+  $('#quit-char').innerHTML = meHTML({ mood: 'sad' });
   $('#quit-sheet').hidden = false;
   kbFocus($('#quit-cancel'));
 });
@@ -2555,8 +2692,12 @@ $('#vs-close').addEventListener('click', closeVinyl);
 
 // Histoire
 $('#story-card').addEventListener('click', () => show('story'));
-$('#story-back').addEventListener('click', () => show('home'));
-$('#story-list').addEventListener('click', e => { const c = e.target.closest('.artist-card'); if (c && !c.disabled) openArtist(c.dataset.artist); });
+$('#story-back').addEventListener('click', () => scrollToCurrent(true));
+$('#story-list').addEventListener('click', e => {
+  const go = e.target.closest('.pop-go'); if (go) { openStep(go.dataset.artist, +go.dataset.k); return; }
+  const n = e.target.closest('.node'); if (n) { openPopover(n); return; }
+  if (!e.target.closest('.popover')) closePopover();
+});
 $('#ss-close').addEventListener('click', closeArtist);
 $('#story-step').addEventListener('click', e => {
   if (e.target.closest('#ss-next')) storyNext();
@@ -2600,6 +2741,7 @@ $('#pf-avatar').addEventListener('click', () => {
   $('#pf-sec-skin')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
 });
 $('#pf-ach').addEventListener('click', e => { const b = e.target.closest('.ach-claim'); if (b) claimAch(b.dataset.ach); });
+$('#pf-gear').addEventListener('click', () => { PF_TAB = 'settings'; renderProfile(); $('#pf-tabs').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); });
 $('#pf-skins').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id); });
 $('#set-sound').addEventListener('change', e => { store.settings.sound = e.target.checked; save(); if (e.target.checked) { unlockAudio(); sfx.tap(); } else ambience.stop(); });
 $('#set-haptics').addEventListener('change', e => { store.settings.haptics = e.target.checked; save(); buzz(40); });
