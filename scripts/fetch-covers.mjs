@@ -1,5 +1,6 @@
-// Récupère la vraie pochette d'album de chaque chanson du catalogue (Deezer, puis iTunes)
-// et écrit covers.js, embarqué dans l'app : plus aucune recherche de pochette côté navigateur.
+// Récupère la vraie pochette (Deezer, puis iTunes) et l'extrait audio (iTunes, liens stables)
+// de chaque chanson, et écrit covers.js + previews.js embarqués dans l'app :
+// plus aucune recherche côté navigateur.
 // Usage : node scripts/fetch-covers.mjs   (tourne dans la GitHub Action « covers »)
 import fs from 'fs';
 import vm from 'vm';
@@ -40,9 +41,16 @@ async function deezer(song) {
   }
   return null;
 }
+const itCache = new Map();
+async function itunesTrack(song) {
+  if (itCache.has(song.id)) return itCache.get(song.id);
+  const d = await getJSON(`https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=10&country=fr`);
+  const t = d?.results && best(d.results.filter(x => x.previewUrl), song, x => x.trackName, x => x.artistName || '');
+  itCache.set(song.id, t || null);
+  return t || null;
+}
 async function itunes(song) {
-  const d = await getJSON(`https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=10`);
-  const t = d?.results && best(d.results, song, x => x.trackName, x => x.artistName || '');
+  const t = await itunesTrack(song);
   return t?.artworkUrl100 ? t.artworkUrl100.replace('100x100bb', '600x600bb') : null;
 }
 
@@ -65,3 +73,25 @@ const keys = SONGS.map(s => s.id).filter(id => out[id]);
 const body = keys.map(id => `${JSON.stringify(id)}:${JSON.stringify(out[id])}`).join(',\n');
 fs.writeFileSync(OUT, `/* Pompelup — vraies pochettes d'album (généré par scripts/fetch-covers.mjs, ne pas éditer) */\n/* « d:<md5> » = pochette Deezer, sinon URL iTunes. ${keys.length}/${SONGS.length} titres. */\nwindow.COVERS = {\n${body}\n};\n`);
 console.log(`+${found} trouvées · total ${keys.length}/${SONGS.length}`);
+
+// ---------- Extraits audio (iTunes : ~20 requêtes/min, on reprend là où on s'est arrêté) ----------
+const POUT = 'previews.js', PREFIX = 'https://audio-ssl.itunes.apple.com/itunes-assets/';
+const pprev = (() => { try { const c = { window: {} }; vm.createContext(c); vm.runInContext(fs.readFileSync(POUT, 'utf8'), c); return c.window.PREVIEWS || {}; } catch (e) { return {}; } })();
+const pout = { ...pprev };
+const ptodo = SONGS.filter(s => !pout[s.id]);
+console.log(`${ptodo.length} extraits à chercher`);
+const writeP = () => {
+  const ks = SONGS.map(s => s.id).filter(id => pout[id]);
+  fs.writeFileSync(POUT, `/* Pompelup — extraits audio iTunes (généré par scripts/fetch-covers.mjs, ne pas éditer) */\n/* Chemin relatif à ${PREFIX} sauf URL complète. ${ks.length}/${SONGS.length} titres. */\nwindow.PREVIEWS = {\n${ks.map(id => `${JSON.stringify(id)}:${JSON.stringify(pout[id])}`).join(',\n')}\n};\n`);
+};
+const deadline = Date.now() + 75 * 60 * 1000;
+let pn = 0;
+for (const s of ptodo) {
+  if (Date.now() > deadline) { console.log('temps écoulé : la suite au prochain passage'); break; }
+  const t = await itunesTrack(s);
+  if (t?.previewUrl) { pout[s.id] = t.previewUrl.startsWith(PREFIX) ? t.previewUrl.slice(PREFIX.length) : t.previewUrl; pn++; }
+  if (pn % 50 === 0) writeP();
+  await sleep(3100);
+}
+writeP();
+console.log(`extraits : +${pn} · total ${Object.keys(pout).length}/${SONGS.length}`);

@@ -31,7 +31,7 @@ const defaults = () => ({
   equip: { skin: 'rookie', acc: { head: null, eyes: null, ears: null, neck: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
-  ach: {}, achSeen: {}, missions: null,
+  ach: {}, achSeen: {}, missions: null, pass: null,
   settings: { sound: true, haptics: true },
   prefs: { cat: 'all', mode: 'choice', rounds: 10 },
 });
@@ -482,8 +482,12 @@ async function searchDeezer(song) {
   const t = list.length && pickTrack(list, song, x => (x.artist && x.artist.name) || '');
   return t ? { url: t.preview, art: (t.album && (t.album.cover_big || t.album.cover_medium)) || null } : null;
 }
+// Extraits pré-catalogués (previews.js) : lecture immédiate, sans recherche réseau
+const PREVIEWS = window.PREVIEWS || {};
+const catalogPreview = id => { const p = PREVIEWS[id]; return !p ? null : /^https?:/.test(p) ? p : `https://audio-ssl.itunes.apple.com/itunes-assets/${p}`; };
 function fetchPreview(song) {
   if (previewCache.has(song.id)) return previewCache.get(song.id);
+  if (catalogPreview(song.id)) { const r = Promise.resolve({ url: catalogPreview(song.id), art: knownArt(song.id) }); previewCache.set(song.id, r); return r; }
   const p = (async () => {
     let r = null;
     try { r = await searchItunes(song); } catch (e) {}
@@ -707,7 +711,7 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
-const TAB_SCREENS = ['home', 'story', 'collection', 'shop', 'profile'];
+const TAB_SCREENS = ['home', 'boosters', 'story', 'pass', 'collection', 'shop', 'profile'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
@@ -716,8 +720,11 @@ function show(id) {
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
-  if (id === 'collection') { renderCollection(); ambience.start(); } else ambience.stop();
+  if (id === 'collection') renderCollection();
+  ambience.stop();
   if (id === 'shop') renderShop();
+  if (id === 'pass') renderPass();
+  if (id === 'boosters') renderBoosters();
   if (id === 'profile') renderProfile();
   if (id === 'story') { renderStory(); requestAnimationFrame(() => scrollToCurrent(false)); }
   renderBadges();
@@ -727,7 +734,8 @@ function renderBadges() {
   const setBadge = (el, v) => { el.hidden = !v; el.textContent = v === true ? '!' : v; };
   setBadge($('#tb-coll'), unseen > 9 ? '9+' : unseen);
   setBadge($('#tb-shop'), store.gift !== dayKey() ? true : 0);
-  setBadge($('#tb-story'), chestReady() ? true : 0);
+  setBadge($('#tb-story'), totalBoosters());
+  setBadge($('#tb-pass'), passClaimable());
   setBadge($('#tb-prof'), claimableAchs());
   $('#pt-badge').hidden = !claimableAchs();
 }
@@ -828,6 +836,7 @@ function renderHome() {
   renderBoosterCard();
   renderMissionsCard();
   renderStoryCard();
+  renderPassCard();
   renderDaily();
   clearInterval(dailyTicker);
   dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
@@ -1086,6 +1095,7 @@ function finishRound(ok, reason, sourceEl) {
     store.stats.bestCombo = Math.max(store.stats.bestCombo, G.combo);
     if (elapsed < 3) store.stats.fast++;
     missionEvent('found');
+    if (!G.cfg.daily) addPassPts(10);
     missionEvent('combo', G.combo);
     if (elapsed < 5) missionEvent('fast5');
     if (G.cfg.mode === 'type') missionEvent('typeFound');
@@ -1457,13 +1467,14 @@ function endGame() {
     const won = found === 1;
     xp = won ? 150 : 20;
     coins = won ? 60 : 10;
-    if (won) { store.boosters++; G.boostersWon++; store.stats.dailyWins++; missionEvent('dailyWin'); }
+    if (won) { store.boosters++; G.boostersWon++; store.stats.dailyWins++; missionEvent('dailyWin'); addPassPts(50); }
     store.daily = { date: dayKey(), won, tries: won ? G.tries + 1 : G.cfg.attempts, done: true, title: G.song.title, artist: G.song.artist };
   } else {
     xp = Math.round(G.score / 25) + found * 5;
     coins = Math.round(G.score / 100) + found * 5;
     if (n >= 5 && found === n) store.stats.perfect++;
     missionEvent('game');
+    addPassPts(30);
     missionEvent('score', G.score);
     missionEvent('catGame', 1, G.cfg.cat);
     if (!G.hintUsed) missionEvent('noHint');
@@ -1680,6 +1691,7 @@ function closeBooster() {
   if (s === 'results') renderResBooster();
   if (s === 'shop') renderShop();
   if (s === 'profile') renderProfile();
+  if (s === 'boosters') renderBoosters();
   renderCoins();
   checkAchievements();
 }
@@ -2244,6 +2256,7 @@ function refreshScreen() {
   if (s === 'shop') renderShop();
   if (s === 'profile') renderProfile();
   if (s === 'results') renderResBooster();
+  if (s === 'boosters') renderBoosters();
   renderCoins();
   renderBadges();
 }
@@ -2597,11 +2610,142 @@ function openChest(a) {
   checkAchievements();
 }
 
+
+
+/* ================= ÉCRAN BOOSTERS ================= */
+function renderBoosters() {
+  renderCoins();
+  const n = totalBoosters(), gold = store.goldBoosters > 0;
+  $('#bx-hero').classList.toggle('is-empty', !n);
+  $('#bx-hero').classList.toggle('is-gold', gold);
+  $$('#bx-hero .bx-pack use').forEach(u => u.setAttribute('href', gold ? '#i-booster-gold' : '#i-booster'));
+  $('.bx-2').style.display = n < 2 ? 'none' : '';
+  $('.bx-3').style.display = n < 3 ? 'none' : '';
+  $('#bx-n').textContent = n;
+  $('#bx-label').textContent = n ? `${n > 1 ? 'boosters' : 'booster'} à ouvrir${gold ? ' · dont Or' : ''}` : 'Aucun booster pour l’instant';
+  $('#bx-open').textContent = n ? 'Ouvrir' : 'Jouer pour en gagner';
+  $('#bx-g-txt').textContent = `${store.gauge}/${GAUGE_MAX} bonnes réponses`;
+  $('#bx-g-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
+  $('#bx-packs').innerHTML = PACKS.map(p => `
+    <button class="row pk" type="button" data-pack="${p.id}">${p.tag ? `<span class="row-tag">${p.tag}</span>` : ''}
+      ${packArt(p.id)}<span class="row-txt"><b>${p.name}</b><small>${p.desc}</small></span>
+      <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
+    </button>`).join('');
+  $('#bx-odds').innerHTML = RARITIES.slice().reverse().map(r => `<div class="bx-odd r-${r}"><span class="rar-pill r-${r}">${R_NAME[r]}</span><span class="bar bar-sm"><span style="width:${Math.max(3, ODDS[r])}%;--bar:${R_COLOR[r]}"></span></span><b>${String(ODDS[r]).replace('.', ',')} %</b></div>`).join('')
+    + '<small class="bx-g-help">Chaque booster contient 3 vinyles, dont au moins 1 rare. Le Booster Or garantit un épique.</small>';
+  const recent = ownedIds().sort((a, b) => store.coll[b].t - store.coll[a].t).slice(0, 6);
+  $('#bx-recent').innerHTML = recent.length ? recent.map(id => { const s = SONG.get(id), r = RARITY.get(id); return `<button class="bs r-${r} bx-v" type="button" data-id="${id}"><span class="bs-cover">${coverHTML(s)}</span><b>${esc(s.title)}</b></button>`; }).join('') : '<p class="bx-g-help">Ouvre ton premier booster pour commencer ta collection !</p>';
+}
+
+/* ================= PASS DE SAISON (façon Pass Royale) ================= */
+// Saison = mois calendaire. 30 paliers de 100 notes. Piste gratuite + piste Or (1 500 jetons).
+const PASS_TIERS = 30, PASS_STEP = 100, PASS_PRICE = 1500;
+const PASS_NAMES = ['Disco Fever', 'Rock Arena', 'Hip-Hop Block Party', 'Pop Explosion', 'Électro Nights', 'Chanson Café', 'Latino Fiesta', 'K-Pop Stage', 'Summer Hits', 'Back to the 80s', 'Unplugged', 'Legends Live'];
+const seasonKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}`; };
+const seasonNum = () => { const d = new Date(); return (d.getFullYear() - 2026) * 12 + d.getMonth() - 8; };
+function passState() {
+  if (!store.pass || store.pass.season !== seasonKey()) store.pass = { season: seasonKey(), pts: 0, gold: false, free: [], paid: [] };
+  return store.pass;
+}
+const passTier = () => Math.min(PASS_TIERS, Math.floor(passState().pts / PASS_STEP));
+function passReward(k, gold) {
+  if (!gold) {
+    if (k === PASS_TIERS) return { gold: 1 };
+    if (k % 10 === 0) return { item: k === 10 ? 'acc:bandana' : 'acc:stars' };
+    if (k % 5 === 0) return { boosters: 1 };
+    return { coins: 40 + k * 5 };
+  }
+  if (k === PASS_TIERS) return { item: 'skin:passking' };
+  if (k % 10 === 0) return { gold: 1 };
+  if (k === 5) return { item: 'acc:fedora' };
+  if (k === 15) return { item: 'acc:ph-gold' };
+  if (k === 25) return { item: 'disc:holo' };
+  if (k % 2 === 0) return { boosters: 1 };
+  return { coins: 100 + k * 10 };
+}
+const passClaimable = () => { const P = passState(), t = passTier(); let n = 0; for (let k = 1; k <= t; k++) { if (!P.free.includes(k)) n++; if (P.gold && !P.paid.includes(k)) n++; } return n; };
+function addPassPts(n) {
+  const P = passState(), before = passTier();
+  P.pts = Math.min(PASS_TIERS * PASS_STEP, P.pts + n);
+  if (passTier() > before) setTimeout(() => toast(`Pass de saison : palier ${passTier()} atteint !`), 700);
+}
+function rewardArt(r) {
+  if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); return k === 'skin' ? `<span class="pr-char">${charHTML(it, { head: true })}</span>` : k === 'acc' ? ico('gift') : ico('vinyl'); }
+  if (r.gold) return ico('booster-gold');
+  if (r.boosters) return ico('booster');
+  return ico('coin');
+}
+function rewardLabel(r) {
+  if (r.item) { const [k, id] = r.item.split(':'); return itemOf(k, id)?.name || 'Objet'; }
+  if (r.gold) return 'Booster Or';
+  if (r.boosters) return 'Booster';
+  return `${fmt(r.coins)} jetons`;
+}
+function renderPassCard() {
+  const P = passState(), t = passTier();
+  $('#pass-card-title').textContent = t >= PASS_TIERS ? 'Pass terminé !' : `Palier ${t + 1} · ${P.pts % PASS_STEP}/${PASS_STEP} notes`;
+  $('#pass-card-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
+  const c = passClaimable();
+  $('#pass-card-badge').hidden = !c;
+  $('#pass-card-badge').textContent = c;
+}
+function passTimer() { const d = new Date(), end = new Date(d.getFullYear(), d.getMonth() + 1, 1), ms = end - d, days = Math.floor(ms / 864e5); return days >= 1 ? `${days} j ${Math.floor(ms % 864e5 / 36e5)} h` : hms(ms); }
+function renderPass() {
+  const P = passState(), t = passTier();
+  renderCoins();
+  $('#pass-season').textContent = `Saison ${Math.max(1, seasonNum())}`;
+  $('#pass-name').textContent = PASS_NAMES[new Date().getMonth()];
+  $('#pass-timer').textContent = passTimer();
+  $('#pass-tier').textContent = Math.min(PASS_TIERS, t + (t < PASS_TIERS ? 1 : 0));
+  $('#pass-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
+  $('#pass-pts').textContent = t >= PASS_TIERS ? 'Tous les paliers atteints !' : `${P.pts % PASS_STEP} / ${PASS_STEP} notes`;
+  const buy = $('#pass-buy');
+  buy.hidden = P.gold;
+  buy.innerHTML = `Pass Or <i class="coin"></i>${fmt(PASS_PRICE)}`;
+  $('#pass-hero').classList.toggle('is-gold', P.gold);
+  const cell = (k, gold) => {
+    const r = passReward(k, gold), done = (gold ? P.paid : P.free).includes(k), reached = k <= t, locked = gold && !P.gold;
+    const st = done ? 'is-claimed' : reached && !locked ? 'is-ready' : 'is-locked';
+    return `<button class="pr ${gold ? 'pr-gold' : ''} ${st}" type="button" data-k="${k}" data-gold="${gold ? 1 : 0}" ${st === 'is-ready' ? '' : 'tabindex="-1"'}>
+      <span class="pr-art">${rewardArt(r)}</span><span class="pr-name">${esc(rewardLabel(r))}</span>
+      ${done ? `<span class="pr-state">${ico('g-check')}</span>` : locked ? `<span class="pr-state">${ico('g-lock')}</span>` : reached ? '<span class="pr-take">Prendre</span>' : ''}
+    </button>`;
+  };
+  $('#pass-track').innerHTML = Array.from({ length: PASS_TIERS }, (_, i) => i + 1).map(k => `
+    <div class="pt-row${k <= t ? ' is-reached' : ''}${k === t + 1 ? ' is-next' : ''}">
+      ${cell(k, false)}<span class="pt-num">${k}</span>${cell(k, true)}
+    </div>`).join('');
+  renderBadges();
+}
+function claimPass(k, gold) {
+  const P = passState();
+  if (k > passTier() || (gold && !P.gold)) return;
+  const list = gold ? P.paid : P.free;
+  if (list.includes(k)) return;
+  let r = passReward(k, gold);
+  if (r.item) { const [kind, id] = r.item.split(':'); if (isOwned(kind, id)) r = { coins: 300 }; }
+  list.push(k);
+  grantReward(r);
+  sfx.booster(); buzz([30, 40, 30]);
+  showReward({ kicker: `Pass de saison · palier ${k}`, title: rewardLabel(r), reward: r });
+  renderPass();
+}
+function buyPass() {
+  const P = passState();
+  if (P.gold) return;
+  if (!spendCoins(PASS_PRICE)) { toast(`Il te manque ${fmt(PASS_PRICE - store.coins)} jetons`); return; }
+  P.gold = true;
+  save();
+  sfx.fanfare(); confetti(60, ['#FFC800', '#FF9600', '#FFFFFF', '#1CB0F6']);
+  toast('Pass Or débloqué !');
+  renderPass();
+}
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
 $('#home-boosters').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
-$('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); sfx.tap(); show(t.dataset.tab); } });
+$('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); show(t.dataset.tab); } });
 $('#home-coins').addEventListener('click', () => show('shop'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', () => {
@@ -2690,6 +2834,17 @@ $('#screen-collection').addEventListener('click', e => {
 });
 $('#vs-close').addEventListener('click', closeVinyl);
 
+$('#bx-open').addEventListener('click', () => { totalBoosters() ? openBooster() : show('home'); });
+$('#screen-boosters').addEventListener('click', e => {
+  const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
+  const v = e.target.closest('.bx-v'); if (v) openVinyl(v.dataset.id);
+});
+$('#story-home').addEventListener('click', () => show('home'));
+$('#me-btn').addEventListener('click', () => show('profile'));
+$('#pf-back').addEventListener('click', () => show('home'));
+$('#pass-card').addEventListener('click', () => show('pass'));
+$('#pass-buy').addEventListener('click', buyPass);
+$('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pr.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Histoire
 $('#story-card').addEventListener('click', () => show('story'));
 $('#story-back').addEventListener('click', () => scrollToCurrent(true));
@@ -2797,6 +2952,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if (/[?&]debug\b/.test(location.search)) window.__PQ = { G, store, save, openBooster, get BO() { return BO; }, RARITY, BY_RARITY, ACHS, achState, ensureMissions, checkAchievements };
+// Le son se débloque au tout premier toucher, quel que soit l'endroit (iOS / WebView)
+['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once: true, passive: true }));
 ensureMissions();
 applySkins();
 renderCoins();
