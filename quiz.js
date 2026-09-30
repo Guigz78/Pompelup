@@ -1184,7 +1184,7 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { id: 'host', name: 'DJ Patator', shape: 'cloud', color: '#F5B81C', acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#EC4899' } } };
+const HOST = { id: 'host', kind: 'human', name: 'DJ Patator', skin: '#F3CDB8', hair: 'short', hairColor: '#6B4A32', face: 'beard', top: '#F5B81C', shirt: '#1F1B2E', pants: '#3F4A63', acc: { head: { type: 'bob', color: '#8B5A3C' }, eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#EC4899' } } };
 const host = {
   mood: null, timer: null,
   render(mood) {
@@ -2366,7 +2366,7 @@ function finishWelcome(keep) {
 const ARTISTS = window.STORY_ARTISTS || [];
 const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
 const artistById = id => ARTISTS.find(a => a.id === id);
-const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { shape: 'dome', color: a.color });
+const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { kind: 'human', top: a.color });
 // L'intro (bio) est la première étape de chaque parcours ; un coffre clôt chaque artiste.
 const stepsOf = a => [{ type: 'intro' }, ...a.steps];
 const storySt = a => store.story[a.id] || (store.story[a.id] = { step: 0 });

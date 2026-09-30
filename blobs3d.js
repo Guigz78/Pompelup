@@ -208,6 +208,7 @@ function neckAcc(g, a, shape) {
 
 /* ---------- scène ---------- */
 function build(sk, opts) {
+  if (sk.kind === 'human') return buildHuman(sk, opts);
   const g = new T.Group(), shape = sk.shape || 'dome';
   const body = mesh(SHAPES[shape](), velvet(sk.color)), parts = [body];
   g.add(body);
@@ -222,12 +223,201 @@ function build(sk, opts) {
   return g;
 }
 
+/* ---------- humains façon « RV There Yet? » ----------
+   Gros visage large, traits minimalistes, peau d'argile mate, corps trapu,
+   petites mains en moufle, vêtements simples. Le sol est à y = 0. */
+TOP.human = 2.78; WIDTH.human = .96; EYE_Y.human = 2.2; NECK_Y.human = 1.4; HAT.human = 2.68; HAT_W.human = 1.22;
+const clay = (c, r = .8) => keep(new T.MeshStandardMaterial({ color: lin(c), roughness: r, metalness: 0 }));
+function skinMat(c) { const m = keep(new T.MeshStandardMaterial({ color: lin(c), roughness: .75 })); m.emissive = lin(c).multiplyScalar(.06); return m; }
+function capsule(r, mat, from, to) {
+  const a = new T.Vector3(...from), b = new T.Vector3(...to), dir = b.clone().sub(a), g = new T.Group();
+  const cyl = mesh(new T.CylinderGeometry(r, r, dir.length(), 20), mat);
+  cyl.position.copy(a).add(b).multiplyScalar(.5);
+  cyl.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir.normalize());
+  g.add(cyl, mesh(sph(r, 20, 14), mat, from), mesh(sph(r, 20, 14), mat, to));
+  return g;
+}
+const HC = [0, 2.12, 0];   // centre de la tête
+// Tête « bloc arrondi » : sphère gonflée vers le cube (super-ellipsoïde), joues pleines en bas
+function headGeo() {
+  const g = new T.SphereGeometry(1, 64, 48), p = g.attributes.position, v = new T.Vector3(), e = .62;
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    v.set(Math.sign(v.x) * Math.abs(v.x) ** e, Math.sign(v.y) * Math.abs(v.y) ** e, Math.sign(v.z) * Math.abs(v.z) ** e);
+    v.multiplyScalar(.86);
+    if (v.y < 0) { const k = 1 + .1 * Math.min(1, -v.y * 1.4); v.x *= k; v.z *= 1 + .05 * Math.min(1, -v.y); }
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+function humanFace(g, sk, mood) {
+  const ink = matte('#1E1A22'), hair = clay(sk.hairColor || '#3B2A20'), skin = skinMat(sk.skin || '#F5D2BE');
+  const beard = sk.face === 'beard';
+  // yeux : petits ovales noirs, sourcils en trait
+  [-1, 1].forEach(s => {
+    const x = .3 * s, y = EYE_Y.human, z = S.z(x, y);
+    const closed = mood === 'grin' ? 'up' : mood === 'sad' ? 'down' : (mood === 'wink' && s > 0) ? 'up' : null;
+    if (closed) g.add(mesh(new T.TorusGeometry(.08, .022, 10, 24, Math.PI), ink, [x, y - .02, z], [0, 0, closed === 'up' ? 0 : Math.PI]));
+    else g.add(mesh(sph(mood === 'wow' ? .085 : .07, 20, 14), ink, [x, y, z - .01], null, [.8, 1.3, .5]));
+    const by = y + (mood === 'sad' ? .16 : mood === 'wow' ? .2 : .17), tilt = (mood === 'sad' ? -.3 : mood === 'smirk' && s > 0 ? .3 : 0) * s;
+    g.add(mesh(new T.CylinderGeometry(.028, .028, .16, 10), hair, [x, by, S.z(x, by) + .005], [0, 0, Math.PI / 2 + tilt]));
+  });
+  // nez rond
+  g.add(mesh(sph(.13, 24, 16), skin, [0, 2.03, S.z(0, 2.03) - .05], null, [1.1, .9, .85]));
+  // bouche selon l'humeur
+  const my = 1.84, mz = S.z(0, my);
+  if (!beard || mood === 'wow' || mood === 'talk') {
+    if (mood === 'wow' || mood === 'talk') g.add(mesh(sph(.07, 16, 12), matte('#5A2430'), [0, my, mz - .01], null, [1, mood === 'wow' ? 1.3 : .8, .4]));
+    else if (mood === 'grin') g.add(mesh(new T.CylinderGeometry(.13, .13, .03, 24, 1, false, Math.PI / 2, Math.PI), matte('#5A2430'), [0, my + .03, mz - .005], [Math.PI / 2, 0, 0]));
+    else g.add(mesh(new T.TorusGeometry(.09, .018, 8, 24, Math.PI), ink, [mood === 'smirk' ? .06 : 0, my + (mood === 'sad' ? -.05 : .04), mz], [0, 0, mood === 'sad' ? 0 : Math.PI]));
+  }
+  if (sk.face === 'mustache' || beard) [-1, 1].forEach(s => g.add(mesh(sph(.09, 16, 12), hair, [.09 * s, 1.93, S.z(.09 * s, 1.93)], [0, 0, .5 * s], [1.3, .55, .6])));
+  if (beard) g.add(mesh(new T.SphereGeometry(1, 40, 24, 0, Math.PI * 2, Math.PI * .6, Math.PI * .4), hair, HC, [.2, 0, 0], [.87, .74, .8]));
+}
+function humanHair(g, sk) {
+  const t = sk.hair || 'short', m = clay(sk.hairColor || '#3B2A20', .9);
+  if (t === 'bald') return;
+  if (t === 'curly' || t === 'afro') {
+    const R = t === 'afro' ? 1.18 : 1;
+    for (let k = 0; k < 26; k++) {
+      const a = k / 26 * Math.PI * 2, ring = k % 2 ? .55 : .8;
+      g.add(mesh(sph(.24 * R, 16, 12), m, [Math.cos(a) * .7 * ring * R, 2.62 + (1 - ring) * .35 * R + (t === 'afro' ? .12 : 0), Math.sin(a) * .55 * ring * R - .08]));
+    }
+    return;
+  }
+  // calotte de cheveux sur le haut et l'arrière du crâne
+  g.add(mesh(new T.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, Math.PI * .42), m, [0, 2.14, -.02], [-.35, 0, 0], [.99, .8, .85]));
+  if (t === 'long') g.add(mesh(sph(1, 32, 20), m, [0, 1.86, -.28], null, [.9, .78, .52]));
+  if (t === 'bun') g.add(mesh(sph(.26, 20, 14), m, [0, 2.9, -.25]));
+  if (t === 'mohawk') for (let k = 0; k < 6; k++) g.add(mesh(new T.ConeGeometry(.1, .32, 12), m, [0, 2.86 - Math.abs(k - 2.5) * .03, .45 - k * .18], [-.2, 0, 0]));
+}
+// Couvre-chefs taillés pour la grosse tête (calotte qui épouse le crâne)
+function humanHat(g, a) {
+  const c = a.color, t = a.type, shell = (theta, sc, mat, rx = -.3) => mesh(new T.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, theta), mat, [0, 2.14, -.02], [rx, 0, 0], sc);
+  if (t === 'cap') {
+    const m = clay(c, .6);
+    g.add(shell(Math.PI * .4, [1.03, .86, .89], m));
+    g.add(mesh(sph(1, 32, 16), m, [0, 2.66, -.8], [.35, 0, 0], [.5, .05, .42]));        // visière à l'envers
+    g.add(mesh(sph(.07, 12, 8), m, [0, 2.93, -.1]));
+  }
+  if (t === 'beanie') {
+    const m = clay(c, .95);
+    g.add(shell(Math.PI * .47, [1.05, .92, .92], m, -.18));
+    g.add(mesh(new T.TorusGeometry(1, .09, 12, 48), m, [0, 2.44, -.05], [Math.PI / 2 - .18, 0, 0], [.99, .86, 1]));
+    g.add(mesh(sph(.2, 16, 12), clay('#FFFFFF', 1), [0, 3.02, -.12]));
+  }
+  if (t === 'robot' || t === 'helmet') {
+    const m = t === 'robot' ? gloss(c, .15) : keep(new T.MeshPhysicalMaterial({ color: lin(c), transparent: true, opacity: .25, roughness: .05, clearcoat: 1 }));
+    if (t === 'robot') m.metalness = .6;
+    g.add(mesh(headGeo(), m, [0, 2.14, 0], null, [1.04, .86, .88]));
+    if (t === 'robot') g.add(mesh(sph(1, 40, 20), gloss('#15101C', .08), [0, 2.16, .36], null, [.8, .26, .5]));
+  }
+}
+function buildHuman(sk, opts) {
+  const g = new T.Group(), skin = skinMat(sk.skin || '#F5D2BE');
+  const top = clay(sk.top || '#E07A3A'), shirt = clay(sk.shirt || '#F4F1EA'), pants = clay(sk.pants || '#3F4A63'), shoes = clay(sk.shoes || '#2B2B33', .6);
+  // jambes et chaussures
+  [-1, 1].forEach(s => {
+    g.add(mesh(sph(.19, 20, 14), shoes, [.21 * s, .09, .08], null, [1, .55, 1.45]));
+    g.add(capsule(.15, pants, [.21 * s, .16, 0], [.21 * s, .52, 0]));
+  });
+  g.add(mesh(sph(.5, 32, 20), pants, [0, .6, 0], null, [1.02, .44, .8]));
+  // torse trapu (veste + chemise au milieu)
+  const torso = mesh(sph(.57, 40, 28), top, [0, 1.02, 0], null, [1.02, 1, .82]);
+  g.add(torso);
+  if ((sk.shirt || '#F4F1EA') !== (sk.top || '#E07A3A')) g.add(mesh(sph(.57, 32, 24), shirt, [0, 1.0, .05], null, [.34, .95, .8]));
+  // bras et mains en moufle
+  [-1, 1].forEach(s => {
+    g.add(capsule(.14, top, [.5 * s, 1.34, 0], [.7 * s, .86, .06]));
+    g.add(mesh(sph(.16, 20, 14), skin, [.72 * s, .72, .1], null, [1, 1.12, .9]));
+  });
+  // grosse tête large
+  const head = mesh(headGeo(), skin, HC, null, [.95, .78, .8]);
+  g.add(head);
+  g.userData.headMesh = head;
+  [-1, 1].forEach(s => g.add(mesh(sph(.17, 16, 12), skin, [.93 * s, 2.06, -.02], null, [.5, 1, .7])));
+  S = surface([head]);
+  humanFace(g, sk, opts.mood || 'happy');
+  const accs = opts.accs || {};
+  if (!accs.head || !['beanie', 'robot', 'cap'].includes(accs.head.type)) humanHair(g, sk);
+  if (accs.eyes) eyeAcc(g, accs.eyes, 'human');
+  if (accs.ears) { const eg = new T.Group(); eg.position.set(...HC); earAcc(eg, accs.ears, .72, 'human'); g.add(eg); }
+  const ht = accs.head && accs.head.type;
+  if (['cap', 'beanie', 'robot', 'helmet'].includes(ht)) { humanHat(g, accs.head); }
+  else if (accs.head) {
+    const h = new T.Group(), t = accs.head.type;
+    headAcc(h, accs.head, TOP.human, 'human');
+    const lift = { cap: .3, beanie: .32, beret: .06, halo: .05 }[t] || 0, w = { cap: 1.3, beanie: 1.22 }[t] || HAT_W.human;
+    h.scale.set(w, t === 'beanie' ? .95 : 1, w);
+    h.position.y = lift - (w - 1) * .0;
+    if (t === 'cap' || t === 'beanie') { h.position.y += TOP.human * (1 - (t === 'beanie' ? .95 : 1)); }
+    g.add(h);
+  }
+  if (accs.neck) { S = surface([torso]); neckAcc(g, accs.neck, 'human'); }
+  g.userData.human = true;
+  return g;
+}
+// Cadre la caméra sur une boîte (personnage entier, tête seule…)
+function fitCamera(cam, box, pad) {
+  const size = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+  const t = Math.tan(T.MathUtils.degToRad(cam.fov / 2));
+  const dist = Math.max(size.y / (2 * t), size.x / (2 * t * cam.aspect)) * pad + size.z / 2;
+  cam.position.set(c.x, c.y + size.y * .04, c.z + dist);
+  cam.lookAt(c.x, c.y, c.z);
+  cam.updateProjectionMatrix();
+}
+function renderHuman(r, sk, opts, W, H) {
+  const head = !!opts.head, lying = !!opts.lying;
+  const scene = new T.Scene();
+  r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = .95;
+  scene.add(new T.HemisphereLight(0xDDEBFF, 0xE2CDB6, .78));
+  const key = new T.DirectionalLight(0xFFF1E0, 1.3); key.position.set(-3, 5, 5);
+  key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0004; key.shadow.normalBias = .03;
+  Object.assign(key.shadow.camera, { left: -3, right: 3, top: 4, bottom: -1, near: .5, far: 20 });
+  scene.add(key);
+  const fill = new T.DirectionalLight(0xFFFFFF, .35); fill.position.set(3, 1.5, 4); scene.add(fill);
+  const rim = new T.DirectionalLight(0xFFFFFF, .45); rim.position.set(1, 3, -4); scene.add(rim);
+  const ch = build(sk, opts);
+  const pivot = new T.Group(); pivot.add(ch);
+  if (lying) { ch.position.y = -1.4; pivot.rotation.set(.35, 0, Math.PI / 2 - .06); }
+  else ch.rotation.set(0, opts.turn ?? -.22, 0);
+  ch.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  scene.add(pivot);
+  pivot.updateMatrixWorld(true);
+  let box;
+  if (head) {
+    // Cadre sur le visage : la largeur de la tête, et en hauteur jusqu'au sommet du chapeau
+    box = new T.Box3().setFromObject(ch.userData.headMesh);
+    let topY = box.max.y;
+    ch.traverse(o => { if (o.isMesh) { const b = new T.Box3().setFromObject(o); if (b.min.y > 1.3) topY = Math.max(topY, b.max.y); } });
+    box.max.y = Math.min(topY, box.max.y + .45);
+    box.min.y += .15;
+  }
+  else box = new T.Box3().setFromObject(pivot);
+  if (!head && !lying) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(40,30,60,.35)'); gr.addColorStop(1, 'rgba(40,30,60,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+    scene.add(mesh(new T.PlaneGeometry(2.6, 1.3), keep(new T.MeshBasicMaterial({ map: keep(new T.CanvasTexture(c)), transparent: true, depthWrite: false })), [0, .005, 0], [-Math.PI / 2, 0, 0]));
+  }
+  const cam = new T.PerspectiveCamera(22, W / H, .1, 60);
+  fitCamera(cam, box, head ? 1.02 : 1.1);
+  r.setClearColor(0, 0);
+  r.render(scene, cam);
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  out.getContext('2d').drawImage(r.domElement, 0, 0);
+  while (trash.length) { try { trash.pop().dispose(); } catch (e) {} }
+  r.toneMapping = CFG.tm === 'aces' ? T.ACESFilmicToneMapping : T.NoToneMapping; r.toneMappingExposure = CFG.exp;
+  return { url: out.toDataURL('image/webp', .92) };
+}
+
 function render(sk, opts = {}) {
   const r = getRenderer();
   if (!r) return null;
   const head = !!opts.head, lying = !!opts.lying;
   const W = lying ? 520 : 400, H = lying ? 300 : head ? 400 : 440;
   r.setSize(W, H, false);
+  if (sk.kind === 'human') return renderHuman(r, sk, opts, W, H);
   const scene = new T.Scene();
   scene.add(new T.HemisphereLight(0xFFFFFF, 0x6B5A7A, CFG.hemi));
   const key = new T.DirectionalLight(0xFFF1E4, CFG.key); key.position.set(-2.5, 3.5, 4);
@@ -336,9 +526,9 @@ function flock(d, mk, W, H, k) {
 
 /* ---------- cache + file de rendu ---------- */
 // BUDGET (en caractères) : laisse toujours de la place à la sauvegarde de la partie
-const STORE = 'pompelup_blob3d_v3', KEEP = 16, BUDGET = 1.2e6;
+const STORE = 'pompelup_blob3d_v4', KEEP = 16, BUDGET = 1.2e6;
 const cache = new Map();
-try { ['pompelup_blob3d_v1', 'pompelup_blob3d_v2'].forEach(k => localStorage.removeItem(k)); JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, v]) => cache.set(k, v)); } catch (e) {}
+try { ['pompelup_blob3d_v1', 'pompelup_blob3d_v2', 'pompelup_blob3d_v3'].forEach(k => localStorage.removeItem(k)); JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, v]) => cache.set(k, v)); } catch (e) {}
 let saveT = null;
 function persist() {
   clearTimeout(saveT);

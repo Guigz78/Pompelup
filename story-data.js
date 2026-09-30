@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { shape: 'peak', color: '#1F2937', acc: { head: { type: 'fedora', color: '#111827' }, neck: { type: 'bowtie', color: '#F5F5F5' } } },
-  'queen': { shape: 'dome', color: '#FBBF24', acc: { head: { type: 'crown', color: '#FBBF24' } } },
-  'daft-punk': { shape: 'dome', color: '#D4D4D8', acc: { head: { type: 'robot', color: '#FBBF24' } } },
-  'nirvana': { shape: 'cloud', color: '#65A30D', acc: { eyes: { type: 'round', color: '#15101C' } } },
-  'dua-lipa': { shape: 'heart', color: '#DB2777', acc: { eyes: { type: 'shades', color: '#111827' } } },
-  'drake': { shape: 'bean', color: '#78350F', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
-  'edith-piaf': { shape: 'peak', color: '#111827', acc: { head: { type: 'beret', color: '#7F1D1D' } } },
-  'taylor-swift': { shape: 'heart', color: '#C084FC', acc: { eyes: { type: 'stars', color: '#FBBF24' } } },
+  'michael-jackson': { kind: 'human', skin: '#B97C58', hair: 'long', hairColor: '#15100D', top: '#1F1F24', shirt: '#F4F1EA', pants: '#1F1F24', acc: { head: { type: 'fedora', color: '#111827' } } },
+  'queen': { kind: 'human', skin: '#E8B894', hair: 'short', hairColor: '#15100D', face: 'mustache', top: '#F2C230', shirt: '#F4F1EA', pants: '#F4F1EA', acc: { head: { type: 'crown', color: '#FBBF24' } } },
+  'daft-punk': { kind: 'human', skin: '#E8B894', hair: 'bald', top: '#1F1F24', shirt: '#1F1F24', pants: '#1F1F24', acc: { head: { type: 'robot', color: '#FBBF24' } } },
+  'nirvana': { kind: 'human', skin: '#F5D2BE', hair: 'long', hairColor: '#E3C27A', face: 'beard', top: '#5B7A3A', shirt: '#F4F1EA', pants: '#4B6A8F', acc: { eyes: { type: 'shades', color: '#F4F1EA' } } },
+  'dua-lipa': { kind: 'human', skin: '#F0C8AA', hair: 'long', hairColor: '#15100D', top: '#DB2777', shirt: '#DB2777', pants: '#1F1F24', acc: { eyes: { type: 'shades', color: '#111827' } } },
+  'drake': { kind: 'human', skin: '#8D5A3B', hair: 'short', hairColor: '#15100D', face: 'beard', top: '#78350F', shirt: '#F4F1EA', pants: '#1F1F24', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
+  'edith-piaf': { kind: 'human', skin: '#F5D6C6', hair: 'curly', hairColor: '#2B1A12', top: '#15151A', shirt: '#15151A', pants: '#15151A', acc: { head: { type: 'beret', color: '#7F1D1D' } } },
+  'taylor-swift': { kind: 'human', skin: '#F7DCC8', hair: 'long', hairColor: '#E9C77B', top: '#C084FC', shirt: '#FFFFFF', pants: '#1F1F24', acc: { eyes: { type: 'stars', color: '#FBBF24' } } },
 };

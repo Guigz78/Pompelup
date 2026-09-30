@@ -7,20 +7,22 @@
 'use strict';
 
 // shape : dome | bean | peak | frog | heart | cloud · acc : accessoires fournis avec le skin
+// Personnages trapus façon « RV There Yet? » : skin = peau, hair/hairColor, top (veste), shirt, pants, face
+const H = o => Object.assign({ kind: 'human' }, o);
 const SKINS = [
-  { id: 'rookie', name: 'Blobby', shape: 'dome', color: '#F97316', rarity: 'common', price: 0, desc: 'La mascotte Pompelup, casque vissé sur la tête.', acc: { ears: { type: 'phones', color: '#6D28D9' } } },
-  { id: 'crate', name: 'Froggy', shape: 'frog', color: '#8FE03A', rarity: 'common', price: 0, desc: 'Une grenouille qui connaît tous les refrains.' },
-  { id: 'chanson', name: 'Monsieur Béret', shape: 'bean', color: '#2F6BEA', rarity: 'rare', price: 450, desc: 'Chanson française et béret de velours.', acc: { head: { type: 'beret', color: '#1B1B1F' } } },
-  { id: 'seventies', name: 'Pépito', shape: 'peak', color: '#F5E03A', rarity: 'rare', price: 450, desc: 'Lunettes rondes, sourire zen.', acc: { eyes: { type: 'round', color: '#15101C' } } },
-  { id: 'disco', name: 'Cœur Disco', shape: 'heart', color: '#E23CC8', rarity: 'rare', price: 500, desc: 'Lunettes noires et cœur qui bat au tempo.', acc: { eyes: { type: 'shades', color: '#15101C' } } },
-  { id: 'buns', name: 'Nuage Pop', shape: 'cloud', color: '#B79CFA', rarity: 'rare', price: 500, desc: 'Doux comme une ballade des années 80.' },
-  { id: 'rocker', name: 'Rocky', shape: 'dome', color: '#E11D48', rarity: 'epic', price: 800, desc: 'Casquette à l’envers, riff à fond.', acc: { head: { type: 'cap', color: '#111827' }, eyes: { type: 'shades', color: '#111827' } } },
-  { id: 'mc', name: 'MC Mousse', shape: 'bean', color: '#10B981', rarity: 'epic', price: 800, desc: 'Chaîne en or et flow en velours.', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
-  { id: 'kpop', name: 'Idol Bonbon', shape: 'heart', color: '#F9A8D4', rarity: 'epic', price: 850, desc: 'Casque bonbon et cœur de star.', acc: { ears: { type: 'phones', color: '#C084FC' } } },
-  { id: 'neon', name: 'Néon', shape: 'peak', color: '#22D3EE', rarity: 'epic', unlock: true, desc: 'Visière néon, vitesse lumière.', acc: { eyes: { type: 'visor', color: '#EC4899' } } },
-  { id: 'dj', name: 'DJ Minuit', shape: 'cloud', color: '#312E81', rarity: 'epic', unlock: true, desc: 'Le casque qui brille dans le noir.', acc: { ears: { type: 'phones', color: '#22D3EE', glow: true } } },
-  { id: 'astro', name: 'Grenouille d’argent', shape: 'frog', color: '#CBD5E1', rarity: 'legendary', unlock: true, desc: 'Velours argenté et auréole néon.', acc: { head: { type: 'halo', color: '#22D3EE' } } },
-  { id: 'gold', name: 'Disque d’or', shape: 'dome', color: '#F5B81C', rarity: 'legendary', unlock: true, desc: 'Tout en or, couronne comprise.', acc: { head: { type: 'crown', color: '#FBBF24' }, ears: { type: 'phones', color: '#111827' } } },
+  H({ id: 'rookie', name: 'Momo', rarity: 'common', price: 0, desc: 'Le fan de musique du quartier, casque vissé sur les oreilles.', skin: '#EDB08F', hair: 'short', hairColor: '#4A3226', top: '#F28C38', shirt: '#F28C38', pants: '#3F4A63', acc: { ears: { type: 'phones', color: '#6D28D9' } } }),
+  H({ id: 'crate', name: 'Bob le Bob', rarity: 'common', price: 0, desc: 'Bob sur la tête, lunettes noires, toujours au premier rang.', skin: '#EBAD8B', hair: 'short', hairColor: '#6B4A32', top: '#D9692E', shirt: '#F4F1EA', pants: '#4B5563', acc: { head: { type: 'bob', color: '#8B5A3C' }, eyes: { type: 'shades', color: '#15101C' } } }),
+  H({ id: 'chanson', name: 'Monsieur Béret', rarity: 'rare', price: 450, desc: 'Moustache, béret et chanson française.', skin: '#E9A886', hair: 'short', hairColor: '#2B2320', face: 'mustache', top: '#2F6BEA', shirt: '#F4F1EA', pants: '#1F2937', acc: { head: { type: 'beret', color: '#1B1B1F' } } }),
+  H({ id: 'seventies', name: 'Pépito', rarity: 'rare', price: 450, desc: 'Bouclettes, lunettes rondes et chemise à fleurs dans l’âme.', skin: '#E8B894', hair: 'afro', hairColor: '#3A2418', top: '#F2C230', shirt: '#F2C230', pants: '#8B5A3C', acc: { eyes: { type: 'round', color: '#15101C' } } }),
+  H({ id: 'disco', name: 'Disco Dédé', rarity: 'rare', price: 500, desc: 'Veste rose et lunettes noires, il vit la nuit.', skin: '#C68863', hair: 'curly', hairColor: '#1E1612', top: '#E23CC8', shirt: '#1F1B2E', pants: '#1F1B2E', acc: { eyes: { type: 'shades', color: '#15101C' } } }),
+  H({ id: 'buns', name: 'Mamie Lulu', rarity: 'rare', price: 500, desc: 'Chignon gris et gilet lilas, elle connaît tous les refrains.', skin: '#EFB89D', hair: 'bun', hairColor: '#C9C4CF', top: '#B79CFA', shirt: '#F4F1EA', pants: '#6B6478', acc: { eyes: { type: 'round', color: '#8B6BB0' } } }),
+  H({ id: 'rocker', name: 'Rocky', rarity: 'epic', price: 800, desc: 'Casquette, lunettes noires et blouson rouge, riff à fond.', skin: '#EBAD8B', hair: 'short', hairColor: '#6B4A32', face: 'beard', top: '#E11D48', shirt: '#1F2937', pants: '#1F2937', acc: { head: { type: 'cap', color: '#111827' }, eyes: { type: 'shades', color: '#111827' } } }),
+  H({ id: 'mc', name: 'MC Mousse', rarity: 'epic', price: 800, desc: 'Chaîne en or et sweat vert, flow impeccable.', skin: '#8D5A3B', hair: 'short', hairColor: '#15100D', face: 'beard', top: '#10B981', shirt: '#10B981', pants: '#374151', acc: { neck: { type: 'chain', color: '#FBBF24' } } }),
+  H({ id: 'kpop', name: 'Idol Bonbon', rarity: 'epic', price: 850, desc: 'Cheveux roses et casque bonbon, star du karaoké.', skin: '#F0B99C', hair: 'long', hairColor: '#F48FC1', top: '#F9A8D4', shirt: '#FFFFFF', pants: '#F4F1EA', acc: { ears: { type: 'phones', color: '#C084FC' } } }),
+  H({ id: 'neon', name: 'Néon', rarity: 'epic', unlock: true, desc: 'Crête, visière néon, vitesse lumière.', skin: '#EBAD8B', hair: 'mohawk', hairColor: '#22D3EE', top: '#1F1B2E', shirt: '#22D3EE', pants: '#1F1B2E', acc: { eyes: { type: 'visor', color: '#EC4899' } } }),
+  H({ id: 'dj', name: 'DJ Minuit', rarity: 'epic', unlock: true, desc: 'Sweat indigo et casque qui brille dans le noir.', skin: '#C68863', hair: 'short', hairColor: '#15100D', top: '#312E81', shirt: '#312E81', pants: '#1F1B2E', acc: { ears: { type: 'phones', color: '#22D3EE', glow: true } } }),
+  H({ id: 'astro', name: 'Cosmo', rarity: 'legendary', unlock: true, desc: 'Combinaison argentée et auréole néon, venu d’une autre planète.', skin: '#EDB08F', hair: 'bald', top: '#CBD5E1', shirt: '#CBD5E1', pants: '#CBD5E1', shoes: '#F4F1EA', acc: { head: { type: 'halo', color: '#22D3EE' } } }),
+  H({ id: 'gold', name: 'Disque d’or', rarity: 'legendary', unlock: true, desc: 'Veste dorée et couronne : la légende du blind test.', skin: '#E8B894', hair: 'short', hairColor: '#2B2320', face: 'mustache', top: '#F5B81C', shirt: '#1F1B2E', pants: '#1F1B2E', acc: { head: { type: 'crown', color: '#FBBF24' }, ears: { type: 'phones', color: '#111827' } } }),
 ];
 
 const ACCESSORIES = [
@@ -55,14 +57,14 @@ function mergeAccs(sk, extra) { return Object.assign({}, sk.acc || {}, extra || 
 
 // Repli sans WebGL : silhouette plate et yeux
 function flatSVG(sk) {
-  const c = sk.color || '#F97316';
+  const c = sk.color || sk.top || '#F97316';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220"><ellipse cx="100" cy="206" rx="80" ry="10" fill="#1B1026" opacity=".15"/><path d="M20 200 Q14 60 100 50 Q186 60 180 200 Z" fill="${c}"/><ellipse cx="78" cy="130" rx="9" ry="13" fill="#15101C"/><ellipse cx="122" cy="130" rx="9" ry="13" fill="#15101C"/></svg>`;
 }
 const flatURL = sk => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(flatSVG(sk));
 
 function keyOf(sk, opts) {
   const a = mergeAccs(sk, opts.accs);
-  return JSON.stringify([sk.id || '', sk.shape, sk.color, opts.mood || 'happy', opts.head ? 1 : opts.lying ? 2 : 0, Object.keys(a).sort().map(k => a[k] && (a[k].id || a[k].type + a[k].color))]);
+  return JSON.stringify([sk.id || '', sk.kind || sk.shape, sk.color || sk.top, opts.mood || 'happy', opts.head ? 1 : opts.lying ? 2 : 0, Object.keys(a).sort().map(k => a[k] && (a[k].id || a[k].type + a[k].color))]);
 }
 function html(sk, opts = {}) {
   const o = Object.assign({}, opts, { accs: mergeAccs(sk, opts.accs) });
