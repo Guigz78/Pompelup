@@ -27,7 +27,7 @@ const defaults = () => ({
   boosters: 1, goldBoosters: 0, gauge: 0, opened: 0, coll: {},
   coins: 100, gift: null, name: '', onboarded: false,
   owned: { skin: ['rookie', 'crate'], acc: [], disc: ['classic'], theme: ['nuit'], fx: ['sparks'] },
-  equip: { skin: 'rookie', acc: { head: null, eyes: null, ears: null, neck: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
+  equip: { skin: 'rookie', acc: { head: null, eyes: null, face: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null,
@@ -42,6 +42,7 @@ const store = (() => {
     for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen', 'story']) merged[k] = Object.assign(defaults()[k], raw[k]);
     delete merged.equip.avatar;
     merged.equip.acc = Object.assign(defaults().equip.acc, (raw.equip || {}).acc);
+    for (const k of Object.keys(merged.equip.acc)) if (!(k in defaults().equip.acc)) delete merged.equip.acc[k];
     merged.owned = Object.fromEntries(Object.entries(defaults().owned).map(([k, base]) => [k, [...new Set([...base, ...((raw.owned || {})[k] || [])])]]));
     merged.coll = Object.assign({}, raw.coll);
     return merged;
@@ -1128,7 +1129,7 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { name: 'DJ Patator', skin: '#E8B394', hair: ['curls', '#F59E0B'], top: ['sequin', '#6D28D9'], pant: '#111827', shoe: '#F472B6', extra: 'moustache', acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#F472B6' } } };
+const HOST = { id: 'host', name: 'DJ Patator', seed: 'dj-patator', opts: { hair: ['curlyShortHair'], hairColor: ['e9b729'], skinColor: ['efcc9f'], mouth: ['openedSmile'], eyes: ['cheery'] }, acc: { eyes: 'sunglasses', face: 'mustache-brown' } };
 const host = {
   mood: null, timer: null,
   render(mood) {
@@ -1902,7 +1903,7 @@ function renderCollection() {
       <span class="cs-lamp"><i></i></span>
       <span class="couch">
         <i class="c-back"></i><i class="c-pillow c-pl"></i><i class="c-pillow c-pr"></i>
-        <span class="c-char">${meHTML({ lying: true })}</span>
+        <span class="c-char"><span class="c-head">${meHTML({ mood: ids.length ? 'grin' : 'happy' })}</span><i class="c-blanket"></i></span>
         <i class="c-seat"></i><i class="c-arm c-al"></i><i class="c-arm c-ar"></i><i class="c-foot c-fl"></i><i class="c-foot c-fr"></i>
       </span>
       <span class="cs-table"><i class="cs-player"></i></span>
@@ -2295,7 +2296,7 @@ function finishWelcome(keep) {
 const ARTISTS = window.STORY_ARTISTS || [];
 const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
 const artistById = id => ARTISTS.find(a => a.id === id);
-const artistLook = a => Object.assign({ name: a.name }, (window.STORY_LOOKS || {})[a.id] || { skin: '#F5C7A1', hair: ['tuft', '#333'], top: ['hoodie', a.color] });
+const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { seed: a.id });
 const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
 // L'intro (bio) est la première étape de chaque parcours.
 const stepsOf = a => [{ type: 'intro' }, ...a.steps];

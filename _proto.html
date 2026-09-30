@@ -1,0 +1,19 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;padding:10px;background:#FFF4EA;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font:11px sans-serif">
+<script src="vendor/three.min.js"></script><script src="vendor/SVGLoader.js"></script><script src="vendor/bigsmile.js"></script><script>
+const T=THREE;const R=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});R.setSize(400,400,false);R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
+function to3d(svg){
+ svg=svg.replace(/<metadata[\s\S]*?<\/metadata>/,'').replace(/<mask[\s\S]*?<\/mask>/,'').replace(/ mask="[^"]*"/g,'');const data=new T.SVGLoader().parse(svg);const g=new T.Group();let i=0;
+ for(const p of data.paths){const st=p.userData.style;const node=p.userData.node;const op=+(node.getAttribute('opacity')||1)*(st.fillOpacity??1);if(op<.5){continue}
+  if(st.fill&&st.fill!=='none'){const col=new T.Color().setStyle(st.fill).convertSRGBToLinear();
+   const m=new T.MeshStandardMaterial({color:col,roughness:.5,metalness:0,opacity:st.fillOpacity,transparent:st.fillOpacity<1});
+   for(const sh of T.SVGLoader.createShapes(p)){const geo=new T.ExtrudeGeometry(sh,{depth:2,bevelEnabled:true,bevelThickness:5,bevelSize:3,bevelSegments:5,curveSegments:14});const me=new T.Mesh(geo,m);me.position.z=i*2.2;g.add(me);}i++;}
+  if(st.stroke&&st.stroke!=='none'){const col=new T.Color().setStyle(st.stroke).convertSRGBToLinear();const m=new T.MeshStandardMaterial({color:col,roughness:.5});
+   for(const sp of p.subPaths){const geo=T.SVGLoader.pointsToStroke(sp.getPoints(),st);if(geo){const me=new T.Mesh(geo,m);me.position.z=i*2.2+6;g.add(me)}}i++;}
+ }
+ g.scale.y=-1;const inner=new T.Group();inner.add(g);const box=new T.Box3().setFromObject(inner);const c=box.getCenter(new T.Vector3());g.position.set(-c.x,-c.y,-c.z);
+ const holder=new T.Group();holder.add(g);holder.rotation.set(.05,-.32,0);
+ const sc=new T.Scene();sc.add(new T.HemisphereLight(0xffffff,0x8a6a5a,.8));const k=new T.DirectionalLight(0xfff1e0,1.5);k.position.set(-300,400,500);sc.add(k);const rim=new T.DirectionalLight(0xffffff,.6);rim.position.set(400,200,-300);sc.add(rim);sc.add(holder);
+ const cam=new T.PerspectiveCamera(22,1,1,5000);cam.position.set(0,0,1250);cam.lookAt(0,0,0);R.render(sc,cam);return R.domElement.toDataURL();}
+const seeds=['dj-funky-mc','mc-marcel-vibe','mika-kawaii','disco-stella-glitter','neon-rick-80s','crooner-jazzy','mc-groove-fresh','lea-sunset'];
+let h='';for(const s of seeds){const svg=BigSmile({seed:s});h+=`<div style="background:#b6e3f4;border-radius:16px;text-align:center"><img src="${to3d(svg)}" style="width:100%">${s}</div>`}
+document.body.insertAdjacentHTML('beforeend',h);document.title='done';</script>

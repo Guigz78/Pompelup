@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { skin: '#8D5A3B', hair: ['curls', '#111111'], top: ['suit', '#111827', '#FFFFFF'], pant: '#111827', shoe: '#111827', arms: 'hips', acc: { head: { type: 'fedora', color: '#111827' } } },
-  'queen': { skin: '#D9A07A', hair: ['short', '#1F140E'], top: ['jacket', '#FBBF24', '#FFFFFF'], pant: '#F8FAFC', shoe: '#FFFFFF', arms: 'wave', extra: 'moustache', acc: { head: { type: 'crown', color: '#FBBF24' } } },
-  'daft-punk': { skin: '#E0A57E', hair: ['none'], top: ['suit', '#111827', '#9CA3AF'], pant: '#111827', shoe: '#111827', arms: 'relax', acc: { head: { type: 'robot', color: '#FBBF24' } } },
-  'nirvana': { skin: '#F2C6A6', hair: ['long', '#E9C46A'], top: ['stripes', '#15803D'], pant: '#3B4A6B', shoe: '#F5F5F4', arms: 'relax' },
-  'dua-lipa': { skin: '#E8B089', hair: ['long', '#111827'], top: ['jacket', '#DB2777', '#111827'], pant: '#111827', shoe: '#DB2777', arms: 'hips' },
-  'drake': { skin: '#A86B48', hair: ['short', '#111111'], top: ['hoodie', '#1F2937'], pant: '#111827', shoe: '#FFFFFF', arms: 'relax', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
-  'edith-piaf': { skin: '#F6D2B8', hair: ['bob', '#3B2A20'], top: ['suit', '#111827', '#1F2937'], pant: '#111827', shoe: '#111827', arms: 'relax' },
-  'taylor-swift': { skin: '#F6D2B8', hair: ['long', '#F4D58D'], top: ['sequin', '#C084FC'], pant: '#6D28D9', shoe: '#C084FC', arms: 'wave' },
+  'michael-jackson': { seed: 'mj', opts: { hair: ['curlyShortHair'], hairColor: ['220f00'], skinColor: ['8c5a2b'], eyes: ['cheery'], mouth: ['openedSmile'] }, acc: { eyes: 'sunglasses' } },
+  'queen': { seed: 'queen', opts: { hair: ['shortHair'], hairColor: ['220f00'], skinColor: ['c99c62'], eyes: ['normal'], mouth: ['teethSmile'] }, acc: { face: 'mustache-brown', head: 'crown-gold' } },
+  'daft-punk': { seed: 'daft', opts: { hair: ['shavedHead'], hairColor: ['220f00'], skinColor: ['efcc9f'], eyes: ['normal'], mouth: ['awkwardSmile'] }, acc: { eyes: 'sunglasses-neon', face: 'facemask-black' } },
+  'nirvana': { seed: 'kurt', opts: { hair: ['straightHair'], hairColor: ['e9b729'], skinColor: ['f5d7b1'], eyes: ['sleepy'], mouth: ['unimpressed'] } },
+  'dua-lipa': { seed: 'dua', opts: { hair: ['straightHair'], hairColor: ['220f00'], skinColor: ['e2ba87'], eyes: ['winking'], mouth: ['openedSmile'] } },
+  'drake': { seed: 'drake', opts: { hair: ['shavedHead'], hairColor: ['220f00'], skinColor: ['a47539'], eyes: ['normal'], mouth: ['awkwardSmile'] } },
+  'edith-piaf': { seed: 'piaf', opts: { hair: ['bangs'], hairColor: ['3a1a00'], skinColor: ['ffe4c0'], eyes: ['cheery'], mouth: ['openedSmile'] } },
+  'taylor-swift': { seed: 'taylor', opts: { hair: ['wavyBob'], hairColor: ['e9b729'], skinColor: ['ffe4c0'], eyes: ['cheery'], mouth: ['teethSmile'] }, acc: { head: 'crown-silver' } },
 };

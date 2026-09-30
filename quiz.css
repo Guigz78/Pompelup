@@ -1229,3 +1229,22 @@ img { display: block; max-width: 100%; }
 .ac-portrait .char-full { width: auto; height: 94%; }
 .c-char { width: 80%; left: 50%; bottom: 30px; transform: translateX(-46%); }
 .c-char { z-index: 6; bottom: 44px; width: 78%; }
+
+/* ================= Personnages Big Smile en relief ================= */
+.char3d { opacity: 0; transition: opacity .25s; }
+.char3d.is-ready { opacity: 1; }
+.char { display: block; width: 100%; height: auto; -webkit-user-drag: none; user-select: none; }
+.char-prev, .skin-item .char-prev, .item .acc-prev { aspect-ratio: 1; display: grid; place-items: center; padding: 6%; }
+.skin-item .char-prev .char, .item .acc-prev .char, .char-prev .char { width: 100%; height: 100%; object-fit: contain; max-width: none; padding: 0; }
+.ac-portrait { aspect-ratio: 1; display: grid; place-items: center; padding: 8% 12% 0; }
+.ac-portrait .char { width: 100%; height: 100%; object-fit: contain; }
+.res-char { width: 128px; }
+.pf-avatar span .char, .tab-avatar .char, .host-av .char { width: 112%; margin: -4% -6%; }
+.wl-av .char { aspect-ratio: 1; object-fit: contain; padding: 4px; }
+/* Salon : tête sur le coussin, corps sous un plaid */
+.c-char { position: absolute; left: 14%; right: 14%; bottom: 40px; height: 120px; width: auto; transform: none; z-index: 6; filter: none; }
+.c-head { position: absolute; left: -2%; bottom: 18px; width: 118px; transform: rotate(-24deg); z-index: 2; filter: drop-shadow(0 6px 6px rgba(40,20,10,.25)); }
+.c-blanket { position: absolute; left: 22%; right: -4%; bottom: 0; height: 64px; z-index: 3; border-radius: 34px 40px 14px 18px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 6px, transparent 6px 26px), repeating-linear-gradient(0deg, rgba(255,255,255,.28) 0 6px, transparent 6px 26px), linear-gradient(#F97316, #EA580C);
+  box-shadow: inset 0 6px 0 rgba(255,255,255,.25), inset 0 -8px 12px rgba(0,0,0,.15), 0 6px 10px rgba(40,20,10,.25); }
+.c-blanket::after { content: ''; position: absolute; right: 18px; top: -16px; width: 46px; height: 34px; border-radius: 50% 50% 40% 40%; background: inherit; box-shadow: inherit; }
