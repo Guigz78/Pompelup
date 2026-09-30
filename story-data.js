@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { skin: '#8D5A3B', hair: ['short', '#111111'], top: ['suit', '#111827', '#FFFFFF'], acc: ['fedora', '#111827'] },
-  'queen': { skin: '#D9A07A', hair: ['short', '#1F140E'], top: ['jacket', '#FBBF24', '#FFFFFF'], acc: ['crown', '#FBBF24'], extra: 'moustache' },
-  'daft-punk': { skin: '#E0A57E', hair: ['none'], top: ['suit', '#111827', '#9CA3AF'], acc: ['robot', '#FBBF24'] },
-  'nirvana': { skin: '#F2C6A6', hair: ['long', '#E9C46A'], top: ['stripes', '#15803D'] },
-  'dua-lipa': { skin: '#E8B089', hair: ['long', '#111827'], top: ['jacket', '#DB2777', '#111827'] },
-  'drake': { skin: '#A86B48', hair: ['none'], top: ['hoodie', '#111827'], extra: 'chain' },
-  'edith-piaf': { skin: '#F6D2B8', hair: ['bob', '#3B2A20'], top: ['suit', '#111827', '#1F2937'] },
-  'taylor-swift': { skin: '#F6D2B8', hair: ['long', '#F4D58D'], top: ['sequin', '#C084FC'] },
+  'michael-jackson': { pose: 'standing23', c: { skin: '#8D5A3B', hair: '#111111', shirt: '#FFFFFF', coat: '#111827', pant: '#111827', shoe: '#111827' }, acc: { head: { type: 'fedora', color: '#111827' } } },
+  'queen': { pose: 'standing19', c: { skin: '#D9A07A', hair: '#1F140E', shirt: '#FFFFFF', coat: '#FBBF24', pant: '#F8FAFC', shoe: '#FFFFFF' }, acc: { head: { type: 'crown', color: '#FBBF24' } } },
+  'daft-punk': { pose: 'standing5', c: { skin: '#E0A57E', hair: '#111111', shirt: '#9CA3AF', coat: '#111827', pant: '#111827', shoe: '#111827' }, acc: { head: { type: 'robot', color: '#FBBF24' } } },
+  'nirvana': { pose: 'standing7', c: { skin: '#F2C6A6', hair: '#E9C46A', shirt: '#15803D', coat: '#6B7280', pant: '#3B4A6B', shoe: '#F5F5F4' } },
+  'dua-lipa': { pose: 'standing9', c: { skin: '#E8B089', hair: '#111827', shirt: '#111827', coat: '#DB2777', pant: '#111827', shoe: '#DB2777' } },
+  'drake': { pose: 'standing4', c: { skin: '#A86B48', hair: '#111111', shirt: '#111827', coat: '#1F2937', pant: '#111827', shoe: '#FFFFFF' }, acc: { neck: { type: 'chain', color: '#FBBF24' } } },
+  'edith-piaf': { pose: 'standing11', c: { skin: '#F6D2B8', hair: '#3B2A20', shirt: '#111827', coat: '#111827', pant: '#111827', shoe: '#111827' } },
+  'taylor-swift': { pose: 'standing8', c: { skin: '#F6D2B8', hair: '#F4D58D', shirt: '#C084FC', coat: '#F5D0FE', pant: '#6D28D9', shoe: '#C084FC' } },
 };

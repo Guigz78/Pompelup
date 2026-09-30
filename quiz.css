@@ -1198,3 +1198,32 @@ img { display: block; max-width: 100%; }
 .cs-plant i:nth-child(3) { transform: translateX(-50%) rotate(30deg); }
 .cs-plant::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 28px; height: 20px; transform: translateX(-50%); border-radius: 4px 4px 9px 9px; background: #C2410C; }
 .house::after { height: 72px; }
+
+/* ---------- Personnages illustrés en pied ---------- */
+.char { display: block; width: 100%; height: auto; }
+.char-prev, .skin-item .char-prev { background: radial-gradient(120% 90% at 50% 100%, #FFE3C9, #FFF4EA 70%); }
+.item.r-rare .char-prev { background: radial-gradient(120% 90% at 50% 100%, #BAE6FD, #F0F9FF 70%); }
+.item.r-epic .char-prev { background: radial-gradient(120% 90% at 50% 100%, #DDD6FE, #F5F3FF 70%); }
+.item.r-legendary .char-prev { background: radial-gradient(120% 90% at 50% 100%, #FDE68A, #FFFBEB 70%); }
+.skin-item .char-prev .char-full { width: 78%; margin: 0 auto; padding-top: 6px; }
+.acc-prev .char-head { width: 100%; }
+.res-char { width: 110px; height: auto; border-radius: 0; background: none; box-shadow: none; overflow: visible; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
+.pf-avatar, .tab-avatar, .host-av { background: radial-gradient(circle at 50% 35%, #FFE6D2, #F9C79C); }
+.host-av .hv .char { transform: none; }
+.wl-av .char { background: radial-gradient(120% 90% at 50% 100%, #FFE3C9, #FFF4EA 70%); border-radius: 12px; }
+.ac-portrait .char-full { width: 70%; margin: 0 auto; }
+.ss-portrait span { padding: 6px; }
+.ss-portrait .char { width: 100%; }
+.vc-acc-box, .bs-acc { background: radial-gradient(circle at 50% 38%, #fff4ea, var(--rc) 120%); }
+/* Allongé sur le canapé */
+.c-char { width: 118%; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 4; filter: drop-shadow(0 4px 4px rgba(40,20,10,.18)); }
+
+.c-char { width: 104%; bottom: 30px; }
+.c-char { width: 100%; bottom: 4px; z-index: 4; }
+.c-seat { z-index: 5; }
+.skin-item .char-prev .char-full { width: 62%; }
+.ac-portrait .char-full { width: 56%; }
+.skin-item .char-prev { aspect-ratio: 1 / 1.1; display: flex; align-items: flex-end; justify-content: center; }
+.skin-item .char-prev .char-full { width: auto; height: 94%; max-width: 92%; padding: 0; }
+.ac-portrait { aspect-ratio: 1 / 1.05; display: flex; align-items: flex-end; justify-content: center; }
+.ac-portrait .char-full { width: auto; height: 94%; }
