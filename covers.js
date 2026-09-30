@@ -1,5 +1,5 @@
 /* Pompelup — vraies pochettes d'album (généré par scripts/fetch-covers.mjs, ne pas éditer) */
-/* « d:<md5> » = pochette Deezer, sinon URL iTunes. 941/1000 titres. */
+/* « d:<md5> » = pochette Deezer, sinon URL iTunes. 943/1000 titres. */
 window.COVERS = {
 "s1":"d:10e6b28ed3ec7c157844b3187d0ac2f4",
 "s54":"d:fe1082c5ef54876802146897e76b592e",
@@ -665,6 +665,7 @@ window.COVERS = {
 "s684":"d:c53b33078cc5b17acb3a0a3a9bc95da1",
 "s685":"d:5ee5623f99668e0a0d6045d6f5a3236f",
 "s686":"d:876899b899f8e7f1c62621622f4d7cd1",
+"s687":"https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/9b/90/d9/9b90d92b-b668-81cc-1b0e-a70ed4ac2024/07UMGIM11314.rgb.jpg/600x600bb.jpg",
 "s688":"d:876899b899f8e7f1c62621622f4d7cd1",
 "s689":"d:089d25face406c19f5a2c9b2ae0b5278",
 "s690":"d:a26538b9c73da431a6e5a46e9dc23d66",
@@ -734,6 +735,7 @@ window.COVERS = {
 "s775":"d:3ea4e7a79cb3b6b7cd6cc8b1419bc78a",
 "s776":"d:c35627fb50640d971702930cf469f594",
 "s777":"https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/53/83/b1/5383b19c-e670-0c5b-2592-377977d41f33/artwork.jpg/600x600bb.jpg",
+"s778":"https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/7d/b2/94/7db29424-9fb4-0985-cf86-43d88e0ae09a/724357176859.jpg/600x600bb.jpg",
 "s782":"d:e2e018ad9df12e80671538b00d836dcb",
 "s783":"d:35c32b9d794aee8a374b9dfb625d80fe",
 "s784":"d:9b18f2d0646035e662743900f4104169",
