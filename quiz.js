@@ -843,7 +843,7 @@ function renderBoosterCard() {
   $('#bcard-badge').textContent = n;
   const welcome = store.opened === 0 && n > 0;
   $('.hero-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : store.goldBoosters ? 'Booster Or disponible !' : 'Boosters de vinyles';
-  $('#bcard-title').textContent = welcome ? '1 booster offert !' : n ? `${plural(n, 'booster', 'boosters')} à ouvrir` : 'Prochain booster';
+  $('#bcard-title').textContent = welcome ? '1 booster offert\u00A0!' : n ? `${plural(n, 'booster', 'boosters')} à ouvrir` : 'Prochain booster';
   $('#bcard-gauge-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
   $('#bcard-gauge-txt').textContent = n
     ? `Prochain : ${store.gauge}/${GAUGE_MAX} bonnes réponses`
