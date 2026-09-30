@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -27,5 +29,5 @@ jobs:
           git config user.name "pompelup-bot"
           git config user.email "pompelup-bot@users.noreply.github.com"
           git commit -m "chore: pochettes et extraits audio mis à jour"
-          git pull --rebase origin main
+          git pull --rebase -X theirs origin main
           git push origin HEAD:main

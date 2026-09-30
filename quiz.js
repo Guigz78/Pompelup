@@ -300,7 +300,8 @@ function grantReward(r) {
 function claimAch(id) {
   const a = ACHS.find(x => x.id === id), st = achState(a);
   if (!st.claimable) return;
-  const [n, r] = a.tiers[st.claimed];
+  let [n, r] = a.tiers[st.claimed];
+  if (r.item) { const [k, id] = r.item.split(':'); if (isOwned(k, id)) r = Object.assign({}, r, { item: undefined, coins: (r.coins || 0) + 300 }); }
   store.ach[a.id] = st.claimed + 1;
   grantReward(r);
   sfx.fanfare(); buzz([30, 40, 60]);
@@ -487,7 +488,11 @@ const PREVIEWS = window.PREVIEWS || {};
 const catalogPreview = id => { const p = PREVIEWS[id]; return !p ? null : /^https?:/.test(p) ? p : `https://audio-ssl.itunes.apple.com/itunes-assets/${p}`; };
 function fetchPreview(song) {
   if (previewCache.has(song.id)) return previewCache.get(song.id);
-  if (catalogPreview(song.id)) { const r = Promise.resolve({ url: catalogPreview(song.id), art: knownArt(song.id) }); previewCache.set(song.id, r); return r; }
+  if (catalogPreview(song.id)) { const r = Promise.resolve({ url: catalogPreview(song.id), art: knownArt(song.id), catalog: true }); previewCache.set(song.id, r); return r; }
+  return livePreview(song);
+}
+// Recherche en direct (iTunes puis Deezer) : sans catalogue, ou si le lien catalogué ne joue plus
+function livePreview(song) {
   const p = (async () => {
     let r = null;
     try { r = await searchItunes(song); } catch (e) {}
@@ -1014,6 +1019,11 @@ async function startRound() {
   if (G.cfg.mode === 'stems') { await startRapidRound(token, song, pv); return; }
   let playing = false;
   if (pv) playing = await playPreview(pv.url);
+  if (!playing && pv?.catalog && token === G.token) {
+    const lv = await livePreview(song);
+    if (token !== G.token) return;
+    if (lv) { G.pv = lv; playing = await playPreview(lv.url); }
+  }
   if (token !== G.token) return;
   if (!playing) {
     // Pas d'extrait (hors ligne, bloqué…) : on joue avec des indices et un beat au bon tempo.
@@ -1304,8 +1314,13 @@ async function startRapidRound(token, song, pv) {
   G.rapidSrc = null;
   if (pv) {
     unlockAudio();
-    const ok = await loadStemAudio(pv.url);
+    let ok = await loadStemAudio(pv.url);
     if (token !== G.token) return;
+    if (!ok && pv.catalog) {
+      const lv = await livePreview(song);
+      if (token !== G.token) return;
+      if (lv) { pv = G.pv = lv; ok = await loadStemAudio(pv.url); if (token !== G.token) return; }
+    }
     if (ok && buildStemGraph()) { G.rapidSrc = 'stems'; setStemLevel(0); }
     else { G.rapidSrc = 'plain'; player.src = pv.url; }
   }
@@ -2074,7 +2089,7 @@ function itemCardHTML(kind, it, deal) {
   const owned = isOwned(kind, it.id), eq = isEquipped(kind, it.id), locked = !owned && !it.price;
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
   const price = isDeal ? deal.price : it.price;
-  const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? `<span class="item-state">${ico('g-lock')}Succès</span>` : `<span class="item-price"><i class="coin"></i>${fmt(price)}</span>`;
+  const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? `<span class="item-state">${ico('g-lock')}${it.unlock === 'pass' ? 'Pass Or' : 'Succès'}</span>` : `<span class="item-price"><i class="coin"></i>${fmt(price)}</span>`;
   const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
   const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
   return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
@@ -2152,7 +2167,7 @@ function renderItemAction() {
   if (kind === 'acc' && isEquipped(kind, id)) btn.textContent = 'Retirer';
   else if (isEquipped(kind, id)) { btn.textContent = 'Équipé'; btn.disabled = true; }
   else if (isOwned(kind, id)) btn.textContent = 'Équiper';
-  else if (!it.price) btn.textContent = 'Voir mes succès';
+  else if (!it.price) btn.textContent = it.unlock === 'pass' ? 'Voir le Pass' : 'Voir mes succès';
   else if (store.coins < price) { btn.textContent = `Il te manque ${fmt(price - store.coins)} jetons`; btn.disabled = true; }
   else btn.innerHTML = `Acheter · <i class="coin"></i>${fmt(price)}`;
 }
@@ -2168,6 +2183,7 @@ function itemAction() {
     toast(`${it.name} équipé`);
   } else if (!it.price) {
     closeItem();
+    if (it.unlock === 'pass') { show('pass'); return; }
     PF_TAB = 'ach';
     show('profile');
     return;
@@ -2642,7 +2658,7 @@ function renderBoosters() {
 const PASS_TIERS = 30, PASS_STEP = 100, PASS_PRICE = 1500;
 const PASS_NAMES = ['Disco Fever', 'Rock Arena', 'Hip-Hop Block Party', 'Pop Explosion', 'Électro Nights', 'Chanson Café', 'Latino Fiesta', 'K-Pop Stage', 'Summer Hits', 'Back to the 80s', 'Unplugged', 'Legends Live'];
 const seasonKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}`; };
-const seasonNum = () => { const d = new Date(); return (d.getFullYear() - 2026) * 12 + d.getMonth() - 8; };
+const seasonNum = () => { const d = new Date(); return (d.getFullYear() - 2026) * 12 + d.getMonth() - 7; };
 function passState() {
   if (!store.pass || store.pass.season !== seasonKey()) store.pass = { season: seasonKey(), pts: 0, gold: false, free: [], paid: [] };
   return store.pass;
@@ -2659,7 +2675,7 @@ function passReward(k, gold) {
   if (k % 10 === 0) return { gold: 1 };
   if (k === 5) return { item: 'acc:fedora' };
   if (k === 15) return { item: 'acc:ph-gold' };
-  if (k === 25) return { item: 'disc:holo' };
+  if (k === 25) return { gold: 1, coins: 500 };
   if (k % 2 === 0) return { boosters: 1 };
   return { coins: 100 + k * 10 };
 }
