@@ -706,6 +706,7 @@ const TAB_SCREENS = ['home', 'collection', 'shop', 'profile', 'story'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'game' ? '#1C1230' : '#FFF4EA');
+  window.PompeNative?.post('theme', id === 'game' ? 'dark' : 'light');
   $('#tabbar').hidden = !TAB_SCREENS.includes(id);
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);

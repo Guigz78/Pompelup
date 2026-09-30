@@ -1,0 +1,36 @@
+{
+  "name": "pompelup-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.26",
+    "expo-asset": "~57.0.18",
+    "expo-file-system": "~57.0.7",
+    "expo-haptics": "~57.0.3",
+    "expo-splash-screen": "~57.0.9",
+    "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-webview": "13.16.1"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "prestart": "node scripts/build-web.mjs",
+    "start": "expo start",
+    "ios": "node scripts/build-web.mjs && expo run:ios",
+    "android": "node scripts/build-web.mjs && expo run:android",
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "build:ios": "node scripts/build-web.mjs && npx eas-cli@latest build -p ios --profile production",
+    "submit:ios": "npx eas-cli@latest submit -p ios --latest",
+    "eas-build-post-install": "node scripts/build-web.mjs"
+  },
+  "private": true
+}
