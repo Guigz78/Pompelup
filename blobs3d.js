@@ -24,24 +24,32 @@ const lin = c => new T.Color(c).convertSRGBToLinear();
 const trash = [];
 const keep = o => (trash.push(o), o);
 
-// Grain du flocage : bruit fin, réutilisé par tous les matériaux velours
+// Relief du tissu : bruit fractal dont le grain tombe à 1–3 px dans l'image finale
 let grainTex = null;
 function grain() {
   if (grainTex) return grainTex;
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const x = c.getContext('2d'), d = x.createImageData(256, 256);
-  for (let i = 0; i < 256 * 256; i++) { const v = 110 + Math.random() * 145; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v; d.data[i * 4 + 3] = 255; }
-  x.putImageData(d, 0, 0);
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+  const x = c.getContext('2d');
+  // octaves fines seulement : de grosses bosses donneraient un effet papier froissé
+  for (const [cell, amp] of [[4, .3], [2, .35], [1, .35]]) {
+    const n = N / cell, t = document.createElement('canvas'); t.width = t.height = n;
+    const tx = t.getContext('2d'), d = tx.createImageData(n, n);
+    for (let i = 0; i < n * n; i++) { const v = Math.random() * 255; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v; d.data[i * 4 + 3] = 255; }
+    tx.putImageData(d, 0, 0);
+    x.globalAlpha = amp; x.imageSmoothingEnabled = true; x.drawImage(t, 0, 0, N, N);
+  }
   grainTex = new T.CanvasTexture(c);
   grainTex.wrapS = grainTex.wrapT = T.RepeatWrapping;
-  grainTex.repeat.set(6, 6);
+  grainTex.repeat.set(2.6, 1.3);
   return grainTex;
 }
 function velvet(color) {
   const base = new T.Color(color);
   const hsl = {}; base.getHSL(hsl);
-  const sheen = new T.Color().setHSL(hsl.h, Math.min(1, hsl.s), Math.min(.8, hsl.l + .06));
-  return keep(new T.MeshPhysicalMaterial({ color: lin(color), roughness: 1, metalness: 0, sheen: sheen.convertSRGBToLinear(), bumpMap: grain(), bumpScale: .018 }));
+  const sheen = new T.Color().setHSL(hsl.h, Math.min(1, hsl.s), Math.min(.82, hsl.l + .18));
+  const m = keep(new T.MeshPhysicalMaterial({ color: lin(color), roughness: 1, metalness: 0, sheen: sheen.convertSRGBToLinear(), bumpMap: grain(), bumpScale: .035 }));
+  m.userData.velvet = true;
+  return m;
 }
 const gloss = (c, r = .25) => keep(new T.MeshPhysicalMaterial({ color: lin(c), roughness: r, clearcoat: .6, clearcoatRoughness: .2 }));
 const matte = c => keep(new T.MeshStandardMaterial({ color: lin(c), roughness: .55 }));
@@ -104,7 +112,7 @@ function eyes(g, sk, mood, shape) {
     if (mood === 'smirk') g.add(mesh(new T.CylinderGeometry(.1, .1, .03, 24, 1, false, 0, Math.PI), velvet(sk.color), [x, y + .06, z + .02], [Math.PI / 2, 0, 0]));
   });
   if (mood === 'talk' || mood === 'wow') g.add(mesh(sph(.06, 24, 16), matte('#3B0F1E'), [0, y - .2, z - .02], null, [1, mood === 'wow' ? 1.3 : .8, .4]));
-  if (sk.blush !== false) [-1, 1].forEach(s => g.add(mesh(sph(.07, 24, 16), keep(new T.MeshStandardMaterial({ color: lin('#FF7A9C'), roughness: 1, transparent: true, opacity: .35 })), [sx * s * 1.55, y - .14, z - .06], null, [1, .55, .3])));
+  if (sk.blush !== false) [-1, 1].forEach(s => g.add(mesh(sph(.07, 24, 16), (() => { const m = keep(new T.MeshStandardMaterial({ color: lin('#FF7A9C'), roughness: 1, transparent: true, opacity: .35 })); m.userData.noMask = true; return m; })(), [sx * s * 1.55, y - .14, z - .06], null, [1, .55, .3])));
 }
 
 /* ---------- accessoires ---------- */
@@ -113,11 +121,11 @@ function headAcc(g, a, top, shape) {
   if (t === 'beret') { const m = velvet(c); g.add(mesh(sph(.78), m, [-.12, y + .08, 0], [0, 0, .22], [1, .28, 1])); g.add(mesh(sph(.12), m, [-.08, y + .32, 0])); }
   if (t === 'beanie') { const m = velvet(c); g.add(mesh(sph(.78, 64, 32), m, [0, y - .18, 0], null, [1, .85, 1])); g.add(mesh(new T.TorusGeometry(.7, .12, 16, 48), m, [0, y - .28, 0], [Math.PI / 2, 0, 0])); g.add(mesh(sph(.16), velvet('#FFFFFF'), [0, y + .52, 0])); }
   if (t === 'cap') { const m = matte(c); g.add(mesh(sph(.74, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), m, [0, y - .32, 0])); g.add(mesh(new T.CylinderGeometry(.62, .62, .05, 40, 1, false, -Math.PI / 2 - .9, 1.8), m, [0, y - .3, .38])); }
-  if (t === 'bob') { const m = velvet(c); g.add(mesh(sph(.7, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), m, [0, y - .28, 0])); g.add(mesh(new T.CylinderGeometry(.82, 1.02, .16, 48, 1, true), keep(new T.MeshPhysicalMaterial({ color: lin(c), roughness: 1, side: T.DoubleSide, sheen: new T.Color(0xffffff) })), [0, y - .3, 0])); }
+  if (t === 'bob') { const m = velvet(c); g.add(mesh(sph(.7, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), m, [0, y - .28, 0])); g.add(mesh(new T.CylinderGeometry(.82, 1.02, .16, 48, 1, true), (() => { const m = velvet(c); m.side = T.DoubleSide; return m; })(), [0, y - .3, 0])); }
   if (t === 'fedora') { const m = matte(c); g.add(mesh(new T.CylinderGeometry(1.05, 1.05, .05, 48), m, [0, y - .18, 0])); g.add(mesh(new T.CylinderGeometry(.5, .56, .45, 40), m, [0, y + .05, 0])); g.add(mesh(new T.CylinderGeometry(.565, .565, .1, 40), matte('#F5F5F5'), [0, y - .1, 0])); }
   if (t === 'crown') { const m = gloss(c, .2); m.metalness = .6; g.add(mesh(new T.CylinderGeometry(.42, .38, .22, 40, 1, true), m, [0, y + .06, 0])); for (let k = 0; k < 5; k++) { const an = k / 5 * Math.PI * 2; g.add(mesh(new T.ConeGeometry(.1, .24, 16), m, [Math.cos(an) * .4, y + .28, Math.sin(an) * .4])); g.add(mesh(sph(.05, 12, 8), gloss(k % 2 ? '#EF4444' : '#38BDF8', .1), [Math.cos(an) * .41, y + .06, Math.sin(an) * .41])); } }
   if (t === 'halo') g.add(mesh(new T.TorusGeometry(.5, .06, 16, 48), keep(new T.MeshStandardMaterial({ color: lin(c), emissive: lin(c), emissiveIntensity: .8 })), [0, y + .4, 0], [Math.PI / 2 - .2, 0, 0]));
-  if (t === 'helmet') g.add(mesh(sph(1.3), keep(new T.MeshPhysicalMaterial({ color: lin(c), transparent: true, opacity: .22, roughness: .05, clearcoat: 1 })), [0, .1, 0]));
+  if (t === 'helmet') { const m = keep(new T.MeshPhysicalMaterial({ color: lin(c), transparent: true, opacity: .22, roughness: .05, clearcoat: 1 })); m.userData.noMask = true; g.add(mesh(sph(1.3), m, [0, .1, 0])); }
   if (t === 'robot') g.add(mesh(sph(1.12), gloss(c, .2), [0, .05, 0]));
 }
 function eyeAcc(g, a, shape) {
@@ -183,29 +191,136 @@ function render(sk, opts = {}) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
   const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(20,10,30,.45)'); gr.addColorStop(1, 'rgba(20,10,30,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
   const st = keep(new T.CanvasTexture(c));
-  if (!head) scene.add(mesh(new T.PlaneGeometry(3.2, 1.3), keep(new T.MeshBasicMaterial({ map: st, transparent: true, depthWrite: false })), [0, lying ? -.52 : -.73, 0], [-Math.PI / 2, 0, 0]));
+  if (!head) { const sm = keep(new T.MeshBasicMaterial({ map: st, transparent: true, depthWrite: false })); sm.userData.noMask = true; scene.add(mesh(new T.PlaneGeometry(3.2, 1.3), sm, [0, lying ? -.52 : -.73, 0], [-Math.PI / 2, 0, 0])); }
   const cam = new T.PerspectiveCamera(head ? 26 : 30, W / H, .1, 50);
   if (lying) { cam.position.set(0, .5, 4.3); cam.lookAt(0, -.05, 0); }
   else if (head) { cam.position.set(0, .45, 5.4); cam.lookAt(0, .25, 0); }
   else { cam.position.set(0, .7, 6.4); cam.lookAt(0, .25, 0); }
   r.setClearColor(0, 0);
   r.render(scene, cam);
-  let url = r.domElement.toDataURL('image/webp', .92);
-  if (!url.startsWith('data:image/webp')) url = r.domElement.toDataURL('image/png');
+  const gl = r.getContext(), px = new Uint8Array(W * H * 4), mp = new Uint8Array(W * H * 4);
+  gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  // Passe masque : blanc = velours, noir = le reste (yeux, lunettes, métal…)
+  const white = keep(new T.MeshBasicMaterial({ color: 0xFFFFFF, toneMapped: false }));
+  const black = keep(new T.MeshBasicMaterial({ color: 0x000000, toneMapped: false }));
+  scene.traverse(o => { if (!o.isMesh) return; if (o.material.userData.noMask) o.visible = false; else o.material = o.material.userData.velvet ? white : black; });
+  r.render(scene, cam);
+  gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, mp);
   while (trash.length) { try { trash.pop().dispose(); } catch (e) {} }
-  return { url };
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const ox = out.getContext('2d'), img = ox.createImageData(W, H), d = img.data, mk = new Uint8Array(W * H);
+  // WebGL lit de bas en haut, en alpha prémultiplié
+  for (let y = 0; y < H; y++) {
+    for (let x = 0, s = (H - 1 - y) * W * 4, i = y * W; x < W; x++, s += 4, i++) {
+      const a = px[s + 3];
+      mk[i] = mp[s];
+      if (!a) continue;
+      const u = 255 / a, j = i * 4;
+      d[j] = px[s] * u; d[j + 1] = px[s + 1] * u; d[j + 2] = px[s + 2] * u; d[j + 3] = a;
+    }
+  }
+  flock(d, mk, W, H, W / 400);
+  ox.putImageData(img, 0, 0);
+  // Safari n'encode pas le WebP : il renvoie alors directement du PNG
+  return { url: out.toDataURL('image/webp', .93) };
+}
+
+/* ---------- matière floquée (post-traitement au pixel, sans API de tracé) ---------- */
+// Bruit de valeur lissé, valeurs dans [-.5, .5]
+function noiseField(W, H, cell) {
+  const gw = Math.ceil(W / cell) + 2, g = new Float32Array(gw * (Math.ceil(H / cell) + 2)).map(() => Math.random() - .5);
+  const f = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) {
+    const fy = y / cell, iy = fy | 0, ty = fy - iy, sy = ty * ty * (3 - 2 * ty), r0 = iy * gw, r1 = r0 + gw;
+    for (let x = 0; x < W; x++) {
+      const fx = x / cell, ix = fx | 0, tx = fx - ix, sx = tx * tx * (3 - 2 * tx);
+      const a = g[r0 + ix], b = g[r0 + ix + 1], c = g[r1 + ix], e = g[r1 + ix + 1];
+      f[y * W + x] = a + (b - a) * sx + (c - a) * sy + (a - b - c + e) * sx * sy;
+    }
+  }
+  return f;
+}
+// Mélange « source-over » d'un pixel (RGBA non prémultiplié) ; clip = masque optionnel
+function over(d, W, H, x, y, r, g, b, sa, clip) {
+  if (x < 0 || y < 0 || x >= W || y >= H) return;
+  const i = y * W + x;
+  if (clip) sa *= clip[i] / 255;
+  if (sa <= .004) return;
+  if (sa > 1) sa = 1;
+  const j = i * 4, da = d[j + 3] / 255, oa = sa + da * (1 - sa), k = da * (1 - sa);
+  d[j] = (r * sa + d[j] * k) / oa; d[j + 1] = (g * sa + d[j + 1] * k) / oa; d[j + 2] = (b * sa + d[j + 2] * k) / oa; d[j + 3] = oa * 255;
+}
+// Brin anti-aliasé : échantillons tous les .7 px répartis sur 4 pixels, pointe effilée
+function strand(d, W, H, x, y, an, len, w, r, g, b, a, clip) {
+  const cx = Math.cos(an), cy = Math.sin(an), n = Math.max(2, Math.ceil(len / .7)), q = a * Math.min(1, w) * .7;
+  for (let s = 0; s <= n; s++) {
+    const t = s / n, px = x + cx * len * t, py = y + cy * len * t, x0 = Math.floor(px), y0 = Math.floor(py), fx = px - x0, fy = py - y0, al = q * (1 - .55 * t);
+    over(d, W, H, x0, y0, r, g, b, al * (1 - fx) * (1 - fy), clip);
+    over(d, W, H, x0 + 1, y0, r, g, b, al * fx * (1 - fy), clip);
+    over(d, W, H, x0, y0 + 1, r, g, b, al * (1 - fx) * fy, clip);
+    over(d, W, H, x0 + 1, y0 + 1, r, g, b, al * fx * fy, clip);
+  }
+}
+const clamp = v => v < 0 ? 0 : v > 255 ? 255 : v;
+function flock(d, mk, W, H, k) {
+  const N = W * H, mot = noiseField(W, H, 5 * k), blot = noiseField(W, H, 14 * k);
+  const vel = new Int32Array(N), A0 = new Uint8Array(N);
+  let nv = 0;
+  // Grain fin + marbrure du feutre
+  for (let i = 0, j = 0; i < N; i++, j += 4) {
+    A0[i] = d[j + 3];
+    const m = mk[i] / 255;
+    if (m < .08 || d[j + 3] < 40) continue;
+    vel[nv++] = i;
+    const f = 1 + ((Math.random() - .5) * .2 + mot[i] * .16 + blot[i] * .1) * m;
+    d[j] *= f; d[j + 1] *= f; d[j + 2] *= f;
+  }
+  if (!nv) return;
+  // Fibres : petits brins clairs et sombres, gardés dans le velours
+  const nFib = Math.round(nv / 26);
+  for (let n = 0; n < nFib; n++) {
+    const i = vel[(Math.random() * nv) | 0], j = i * 4, light = Math.random() < .55, f = light ? 1.28 : .72, add = light ? 18 : 0;
+    strand(d, W, H, i % W, (i / W) | 0, Math.random() * Math.PI * 2, (1.2 + Math.random() * 2.4) * k, (.6 + Math.random() * .6) * k,
+      clamp(d[j] * f + add), clamp(d[j + 1] * f + add), clamp(d[j + 2] * f + add), .22 + Math.random() * .22, mk);
+  }
+  // Duvet : poils qui dépassent de la silhouette et accrochent la lumière
+  const A = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 0 : A0[y * W + x];
+  for (let v = 0; v < nv; v++) {
+    const i = vel[v], x = i % W, y = (i / W) | 0;
+    if (mk[i] < 128 || A0[i] < 150) continue;
+    if (A(x - 1, y) > 60 && A(x + 1, y) > 60 && A(x, y - 1) > 60 && A(x, y + 1) > 60) continue;
+    if (Math.random() > .85) continue;
+    let nx = A(x - 1, y) - A(x + 1, y), ny = A(x, y - 1) - A(x, y + 1);
+    const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
+    // côté sol : presque pas de poils (sinon « barbe » sombre sur l'ombre)
+    if (ny > .5 && Math.random() < .85) continue;
+    const j = i * 4, r0 = d[j], g0 = d[j + 1], b0 = d[j + 2], count = 1 + (Math.random() * 2.4 | 0);
+    for (let c = 0; c < count; c++) {
+      // quelques longs poils, beaucoup de duvet court et fin
+      const long = Math.random() < .3;
+      const an = Math.atan2(ny, nx) + (Math.random() - .5) * 1.6, len = (long ? 2.6 + Math.random() * 2.8 : .9 + Math.random() * 1.6) * k;
+      const t = .1 + Math.random() * .3, dark = Math.random() < .08;
+      strand(d, W, H, x - nx * k, y - ny * k, an, len + k, (long ? .6 + Math.random() * .5 : .7 + Math.random() * .7) * k,
+        dark ? r0 * .8 : r0 + (255 - r0) * t, dark ? g0 * .8 : g0 + (255 - g0) * t, dark ? b0 * .8 : b0 + (255 - b0) * t,
+        ((long ? .45 : .35) + Math.random() * .4) * 1.25);
+    }
+  }
 }
 
 /* ---------- cache + file de rendu ---------- */
-const STORE = 'pompelup_blob3d_v1', KEEP = 16;
+// BUDGET (en caractères) : laisse toujours de la place à la sauvegarde de la partie
+const STORE = 'pompelup_blob3d_v2', KEEP = 16, BUDGET = 1.2e6;
 const cache = new Map();
-try { JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, v]) => cache.set(k, v)); } catch (e) {}
+try { localStorage.removeItem('pompelup_blob3d_v1'); JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, v]) => cache.set(k, v)); } catch (e) {}
 let saveT = null;
 function persist() {
   clearTimeout(saveT);
   saveT = setTimeout(() => {
-    const recent = [...cache].slice(-KEEP);
+    const recent = [];
+    let size = 0;
+    for (const e of [...cache].reverse()) { size += e[1].url.length; if (recent.length >= KEEP || size > BUDGET) break; recent.unshift(e); }
     for (let n = recent.length; n > 0; n--) { try { localStorage.setItem(STORE, JSON.stringify(recent.slice(-n))); return; } catch (e) {} }
+    try { localStorage.removeItem(STORE); } catch (e) {}
   }, 800);
 }
 const queue = new Map();

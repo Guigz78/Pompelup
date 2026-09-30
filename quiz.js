@@ -893,6 +893,8 @@ function startGame(cfg) {
   applySkins();
   host.mood = null;
   host.render('happy');
+  // Pré-rendu des autres humeurs : pas d'à-coup au moment de la réponse
+  ['wow', 'sad', 'wink'].forEach(mood => charHTML(HOST, { head: true, mood }));
   $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
