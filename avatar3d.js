@@ -529,6 +529,19 @@ function render(sk, opts = {}) {
 
 /* ---------- cache + file de rendu (une image par frame, sans à-coups) ---------- */
 const cache = new Map(), queue = new Map();
+// Les derniers rendus survivent au rechargement de la page (lancement instantané)
+const STORE = 'pompelup_av3d_v1', KEEP = 14;
+try { JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, u]) => cache.set(k, u)); } catch (e) {}
+let saveT = null;
+function persist() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    const recent = [...cache].slice(-KEEP);
+    for (let n = recent.length; n > 0; n--) {
+      try { localStorage.setItem(STORE, JSON.stringify(recent.slice(-n))); return; } catch (e) {}
+    }
+  }, 800);
+}
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 function keyOf(sk, opts) {
   const a = opts.accs || {};
@@ -545,7 +558,7 @@ function pump() {
     let url = null;
     try { url = render(job.sk, job.opts); } catch (e) { console.warn('avatar3d', e); ok = false; }
     if (!url) { document.querySelectorAll(`img[data-ck="${k}"]`).forEach(img => { img.outerHTML = C.svg(job.sk, job.opts); }); continue; }
-    cache.set(k, url);
+    cache.delete(k); cache.set(k, url); persist();
     document.querySelectorAll(`img[data-ck="${k}"]`).forEach(img => { img.src = url; img.classList.add('is-ready'); });
     if (performance.now() - t0 > 28) break;
   }
@@ -556,7 +569,7 @@ function html(sk, opts = {}) {
   if (!ok || !T) return C.svg(sk, opts);
   const k = keyOf(sk, opts), cls = `char char3d${opts.head ? ' char-head' : opts.room ? ' char-room' : ' char-bust'}`;
   const alt = sk.name ? ` alt="${String(sk.name).replace(/"/g, '&quot;')}"` : ' alt=""';
-  if (cache.has(k)) return `<img class="${cls} is-ready" src="${cache.get(k)}"${alt} draggable="false">`;
+  if (cache.has(k)) { const u = cache.get(k); cache.delete(k); cache.set(k, u); return `<img class="${cls} is-ready" src="${u}"${alt} draggable="false">`; }
   if (!queue.has(k)) queue.set(k, { sk, opts });
   if (!pumping) { pumping = true; requestAnimationFrame(pump); }
   return `<img class="${cls}" data-ck="${k}" src="${BLANK}"${alt} draggable="false">`;
