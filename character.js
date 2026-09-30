@@ -246,7 +246,24 @@ function svg(sk, opts = {}) {
   return `<svg class="char${opts.head ? ' char-head' : ' char-bust'}" viewBox="${vb}" role="img" aria-label="${sk.name || ''}"><defs>${defs}</defs><g class="ch-body">${P.join('')}</g></svg>`;
 }
 
+// Rendu en <img> : le navigateur rastérise le SVG une fois (filtres compris) au lieu de
+// le recalculer à chaque rafraîchissement — bien plus fluide sur mobile.
+const imgCache = new Map();
+function html(sk, opts = {}) {
+  const a = opts.accs || {};
+  const key = JSON.stringify([sk.id || sk, opts.mood || 'happy', opts.head ? 1 : 0, Object.keys(a).sort().map(k => a[k] && (a[k].id || a[k].type + a[k].color))]);
+  let src = imgCache.get(key);
+  if (!src) {
+    src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg(sk, opts).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+    imgCache.set(key, src);
+  }
+  const cls = `char${opts.head ? ' char-head' : ' char-bust'}`;
+  const alt = sk.name ? String(sk.name).replace(/"/g, '&quot;') : '';
+  return `<img class="${cls}" src="${src}" alt="${alt}" draggable="false">`;
+}
+
 window.PompeChar = {
+  html,
   SKINS, ACCESSORIES, SLOTS, svg,
   byId: id => SKINS.find(s => s.id === id) || SKINS[0],
   accById: id => ACCESSORIES.find(a => a.id === id),

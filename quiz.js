@@ -773,27 +773,7 @@ function renderHome() {
   $('#home-streak').classList.toggle('is-cold', !playedToday());
   $('#home-streak').setAttribute('aria-label', `Série : ${plural(streak, 'jour', 'jours')}${playedToday() ? '' : ' — joue aujourd’hui pour la garder'}`);
   renderCoins();
-  const L = levelOf(store.xp);
-  $('#me-name').textContent = displayName();
-  $('#home-level').textContent = L.lvl;
-  $('#home-level-fill').style.width = `${Math.round(L.pct * 100)}%`;
-  $('#me-head').innerHTML = meHTML({ head: true });
-  $('#lobby-char').innerHTML = meHTML({ mood: playedToday() ? 'happy' : 'smirk' });
-  $('#lobby-skin').textContent = mySkin().name;
-  renderModePicker();
-  renderBoosterCard();
-  renderMissionsCard();
-  renderStoryCard();
-  renderDaily();
-  const gift = store.gift !== dayKey();
-  $('#gift-badge').hidden = !gift;
-  $('#gift-side').classList.toggle('is-hot', gift);
-  $('#gift-side-sub').textContent = gift ? 'Gratuit' : 'Demain';
-  clearInterval(dailyTicker);
-  dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
-}
-const MODE_NAME = { choice: '4 choix', type: 'Saisie', stems: 'Partie rapide' };
-function renderModePicker() {
+
   const list = $('#cat-list');
   if (!list.children.length) {
     list.innerHTML = CATS.map(c => `
@@ -806,39 +786,56 @@ function renderModePicker() {
   $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
   $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  const c = catById(store.prefs.cat);
-  $('#play-sub').textContent = c.name;
-  $('#mode-kind').textContent = `${MODE_NAME[store.prefs.mode]} · ${store.prefs.rounds} manches`;
-  $('#mode-thumb').innerHTML = `<img src="${c.illu}" alt="" style="object-position:${c.pos}">`;
-  $('#mode-thumb').style.background = c.bg;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
+  renderBoosterCard();
+  renderMissionsCard();
+  renderStoryCard();
+  renderDaily();
+  clearInterval(dailyTicker);
+  dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
 }
 const totalBoosters = () => store.boosters + store.goldBoosters;
 function renderBoosterCard() {
-  const n = totalBoosters();
-  $('#booster-card').classList.toggle('is-hot', n > 0);
-  $('#sb-pack').className = `sb-pack${store.goldBoosters ? ' is-gold' : ''}`;
+  const n = totalBoosters(), card = $('#booster-card');
+  card.classList.toggle('is-empty', n === 0);
+  $('.mp-1', card).classList.toggle('mp-gold', store.goldBoosters > 0);
+  $('.mp-1 .mp-name', card).textContent = store.goldBoosters > 0 ? 'Booster Or' : 'Booster';
+  $('.mp-2', card).hidden = n < 2;
+  $('.mp-3', card).hidden = n < 3;
   $('#bcard-badge').hidden = n === 0;
   $('#bcard-badge').textContent = n;
-  $('#bcard-title').textContent = n ? (store.opened === 0 ? 'Offert !' : `${n} à ouvrir`) : 'Boutique';
+  const welcome = store.opened === 0 && n > 0;
+  $('.bcard-kicker', card).textContent = welcome ? 'Cadeau de bienvenue' : store.goldBoosters ? 'Booster Or disponible !' : 'Boosters de vinyles';
+  $('#bcard-title').textContent = welcome ? '1 booster offert !' : n ? `${plural(n, 'booster', 'boosters')} à ouvrir` : 'Prochain booster';
   $('#bcard-gauge-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
-  $('#bcard-gauge-txt').textContent = `${store.gauge}/${GAUGE_MAX}`;
+  $('#bcard-gauge-txt').textContent = n
+    ? `Prochain : ${store.gauge}/${GAUGE_MAX} bonnes réponses`
+    : `${store.gauge}/${GAUGE_MAX} bonnes réponses · encore ${GAUGE_MAX - store.gauge} !`;
+  $('#btn-open-booster').textContent = n ? 'Ouvrir' : 'Boutique';
 }
 function ownedIds() { return Object.keys(store.coll).filter(id => SONG.has(id)); }
 function renderMissionsCard() {
   const M = ensureMissions(), done = M.list.filter(m => m.p >= m.target).length;
   $('#mis-done').textContent = done;
+  $$('#mis-dots i').forEach((d, i) => { const m = M.list[i]; d.className = m?.claimed ? 'is-claimed' : m && m.p >= m.target ? 'is-done' : ''; });
+  const next = M.list.find(m => m.p < m.target);
   const claim = missionsClaimable();
+  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer →` : next ? `${next.text} (${next.max ? fmt(next.p) : next.p}/${next.max ? fmt(next.target) : next.target})` : 'Toutes les missions sont faites ✓';
   $('#mis-badge').hidden = !claim;
-  $('#mis-badge').textContent = claim;
-  $('#mis-card').classList.toggle('is-hot', !!claim);
 }
 function dailyToday() { return store.daily && store.daily.date === dayKey() ? store.daily : null; }
 function renderDaily() {
-  const d = dailyToday();
-  $('#daily-card').classList.toggle('is-done', !!d);
-  $('#daily-card').classList.toggle('is-hot', !d);
-  $('#daily-badge').hidden = !!d;
-  $('#daily-cta').textContent = d ? hms(msToMidnight()) : 'Nouveau';
+  const d = dailyToday(), card = $('#daily-card');
+  card.classList.toggle('is-done', !!d);
+  if (!d) {
+    $('#daily-title').textContent = 'Chanson mystère';
+    $('#daily-sub').textContent = '3 essais · +1 booster';
+    $('#daily-cta').textContent = 'Jouer →';
+    return;
+  }
+  $('#daily-title').textContent = d.won ? 'Défi réussi !' : 'Raté !';
+  $('#daily-sub').textContent = d.title ? `« ${d.title} »` : 'Défi abandonné';
+  $('#daily-cta').textContent = `⏳ ${hms(msToMidnight())}`;
 }
 function dailySongCandidates() {
   const h = hashStr(`pompelup-${dayKey()}`), out = [];
@@ -848,6 +845,7 @@ function dailySongCandidates() {
 
 /* ---------------- Partie ---------------- */
 const G = { phase: 'idle', token: 0 };
+const NO_AUTO = /[?&]noauto\b/.test(location.search);   // tests automatisés uniquement
 
 function startGame(cfg) {
   unlockAudio();
@@ -1111,7 +1109,7 @@ function finishRound(ok, reason, sourceEl) {
   void bar.offsetWidth;
   bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
   const token = G.token;
-  G.autoNext = setTimeout(() => { if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
+  if (!NO_AUTO) G.autoNext = setTimeout(() => { if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
 }
 
 function animateScore() {
@@ -1900,7 +1898,16 @@ function renderCollection() {
   // Les 6 plus belles pièces au-dessus du canapé, le reste sur les étagères
   const top = shown.slice(0, 6), rest = shown.slice(6);
   $('#coll-top').innerHTML = top.map(frameHTML).join('') + emptyFrame.repeat(Math.max(0, 6 - top.length));
-  $('#living-img').innerHTML = charHTML(mySkin(), { room: true, accs: myAccs(), mood: ids.length ? 'happy' : 'wow' });
+  $('#living-img').innerHTML = `<span class="cs">
+      <span class="cs-lamp"><i></i></span>
+      <span class="couch">
+        <i class="c-back"></i><i class="c-pillow c-pl"></i><i class="c-pillow c-pr"></i>
+        <span class="c-char">${meHTML({ mood: ids.length ? 'happy' : 'wow' })}</span>
+        <i class="c-seat"></i><i class="c-arm c-al"></i><i class="c-arm c-ar"></i><i class="c-foot c-fl"></i><i class="c-foot c-fr"></i>
+      </span>
+      <span class="cs-table"><i class="cs-player"></i></span>
+      <span class="cs-plant"><i></i><i></i><i></i></span>
+    </span>`;
   const restSlots = rest.length ? Math.ceil(rest.length / 4) * 4 : 0;
   grid.innerHTML = rest.map((id, i) => frameHTML(id, i + 6)).join('') + emptyFrame.repeat(Math.max(0, restSlots - rest.length));
   $('#shelf-title').hidden = !rest.length;
@@ -2293,9 +2300,10 @@ const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
 // L'intro (bio) est la première étape de chaque parcours.
 const stepsOf = a => [{ type: 'intro' }, ...a.steps];
 function renderStoryCard() {
-  const next = ARTISTS.find(a => !store.story[a.id]?.done) || ARTISTS[0];
-  $('#story-card-art').innerHTML = `<span class="sb-face" style="background:${next.color}">${charHTML(artistLook(next), { head: true })}</span>`;
-  $('#story-card-sub').textContent = `${storyDone()}/${ARTISTS.length}`;
+  const art = $('#story-card-art');
+  art.innerHTML = ARTISTS.slice(0, 3).map(a => `<span style="background:${a.color}">${charHTML(artistLook(a), { head: true })}</span>`).join('');
+  const d = storyDone();
+  $('#story-card-sub').textContent = d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes · écoute, anecdotes, quiz`;
 }
 function renderStory() {
   const lvl = levelOf(store.xp).lvl;
@@ -2451,13 +2459,8 @@ $('#home-streak').addEventListener('click', () => {
 $('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat'); if (!b) return; store.prefs.cat = b.dataset.cat; save(); renderHome(); });
 $('#mode-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); renderHome(); });
 $('#rounds-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.rounds = +b.dataset.rounds; save(); renderHome(); });
+$('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); totalBoosters() ? openBooster() : show('shop'); });
 $('#booster-card').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
-$('#gift-side').addEventListener('click', () => { show('shop'); if (store.gift !== dayKey()) setTimeout(claimGift, 250); });
-$('#me-pill').addEventListener('click', () => show('profile'));
-$('#lobby-char').addEventListener('click', () => { PF_TAB = 'skins'; show('profile'); });
-$('#mode-btn').addEventListener('click', () => { sfx.tap(); $('#mode-sheet').hidden = false; });
-$('#mode-go').addEventListener('click', () => { $('#mode-sheet').hidden = true; quickPlay(); });
-$('#mode-sheet').addEventListener('click', e => { if (e.target.id === 'mode-sheet') $('#mode-sheet').hidden = true; });
 
 $('#choices').addEventListener('click', e => { const b = e.target.closest('.choice'); if (b) onChoice(b); });
 $('#type-box').addEventListener('submit', e => { e.preventDefault(); submitText($('#type-input').value); });
@@ -2603,7 +2606,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (!$('#vinyl-sheet').hidden) { closeVinyl(); return; }
     if (!$('#item-sheet').hidden) { closeItem(); return; }
-    if (!$('#mode-sheet').hidden) { $('#mode-sheet').hidden = true; return; }
     if (!$('#missions-sheet').hidden) { $('#missions-sheet').hidden = true; return; }
     if (!$('#reset-sheet').hidden) { $('#reset-sheet').hidden = true; return; }
     if (!$('#reward-overlay').hidden) { closeReward(false); return; }
