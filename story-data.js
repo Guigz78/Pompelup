@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { pose: 'standing23', c: { skin: '#8D5A3B', hair: '#111111', shirt: '#FFFFFF', coat: '#111827', pant: '#111827', shoe: '#111827' }, acc: { head: { type: 'fedora', color: '#111827' } } },
-  'queen': { pose: 'standing19', c: { skin: '#D9A07A', hair: '#1F140E', shirt: '#FFFFFF', coat: '#FBBF24', pant: '#F8FAFC', shoe: '#FFFFFF' }, acc: { head: { type: 'crown', color: '#FBBF24' } } },
-  'daft-punk': { pose: 'standing5', c: { skin: '#E0A57E', hair: '#111111', shirt: '#9CA3AF', coat: '#111827', pant: '#111827', shoe: '#111827' }, acc: { head: { type: 'robot', color: '#FBBF24' } } },
-  'nirvana': { pose: 'standing7', c: { skin: '#F2C6A6', hair: '#E9C46A', shirt: '#15803D', coat: '#6B7280', pant: '#3B4A6B', shoe: '#F5F5F4' } },
-  'dua-lipa': { pose: 'standing9', c: { skin: '#E8B089', hair: '#111827', shirt: '#111827', coat: '#DB2777', pant: '#111827', shoe: '#DB2777' } },
-  'drake': { pose: 'standing4', c: { skin: '#A86B48', hair: '#111111', shirt: '#111827', coat: '#1F2937', pant: '#111827', shoe: '#FFFFFF' }, acc: { neck: { type: 'chain', color: '#FBBF24' } } },
-  'edith-piaf': { pose: 'standing11', c: { skin: '#F6D2B8', hair: '#3B2A20', shirt: '#111827', coat: '#111827', pant: '#111827', shoe: '#111827' } },
-  'taylor-swift': { pose: 'standing8', c: { skin: '#F6D2B8', hair: '#F4D58D', shirt: '#C084FC', coat: '#F5D0FE', pant: '#6D28D9', shoe: '#C084FC' } },
+  'michael-jackson': { skin: '#8D5A3B', hair: ['curls', '#111111'], top: ['suit', '#111827', '#FFFFFF'], pant: '#111827', shoe: '#111827', arms: 'hips', acc: { head: { type: 'fedora', color: '#111827' } } },
+  'queen': { skin: '#D9A07A', hair: ['short', '#1F140E'], top: ['jacket', '#FBBF24', '#FFFFFF'], pant: '#F8FAFC', shoe: '#FFFFFF', arms: 'wave', extra: 'moustache', acc: { head: { type: 'crown', color: '#FBBF24' } } },
+  'daft-punk': { skin: '#E0A57E', hair: ['none'], top: ['suit', '#111827', '#9CA3AF'], pant: '#111827', shoe: '#111827', arms: 'relax', acc: { head: { type: 'robot', color: '#FBBF24' } } },
+  'nirvana': { skin: '#F2C6A6', hair: ['long', '#E9C46A'], top: ['stripes', '#15803D'], pant: '#3B4A6B', shoe: '#F5F5F4', arms: 'relax' },
+  'dua-lipa': { skin: '#E8B089', hair: ['long', '#111827'], top: ['jacket', '#DB2777', '#111827'], pant: '#111827', shoe: '#DB2777', arms: 'hips' },
+  'drake': { skin: '#A86B48', hair: ['short', '#111111'], top: ['hoodie', '#1F2937'], pant: '#111827', shoe: '#FFFFFF', arms: 'relax', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
+  'edith-piaf': { skin: '#F6D2B8', hair: ['bob', '#3B2A20'], top: ['suit', '#111827', '#1F2937'], pant: '#111827', shoe: '#111827', arms: 'relax' },
+  'taylor-swift': { skin: '#F6D2B8', hair: ['long', '#F4D58D'], top: ['sequin', '#C084FC'], pant: '#6D28D9', shoe: '#C084FC', arms: 'wave' },
 };

@@ -1227,3 +1227,5 @@ img { display: block; max-width: 100%; }
 .skin-item .char-prev .char-full { width: auto; height: 94%; max-width: 92%; padding: 0; }
 .ac-portrait { aspect-ratio: 1 / 1.05; display: flex; align-items: flex-end; justify-content: center; }
 .ac-portrait .char-full { width: auto; height: 94%; }
+.c-char { width: 80%; left: 50%; bottom: 30px; transform: translateX(-46%); }
+.c-char { z-index: 6; bottom: 44px; width: 78%; }

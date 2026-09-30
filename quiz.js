@@ -194,7 +194,7 @@ function itemPreviewHTML(kind, it) {
   if (kind === 'disc') return discPrevHTML(it.id);
   if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
   if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
-  if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { head: true, accs: myAccs(it) })}</span>`;
+  if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { head: it.slot !== 'neck', accs: myAccs(it) })}</span>`;
   return `<span class="char-prev">${charHTML(it)}</span>`;
 }
 function applySkins() {
@@ -1128,13 +1128,13 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { name: 'DJ Patator', pose: 'standing20', c: { skin: '#E8B394', hair: '#F59E0B', shirt: '#FBBF24', coat: '#6D28D9', pant: '#111827', shoe: '#F472B6' }, acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#F472B6' } } };
+const HOST = { name: 'DJ Patator', skin: '#E8B394', hair: ['curls', '#F59E0B'], top: ['sequin', '#6D28D9'], pant: '#111827', shoe: '#F472B6', extra: 'moustache', acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#F472B6' } } };
 const host = {
   mood: null, timer: null,
   render(mood) {
     if (mood === this.mood) return;
     this.mood = mood;
-    $('#host-av').innerHTML = `<span class="hv hv-rest">${charHTML(HOST, { head: true })}</span>`;
+    $('#host-av').innerHTML = `<span class="hv hv-rest">${charHTML(HOST, { head: true, mood })}</span>`;
   },
   // Petite voix musicale : une syllabe = une note douce de la gamme pentatonique
   voice(text) {
@@ -1700,7 +1700,7 @@ function cardHTML(c, i) {
     return `<div class="vc vc-acc r-${c.rarity}" data-i="${i}" role="button" tabindex="-1" aria-label="Carte ${i + 1} sur 3">
     <div class="vc-flip">
       <div class="vc-back"><span class="vc-back-logo">Pompe<span>lup</span></span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
-      <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { head: true, accs: myAccs(a) })}</div></div>
+      <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { head: a.slot !== 'neck', accs: myAccs(a) })}</div></div>
     </div>
     <div class="vc-info">
       <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]} · Accessoire</span>
@@ -1849,7 +1849,7 @@ function showSummary() {
   $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
   $('#bo-sum-grid').innerHTML = cards.map(c => `
     <div class="bs r-${c.rarity}">
-      <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { head: true, accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
+      <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { head: c.acc.slot !== 'neck', accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
       <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]}</span>
       <b>${esc(c.acc ? c.acc.name : c.song.title)}</b>
     </div>`).join('');
