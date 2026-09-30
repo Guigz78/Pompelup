@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { base: 'drum', map: { '5799D9': '#111827', '5BB0E6': '#1F2937', '4B60B6': '#030712', F89B0F: '#F5F5F5', F9D107: '#E5E7EB' } },
-  'queen': { base: 'rock', map: { F04035: '#FBBF24', '4669BB': '#F8FAFC', '3D54AD': '#CBD5E1', '4361B6': '#E2E8F0' }, acc: { head: { type: 'crown', color: '#FBBF24' } } },
-  'daft-punk': { base: 'drum', map: { '5799D9': '#111827', '5BB0E6': '#374151', '4B60B6': '#030712' }, acc: { head: { type: 'robot', color: '#FBBF24' } } },
-  'nirvana': { base: 'rock', map: { F04035: '#15803D', '4669BB': '#6B7280', '3D54AD': '#4B5563' } },
-  'dua-lipa': { base: 'rap', map: { F89B0F: '#DB2777', F68113: '#BE185D', F9A60D: '#EC4899', F7980F: '#DB2777', '5BA7E0': '#111827', '5991D4': '#1F2937', EF372C: '#111827' } },
-  'drake': { base: 'jazz', map: { '55A5E0': '#1F2937', '5496D7': '#111827', '4C72C1': '#030712', '36B66B': '#374151', '2D8668': '#1F2937' }, acc: { neck: { type: 'chain', color: '#FBBF24' } } },
-  'edith-piaf': { base: 'bass', map: { '5BA7E0': '#111827', '5BB0E6': '#1F2937', '5993D5': '#1F2937', '4B60B6': '#030712' } },
-  'taylor-swift': { base: 'rap', map: { F89B0F: '#C084FC', F68113: '#A855F7', F9A60D: '#D8B4FE', F7980F: '#C084FC', EF372C: '#FDE68A' } },
+  'michael-jackson': { shape: 'peak', color: '#1F2937', acc: { head: { type: 'fedora', color: '#111827' }, neck: { type: 'bowtie', color: '#F5F5F5' } } },
+  'queen': { shape: 'dome', color: '#FBBF24', acc: { head: { type: 'crown', color: '#FBBF24' } } },
+  'daft-punk': { shape: 'dome', color: '#D4D4D8', acc: { head: { type: 'robot', color: '#FBBF24' } } },
+  'nirvana': { shape: 'cloud', color: '#65A30D', acc: { eyes: { type: 'round', color: '#15101C' } } },
+  'dua-lipa': { shape: 'heart', color: '#DB2777', acc: { eyes: { type: 'shades', color: '#111827' } } },
+  'drake': { shape: 'bean', color: '#78350F', acc: { neck: { type: 'chain', color: '#FBBF24' } } },
+  'edith-piaf': { shape: 'peak', color: '#111827', acc: { head: { type: 'beret', color: '#7F1D1D' } } },
+  'taylor-swift': { shape: 'heart', color: '#C084FC', acc: { eyes: { type: 'stars', color: '#FBBF24' } } },
 };

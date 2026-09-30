@@ -195,7 +195,7 @@ function itemPreviewHTML(kind, it) {
   if (kind === 'disc') return discPrevHTML(it.id);
   if (kind === 'theme') return `<span class="theme-prev theme-${it.id}">${discPrevHTML(store.equip.disc)}</span>`;
   if (kind === 'fx') return `<span class="fx-prev">${[0, 1, 2].map(i => it.glyphs[i % it.glyphs.length]).map(g => g === 'coin' ? '<i class="coin"></i>' : `<i>${g}</i>`).join('')}</span>`;
-  if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { head: it.slot !== 'neck', accs: myAccs(it) })}</span>`;
+  if (kind === 'acc') return `<span class="char-prev acc-prev">${charHTML(mySkin(), { accs: myAccs(it) })}</span>`;
   return `<span class="char-prev">${charHTML(it)}</span>`;
 }
 function applySkins() {
@@ -1155,7 +1155,7 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { id: 'host', base: 'rap', name: 'DJ Patator', map: { F89B0F: '#7C3AED', F68113: '#6D28D9', F9A60D: '#8B5CF6', F7980F: '#7C3AED', EF372C: '#FBBF24' }, acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#F472B6' } } };
+const HOST = { id: 'host', name: 'DJ Patator', shape: 'cloud', color: '#F5B81C', acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#EC4899' } } };
 const host = {
   mood: null, timer: null,
   render(mood) {
@@ -1727,7 +1727,7 @@ function cardHTML(c, i) {
     return `<div class="vc vc-acc r-${c.rarity}" data-i="${i}" role="button" tabindex="-1" aria-label="Carte ${i + 1} sur 3">
     <div class="vc-flip">
       <div class="vc-back"><span class="vc-back-logo">Pompe<span>lup</span></span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
-      <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { head: a.slot !== 'neck', accs: myAccs(a) })}</div></div>
+      <div class="vc-front"><div class="vc-sleeve vc-acc-box">${charHTML(mySkin(), { mood: 'wow', accs: myAccs(a) })}</div></div>
     </div>
     <div class="vc-info">
       <span class="rar-pill r-${c.rarity}">${R_ICON[c.rarity]} ${R_NAME[c.rarity]} · Accessoire</span>
@@ -1876,7 +1876,7 @@ function showSummary() {
   $('#bo-sum-title').textContent = best === 'legendary' ? 'Légendaire ! 🏆' : fresh === 3 ? '3 nouveaux vinyles !' : fresh ? `${plural(fresh, 'nouveau vinyle', 'nouveaux vinyles')} !` : 'Que des doublons… +jetons !';
   $('#bo-sum-grid').innerHTML = cards.map(c => `
     <div class="bs r-${c.rarity}">
-      <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { head: c.acc.slot !== 'neck', accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
+      <span class="bs-cover${c.acc ? ' bs-acc' : ''}">${c.acc ? charHTML(mySkin(), { accs: myAccs(c.acc) }) : coverHTML(c.song, c.art)}</span>
       <span class="rar-pill r-${c.rarity}">${R_NAME[c.rarity]}</span>
       <b>${esc(c.acc ? c.acc.name : c.song.title)}</b>
     </div>`).join('');
@@ -1929,7 +1929,7 @@ function renderCollection() {
       <span class="cs-lamp"><i></i></span>
       <span class="couch">
         <i class="c-back"></i><i class="c-pillow c-pl"></i><i class="c-pillow c-pr"></i>
-        <span class="c-char">${meHTML({})}</span>
+        <span class="c-char">${meHTML({ lying: true, mood: 'grin' })}</span>
         <i class="c-seat"></i><i class="c-arm c-al"></i><i class="c-arm c-ar"></i><i class="c-foot c-fl"></i><i class="c-foot c-fr"></i>
       </span>
       <span class="cs-table"><i class="cs-player"></i></span>
@@ -2322,7 +2322,7 @@ function finishWelcome(keep) {
 const ARTISTS = window.STORY_ARTISTS || [];
 const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
 const artistById = id => ARTISTS.find(a => a.id === id);
-const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { seed: a.id });
+const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { shape: 'dome', color: a.color });
 const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
 // L'intro (bio) est la première étape de chaque parcours.
 const stepsOf = a => [{ type: 'intro' }, ...a.steps];
