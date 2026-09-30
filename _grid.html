@@ -1,0 +1,7 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#fff;font:10px sans-serif">
+<script>
+const files=['illu-dance.svg','illu-rap.svg','illu-rock.svg','illu-jazz.svg','illu-monde.svg'];
+Promise.all(files.map(f=>fetch('assets/'+f).then(r=>r.text()))).then(ts=>{
+ ts.forEach((t,i)=>{const d=document.createElement('div');d.style.cssText='position:relative;width:830px;display:inline-block;margin:4px';d.innerHTML=t+`<b style="position:absolute;left:4px;top:4px;background:#fff">${files[i]}</b>`;
+ let g='';for(let x=0;x<=850;x+=50)g+=`<line x1="${x}" y1="0" x2="${x}" y2="712" stroke="${x%100?'#0003':'#f00a'}"/><text x="${x+2}" y="10" font-size="9">${x}</text>`;for(let y=0;y<=712;y+=50)g+=`<line x1="0" y1="${y}" x2="850" y2="${y}" stroke="${y%100?'#0003':'#f00a'}"/><text x="2" y="${y+10}" font-size="9">${y}</text>`;
+ d.insertAdjacentHTML('beforeend',`<svg style="position:absolute;inset:0" viewBox="0 0 830 712">${g}</svg>`);document.body.appendChild(d)});document.title='ok'})</script>

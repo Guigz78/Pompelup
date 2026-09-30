@@ -131,12 +131,12 @@ let HIST_STATE = { activeArtist: null, activeStep: 0, stepSong: null };
 
 // Portraits illustrés (même direction artistique que le personnage)
 window.STORY_LOOKS = {
-  'michael-jackson': { seed: 'mj', opts: { hair: ['curlyShortHair'], hairColor: ['220f00'], skinColor: ['8c5a2b'], eyes: ['cheery'], mouth: ['openedSmile'] }, acc: { eyes: 'sunglasses' } },
-  'queen': { seed: 'queen', opts: { hair: ['shortHair'], hairColor: ['220f00'], skinColor: ['c99c62'], eyes: ['normal'], mouth: ['teethSmile'] }, acc: { face: 'mustache-brown', head: 'crown-gold' } },
-  'daft-punk': { seed: 'daft', opts: { hair: ['shavedHead'], hairColor: ['220f00'], skinColor: ['efcc9f'], eyes: ['normal'], mouth: ['awkwardSmile'] }, acc: { eyes: 'sunglasses-neon', face: 'facemask-black' } },
-  'nirvana': { seed: 'kurt', opts: { hair: ['straightHair'], hairColor: ['e9b729'], skinColor: ['f5d7b1'], eyes: ['sleepy'], mouth: ['unimpressed'] } },
-  'dua-lipa': { seed: 'dua', opts: { hair: ['straightHair'], hairColor: ['220f00'], skinColor: ['e2ba87'], eyes: ['winking'], mouth: ['openedSmile'] } },
-  'drake': { seed: 'drake', opts: { hair: ['shavedHead'], hairColor: ['220f00'], skinColor: ['a47539'], eyes: ['normal'], mouth: ['awkwardSmile'] } },
-  'edith-piaf': { seed: 'piaf', opts: { hair: ['bangs'], hairColor: ['3a1a00'], skinColor: ['ffe4c0'], eyes: ['cheery'], mouth: ['openedSmile'] } },
-  'taylor-swift': { seed: 'taylor', opts: { hair: ['wavyBob'], hairColor: ['e9b729'], skinColor: ['ffe4c0'], eyes: ['cheery'], mouth: ['teethSmile'] }, acc: { head: 'crown-silver' } },
+  'michael-jackson': { base: 'drum', map: { '5799D9': '#111827', '5BB0E6': '#1F2937', '4B60B6': '#030712', F89B0F: '#F5F5F5', F9D107: '#E5E7EB' } },
+  'queen': { base: 'rock', map: { F04035: '#FBBF24', '4669BB': '#F8FAFC', '3D54AD': '#CBD5E1', '4361B6': '#E2E8F0' }, acc: { head: { type: 'crown', color: '#FBBF24' } } },
+  'daft-punk': { base: 'drum', map: { '5799D9': '#111827', '5BB0E6': '#374151', '4B60B6': '#030712' }, acc: { head: { type: 'robot', color: '#FBBF24' } } },
+  'nirvana': { base: 'rock', map: { F04035: '#15803D', '4669BB': '#6B7280', '3D54AD': '#4B5563' } },
+  'dua-lipa': { base: 'rap', map: { F89B0F: '#DB2777', F68113: '#BE185D', F9A60D: '#EC4899', F7980F: '#DB2777', '5BA7E0': '#111827', '5991D4': '#1F2937', EF372C: '#111827' } },
+  'drake': { base: 'jazz', map: { '55A5E0': '#1F2937', '5496D7': '#111827', '4C72C1': '#030712', '36B66B': '#374151', '2D8668': '#1F2937' }, acc: { neck: { type: 'chain', color: '#FBBF24' } } },
+  'edith-piaf': { base: 'bass', map: { '5BA7E0': '#111827', '5BB0E6': '#1F2937', '5993D5': '#1F2937', '4B60B6': '#030712' } },
+  'taylor-swift': { base: 'rap', map: { F89B0F: '#C084FC', F68113: '#A855F7', F9A60D: '#D8B4FE', F7980F: '#C084FC', EF372C: '#FDE68A' } },
 };

@@ -1,0 +1,59 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#FFF4EA;display:flex;flex-wrap:wrap;gap:8px;font:11px sans-serif">
+<script>
+const DEFS = window.DEFS = [
+ { id:'rap', file:'illu-rap.svg', rect:[230,85,500,600], maxArea:.5, hatch:true, drop:['#F6828F','#FABAAE','#F8A4AA','#F48A96','#F9B8B0','#FCE5E3','#FDF1EF','#F9A9AC','#F7939D','#FBC7BF','#FDDAD4','#F7A1A4'], ex:[[[220,150,70,70],'*'],[[545,395,80,70],'*']] },
+ { id:'rock', file:'illu-rock.svg', rect:[0,20,570,690], maxArea:.62, hatch:true, drop:['#84C8BE','#71B9AF','#4A8D8D','#97D9B6','#226953','#6DB4A9','#5FA69C','#2D8668'], ex:[[[30,425,310,285],['#226953','#1A2746','#4A8D8D','#71B9AF','#97D9B6','#319D5E','#36B66B','#2D8668']],[[85,335,260,60],['#71B9AF','#4A8D8D','#97D9B6','#226953']],[[0,20,40,690],'*']] },
+ { id:'jazz', file:'illu-jazz.svg', rect:[160,140,470,570], maxArea:.5, ex:[[[150,205,135,380],'*'],[[580,330,70,260],'*'],[[235,345,70,60],'*'],[[150,560,75,160],'*'],[[528,495,110,215],'*']] },
+ { id:'bass', file:'illu-monde.svg', rect:[60,120,240,580], maxArea:.5, ex:[[[60,470,40,110],'*'],[[60,430,240,180],['#FAB6A8','#F794A9','#FABAAE','#F9A797','#F7A6A0','#FAB8A5']]] },
+ { id:'drum', file:'illu-monde.svg', rect:[290,170,370,520], maxArea:.5 },
+];
+const out = window.OUT = {};
+(async () => {
+ for (const d of DEFS) {
+  const txt = await (await fetch('assets/' + d.file)).text();
+  const host = document.createElement('div'); host.style.cssText = 'position:absolute;left:-9999px;width:830px'; host.innerHTML = txt; document.body.appendChild(host);
+  const svg = host.querySelector('svg');
+  const [rx, ry, rw, rh] = d.rect, rA = rw * rh;
+  const keep = [], masks = new Set();
+  const els = [...svg.querySelectorAll('path,circle,ellipse,rect,polygon')].filter(e => !e.closest('mask,clipPath,defs'));
+  for (const e of els) {
+   let b; try { b = e.getBBox(); } catch (x) { continue; }
+   const m = e.getCTM(), sm = svg.getCTM().inverse().multiply(m);
+   const p1 = new DOMPoint(b.x, b.y).matrixTransform(sm), p2 = new DOMPoint(b.x + b.width, b.y + b.height).matrixTransform(sm);
+   let x0 = Math.min(p1.x, p2.x), y0 = Math.min(p1.y, p2.y), x1 = Math.max(p1.x, p2.x), y1 = Math.max(p1.y, p2.y);
+   const mg = e.closest('g[mask]'); let mref = null;
+   if (mg) { const id = /#([^)]+)/.exec(mg.getAttribute('mask'))[1]; const mk = svg.querySelector('#' + CSS.escape(id));
+     if (mk) { mref = id; const mx = +mk.getAttribute('x'), my = +mk.getAttribute('y'), mw = +mk.getAttribute('width'), mh = +mk.getAttribute('height');
+       if (mw) { x0 = Math.max(x0, mx); y0 = Math.max(y0, my); x1 = Math.min(x1, mx + mw); y1 = Math.min(y1, my + mh); if (x1 <= x0 || y1 <= y0) continue; } } }
+   const area = Math.max(1, (x1 - x0) * (y1 - y0));
+   const ix = Math.max(0, Math.min(x1, rx + rw) - Math.max(x0, rx)), iy = Math.max(0, Math.min(y1, ry + rh) - Math.max(y0, ry));
+   const inside = ix * iy / area;
+   const cf = getComputedStyle(e).fill; if (d.id==='rock' && /rgb\((6[0-9]|7[0-9]), (8[0-9]|9[0-9]|10[0-9]), 1[6-9][0-9]\)/.test(cf)) (window.BLUE=window.BLUE||[]).push([Math.round(x0),Math.round(y0),Math.round(x1),Math.round(y1),cf,inside?0:0]);
+   const mm = /rgb\((\d+), (\d+), (\d+)\)/.exec(cf);
+   const fill = mm ? '#' + [mm[1], mm[2], mm[3]].map(v => (+v).toString(16).padStart(2, '0')).join('').toUpperCase() : 'NONE';
+   const sw = parseFloat(getComputedStyle(e).strokeWidth) || 0;
+   if (inside < .75 || area > d.maxArea * rA) { if (inside > .3) (window.DROPPED = window.DROPPED || []).push([d.id, 'SIZE', Math.round((x0+x1)/2), Math.round((y0+y1)/2), Math.round(area), inside.toFixed(2), (e.getAttribute('fill')||'')]); continue; }
+   const noFill = !fill || fill === 'NONE';
+   if (d.hatch && noFill && sw < 2.5) { (window.DROPPED = window.DROPPED || []).push([d.id, 'HATCH', Math.round((x0+x1)/2), Math.round((y0+y1)/2), Math.round(area), cf, e.getAttribute('fill')]); continue; }
+   if ((d.drop || []).includes(fill)) continue;
+   if (d.id === 'rap' && fill === '#FFFFFF' && area > 1500) continue;
+   if (d.dropPink && mm) { const [r, g, bb] = [+mm[1], +mm[2], +mm[3]]; if (r > 235 && g > 120 && g < 215 && bb > 130 && bb < 200) continue; }
+   let bad = false;
+   for (const [[ex, ey, ew, eh], cols] of (d.ex || [])) {
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    if (cx >= ex && cx <= ex + ew && cy >= ey && cy <= ey + eh && (cols === '*' || cols.includes(fill) || noFill)) { bad = true; break; }
+   }
+   if (bad) { (window.DROPPED = window.DROPPED || []).push([d.id, fill, Math.round((x0+x1)/2), Math.round((y0+y1)/2), Math.round(area)]); continue; }
+   const c = e.cloneNode(true); if (fill !== 'NONE') c.setAttribute('fill', fill); if (!c.getAttribute('stroke') && getComputedStyle(e).stroke !== 'none') c.setAttribute('stroke', getComputedStyle(e).stroke), c.setAttribute('stroke-width', sw);
+   const ctm = sm; c.setAttribute('transform', `matrix(${ctm.a} ${ctm.b} ${ctm.c} ${ctm.d} ${ctm.e} ${ctm.f})`);
+   keep.push(mref ? `<g mask="url(#${d.id}-${mref})">${c.outerHTML}</g>` : c.outerHTML); if (mref) masks.add(mref);
+  }
+  const defs = [...masks].map(id => { const mk = svg.querySelector('#' + CSS.escape(id)).cloneNode(true); mk.id = d.id + '-' + id; return mk.outerHTML; }).join('');
+  host.remove();
+  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${rx} ${ry} ${rw} ${rh}" fill="none"><defs>${defs}</defs>${keep.join('')}</svg>`;
+  out[d.id] = s; window.COL = window.COL || {}; window.COL[d.id] = keep.map(k => (k.match(/fill="(#[0-9A-Fa-f]{6})"/)||[])[1]).filter(Boolean);
+  document.body.insertAdjacentHTML('beforeend', `<div style="width:260px;background:#9CC7F7;border-radius:12px">${s.replace('<svg ', '<svg style="width:100%;height:auto" ')}<b>${d.id}</b> ${keep.length}</div>`);
+ }
+ document.title = 'done';
+})();
+</script>

@@ -27,7 +27,7 @@ const defaults = () => ({
   boosters: 1, goldBoosters: 0, gauge: 0, opened: 0, coll: {},
   coins: 100, gift: null, name: '', onboarded: false,
   owned: { skin: ['rookie', 'crate'], acc: [], disc: ['classic'], theme: ['nuit'], fx: ['sparks'] },
-  equip: { skin: 'rookie', acc: { head: null, eyes: null, face: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
+  equip: { skin: 'rookie', acc: { head: null, eyes: null, ears: null, neck: null }, disc: 'classic', theme: 'nuit', fx: 'sparks' },
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null,
@@ -443,26 +443,50 @@ function rememberArt(id, url) {
   artSaveTimer = setTimeout(() => { try { localStorage.setItem(ART_KEY, JSON.stringify(artCache)); } catch (e) {} }, 400);
 }
 const previewCache = new Map();
+// JSONP : contourne l'absence d'en-têtes CORS de certaines API musicales
+let jsonpN = 0;
+function jsonp(url, ms = 6000) {
+  return new Promise((resolve, reject) => {
+    const cb = `__pq_jp${++jsonpN}`, s = document.createElement('script');
+    const done = (err, data) => { clearTimeout(t); delete window[cb]; s.remove(); err ? reject(err) : resolve(data); };
+    const t = setTimeout(() => done(new Error('timeout')), ms);
+    window[cb] = data => done(null, data);
+    s.onerror = () => done(new Error('jsonp'));
+    s.src = `${url}${url.includes('?') ? '&' : '?'}callback=${cb}`;
+    document.head.appendChild(s);
+  });
+}
+function pickTrack(list, song, artistOf) {
+  const ar = normalize(song.artist), ti = cleanTitle(song.title);
+  const score = x => (normalize(artistOf(x)).includes(ar) || similarity(normalize(artistOf(x)), ar) > .6 ? 2 : 0) + (similarity(cleanTitle(x.trackName || x.title || ''), ti) > .7 ? 1 : 0);
+  return list.slice().sort((a, b) => score(b) - score(a))[0];
+}
+async function searchItunes(song) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=8`;
+  let data;
+  try {
+    const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 5000);
+    try { data = await (await fetch(url, { signal: ctrl.signal })).json(); } finally { clearTimeout(to); }
+  } catch (e) { data = await jsonp(url); }
+  const list = (data.results || []).filter(t => t.previewUrl);
+  const t = list.length && pickTrack(list, song, x => x.artistName || '');
+  return t ? { url: t.previewUrl, art: t.artworkUrl100 ? t.artworkUrl100.replace(/100x100/, '600x600') : null } : null;
+}
+async function searchDeezer(song) {
+  const data = await jsonp(`https://api.deezer.com/search?q=${encodeURIComponent(`artist:"${song.artist}" track:"${song.title}"`)}&limit=8&output=jsonp`);
+  const list = (data.data || []).filter(t => t.preview);
+  const t = list.length && pickTrack(list, song, x => (x.artist && x.artist.name) || '');
+  return t ? { url: t.preview, art: (t.album && (t.album.cover_big || t.album.cover_medium)) || null } : null;
+}
 function fetchPreview(song) {
   if (previewCache.has(song.id)) return previewCache.get(song.id);
   const p = (async () => {
-    const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 6000);
-    try {
-      const q = encodeURIComponent(`${song.title} ${song.artist}`);
-      const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=8`, { signal: ctrl.signal });
-      const data = await res.json();
-      const list = (data.results || []).filter(t => t.previewUrl);
-      const ar = normalize(song.artist);
-      const t = list.find(x => { const n = normalize(x.artistName || ''); return n.includes(ar) || similarity(n, ar) > 0.6; }) || list[0];
-      if (!t) { rememberArt(song.id, ''); return null; }
-      const art = t.artworkUrl100 ? t.artworkUrl100.replace(/100x100/, '400x400') : null;
-      rememberArt(song.id, art);
-      return { url: t.previewUrl, art };
-    } catch (e) {
-      previewCache.delete(song.id);
-      return null;
-    } finally { clearTimeout(to); }
+    let r = null;
+    try { r = await searchItunes(song); } catch (e) {}
+    if (!r || !r.art) { try { const d = await searchDeezer(song); if (d) r = r ? Object.assign({}, r, { art: r.art || d.art }) : d; } catch (e) {} }
+    if (!r) { previewCache.delete(song.id); return null; }
+    rememberArt(song.id, r.art);
+    return r;
   })();
   previewCache.set(song.id, p);
   return p;
@@ -490,7 +514,8 @@ function pumpArt() {
 }
 
 function fallbackCover(song) {
-  return `<span class="cover-fb"><span class="cf-emoji">${song.emoji || '🎵'}</span><span><span class="cf-title">${esc(song.title)}</span><span class="cf-artist">${esc(song.artist)}</span></span></span>`;
+  // Pochette typographique (en attendant la vraie pochette de l'album)
+  return `<span class="cover-fb"><span class="cf-disc"></span><span class="cf-txt"><span class="cf-title">${esc(song.title)}</span><span class="cf-artist">${esc(song.artist)} · ${song.year}</span></span></span>`;
 }
 function coverHTML(song, art = knownArt(song.id)) {
   return `<span class="cover" data-cover="${song.id}" style="--sc:${song.color || '#6D28D9'}">${art ? `<img src="${esc(art)}" alt="" loading="lazy" decoding="async">` : fallbackCover(song)}</span>`;
@@ -965,7 +990,7 @@ async function startRound() {
     // Pas d'extrait (hors ligne, bloqué…) : on joue avec des indices et un beat au bon tempo.
     startBeat(song.bpm);
     $('#clues').hidden = false;
-    $('#clues').innerHTML = `<span class="clue">${song.emoji || '🎵'}</span><span class="clue">Année <b>${song.year}</b></span><span class="clue">${esc(song.genre)}</span>`;
+    $('#clues').innerHTML = `<span class="clue">Année <b>${song.year}</b></span><span class="clue">${esc(song.genre)}</span>`;
     $('#stage-status').textContent = 'Extrait indisponible — devine avec les indices';
   } else {
     $('#stage-status').textContent = G.cfg.daily ? 'Quelle est cette chanson ?' : 'Écoute bien…';
@@ -1129,7 +1154,7 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { id: 'host', name: 'DJ Patator', seed: 'dj-patator', opts: { hair: ['curlyShortHair'], hairColor: ['e9b729'], skinColor: ['efcc9f'], mouth: ['openedSmile'], eyes: ['cheery'] }, acc: { eyes: 'sunglasses', face: 'mustache-brown' } };
+const HOST = { id: 'host', base: 'rap', name: 'DJ Patator', map: { F89B0F: '#7C3AED', F68113: '#6D28D9', F9A60D: '#8B5CF6', F7980F: '#7C3AED', EF372C: '#FBBF24' }, acc: { eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#F472B6' } } };
 const host = {
   mood: null, timer: null,
   render(mood) {
@@ -1247,7 +1272,7 @@ async function startRapidRound(token, song, pv) {
   if (!G.rapidSrc) {
     G.rapidSrc = 'beat';
     $('#clues').hidden = false;
-    $('#clues').innerHTML = `<span class="clue">${song.emoji || '🎵'}</span><span class="clue">Année <b>${song.year}</b></span><span class="clue">${esc(song.genre)}</span>`;
+    $('#clues').innerHTML = `<span class="clue">Année <b>${song.year}</b></span><span class="clue">${esc(song.genre)}</span>`;
   }
   renderStems();
   $('#rapid').hidden = false;
@@ -1903,7 +1928,7 @@ function renderCollection() {
       <span class="cs-lamp"><i></i></span>
       <span class="couch">
         <i class="c-back"></i><i class="c-pillow c-pl"></i><i class="c-pillow c-pr"></i>
-        <span class="c-char"><span class="c-head">${meHTML({ mood: ids.length ? 'grin' : 'happy' })}</span><i class="c-blanket"></i></span>
+        <span class="c-char">${meHTML({})}</span>
         <i class="c-seat"></i><i class="c-arm c-al"></i><i class="c-arm c-ar"></i><i class="c-foot c-fl"></i><i class="c-foot c-fr"></i>
       </span>
       <span class="cs-table"><i class="cs-player"></i></span>

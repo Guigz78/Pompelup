@@ -1248,3 +1248,30 @@ img { display: block; max-width: 100%; }
   background: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 6px, transparent 6px 26px), repeating-linear-gradient(0deg, rgba(255,255,255,.28) 0 6px, transparent 6px 26px), linear-gradient(#F97316, #EA580C);
   box-shadow: inset 0 6px 0 rgba(255,255,255,.25), inset 0 -8px 12px rgba(0,0,0,.15), 0 6px 10px rgba(40,20,10,.25); }
 .c-blanket::after { content: ''; position: absolute; right: 18px; top: -16px; width: 46px; height: 34px; border-radius: 50% 50% 40% 40%; background: inherit; box-shadow: inherit; }
+
+/* ---------- Pochettes : repli typographique, sans emoji ---------- */
+.cover-fb { background: radial-gradient(90% 80% at 20% 15%, rgba(255,255,255,.3), transparent 60%), linear-gradient(150deg, var(--sc, #6D28D9), #140b24 135%); }
+.cover-fb .cf-disc { position: absolute; right: -18cqw; top: -18cqw; width: 70cqw; height: 70cqw; border-radius: 50%; background: repeating-radial-gradient(circle, rgba(0,0,0,.35) 0 1.2cqw, rgba(0,0,0,.2) 1.2cqw 2.4cqw); box-shadow: 0 0 0 1.5cqw rgba(255,255,255,.08); }
+.cover-fb .cf-disc::after { content: ''; position: absolute; inset: 36%; border-radius: 50%; background: var(--orange); }
+.cover-fb .cf-txt { position: absolute; left: 9cqw; right: 9cqw; bottom: 9cqw; display: flex; flex-direction: column; gap: 2cqw; }
+.cover-fb::after { display: none; }
+.disc-p { font-family: var(--display); font-size: 1.6em; color: #fff; }
+
+/* ================= Musiciens illustrés en relief ================= */
+.char { object-fit: contain; }
+.skin-item .char-prev, .item .acc-prev, .char-prev { aspect-ratio: 1 / 1.12; padding: 6% 8% 0; display: grid; place-items: end center; }
+.skin-item .char-prev .char, .char-prev .char { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.item .acc-prev { padding: 0; place-items: center; }
+.item .acc-prev .char-head { width: 100%; height: 100%; object-fit: cover; }
+.ac-portrait { aspect-ratio: 1 / 1.05; padding: 6% 10% 0; display: grid; place-items: end center; }
+.ac-portrait .char { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.pf-avatar span .char, .tab-avatar .char, .host-av .char { width: 100%; height: 100%; margin: 0; object-fit: cover; }
+.res-char { width: 150px; height: 170px; }
+.res-char .char { width: 100%; height: 100%; object-fit: contain; }
+.wl-av .char { aspect-ratio: 1; object-fit: contain; }
+.ss-portrait span { width: 160px; height: 170px; border-radius: 22px; padding: 6px; }
+.ss-portrait .char { width: 100%; height: 100%; object-fit: contain; }
+/* Salon : le musicien allongé de tout son long sur le canapé */
+.c-char { position: absolute; left: 50%; bottom: 36px; width: 170px; height: 280px; transform: translateX(-50%) rotate(-82deg); transform-origin: 50% 60%; z-index: 4; filter: drop-shadow(0 8px 6px rgba(40,20,10,.25)); right: auto; }
+.c-char .char { width: 100%; height: 100%; object-fit: contain; }
+.c-char { bottom: 14px; }
