@@ -49,7 +49,11 @@ const store = (() => {
     return merged;
   } catch (e) { return d; }
 })();
-const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} };
+const save = () => {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
+  // Connecté : la progression part aussi dans le cloud (regroupée toutes les 3 s)
+  if (window.PompeAuth?.user) window.PompeAuth.pushSave(store);
+};
 store.stats.bestStreak = Math.max(store.stats.bestStreak, store.streak.count || 0);
 
 /* ---------------- Dates, streak, niveau ---------------- */
@@ -2373,7 +2377,7 @@ function maybeWelcome() {
   if (store.onboarded) return;
   wlAvatar = store.equip.skin;
   $('#wl-avatars').innerHTML = COSMETICS.skin.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}" aria-label="${esc(a.name)}">${charHTML(a)}<b>${esc(a.name)}</b></button>`).join('');
-  $('#wl-name').value = store.name;
+  $('#wl-name').value = store.name || window.PompeAuth?.displayName() || '';
   $('#wl-host').innerHTML = charHTML(HOST, { head: true, mood: 'happy' });
   $('#welcome-sheet').hidden = false;
 }
@@ -2757,6 +2761,122 @@ function buyPass() {
   renderPass();
 }
 
+
+/* ================= COMPTE : Google, Apple, email ================= */
+const A = window.PompeAuth;
+let authMode = 'signup', signedInDone = false;
+function showAuth() {
+  $('#auth-host').innerHTML = charHTML(HOST, { mood: 'happy' });
+  $('#auth-screen').hidden = false;
+  $('#auth-home').hidden = false;
+  $('#auth-form').hidden = true;
+  $('#auth-wait').hidden = true;
+}
+const hideAuth = () => { $('#auth-screen').hidden = true; };
+function authWait(on, txt = 'Connexion…') { $('#auth-wait').hidden = !on; $('#auth-wait-txt').textContent = txt; }
+function authMsg(msg, ok) {
+  authWait(false);
+  const el = $('#auth-msg');
+  if (!$('#auth-form').hidden) { el.textContent = msg || ''; el.classList.toggle('is-ok', !!ok); } else if (msg) toast(msg);
+}
+function authForm(mode) {
+  authMode = mode;
+  const up = mode === 'signup';
+  $('#auth-home').hidden = true;
+  $('#auth-form').hidden = false;
+  $('#auth-form-title').textContent = up ? 'Crée ton compte' : 'Content de te revoir !';
+  $('#auth-name-row').hidden = !up;
+  $('#auth-pass').autocomplete = up ? 'new-password' : 'current-password';
+  $('#auth-submit').textContent = up ? 'Créer mon compte' : 'Me connecter';
+  $('#auth-switch').textContent = up ? 'J’ai déjà un compte' : 'Créer un compte';
+  $('#auth-forgot').hidden = up;
+  $('#auth-msg').textContent = '';
+  if (up && store.name) $('#auth-name').value = store.name;
+  setTimeout(() => (up ? $('#auth-name') : $('#auth-email')).focus(), 50);
+}
+// Récupère la progression du compte : on garde la plus avancée des deux
+async function syncFromCloud() {
+  try {
+    const row = await A.loadSave();
+    const cloud = row?.data;
+    const prog = d => (d?.xp || 0) + (d?.games || 0) * 10 + Object.keys(d?.coll || {}).length;
+    if (cloud && typeof cloud === 'object' && prog(cloud) > prog(store)) {
+      localStorage.setItem(STORE_KEY, JSON.stringify(Object.assign(cloud, { guest: false })));
+      location.reload();
+      return true;
+    }
+    A.pushSave(store, true);
+  } catch (e) {}
+  return false;
+}
+async function onSignedIn() {
+  if (signedInDone) return;
+  signedInDone = true;
+  hideAuth();
+  store.guest = false;
+  const name = $('#auth-name').value.trim() || store.name;
+  if (name && !store.name) store.name = name.slice(0, 16);
+  save();
+  A.ensureProfile(store.name).catch(() => {});
+  if (await syncFromCloud()) return;
+  renderAccount();
+  if (!store.onboarded) maybeWelcome();
+  else toast(`Connecté${store.name ? ` : salut ${store.name} !` : ' !'}`);
+  refreshScreen();
+}
+function renderAccount() {
+  const u = A?.user;
+  $('#acc-sub').textContent = u ? (u.email || 'Compte connecté') : 'Joue avec un compte pour sauvegarder ta progression';
+  $('#acc-btn').textContent = u ? 'Se déconnecter' : 'Se connecter';
+}
+async function startAccount() {
+  if (!A?.ready) { setTimeout(maybeWelcome, 500); return; }
+  A.onError(msg => authMsg(msg));
+  A.onChange(u => { if (u) onSignedIn(); else { signedInDone = false; renderAccount(); } });
+  await A.init();
+  renderAccount();
+  if (A.user) { onSignedIn(); return; }
+  if (store.guest) { setTimeout(maybeWelcome, 300); return; }
+  showAuth();
+}
+$('#auth-screen').addEventListener('click', async e => {
+  const o = e.target.closest('[data-oauth]');
+  if (o) {
+    unlockAudio();
+    authWait(true, o.dataset.oauth === 'apple' ? 'Connexion avec Apple…' : 'Connexion avec Google…');
+    try { await A.oauth(o.dataset.oauth); } catch (err) { authMsg(A.frError(err)); }
+    return;
+  }
+  if (e.target.closest('#auth-to-signup')) authForm('signup');
+  else if (e.target.closest('#auth-to-login')) authForm('login');
+  else if (e.target.closest('#auth-switch')) authForm(authMode === 'signup' ? 'login' : 'signup');
+  else if (e.target.closest('#auth-back')) showAuth();
+  else if (e.target.closest('#auth-guest')) { store.guest = true; save(); hideAuth(); maybeWelcome(); }
+  else if (e.target.closest('#auth-forgot')) {
+    const email = $('#auth-email').value.trim();
+    if (!email) { authMsg('Entre ton email pour recevoir un lien.'); return; }
+    try { await A.resetPassword(email); authMsg('Lien envoyé ! Regarde ta boîte mail.', true); } catch (err) { authMsg(A.frError(err)); }
+  }
+});
+$('#auth-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#auth-email').value.trim(), pass = $('#auth-pass').value, name = $('#auth-name').value.trim();
+  if (authMode === 'signup' && name.length < 2) { authMsg('Choisis un pseudo (2 caractères minimum).'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { authMsg('Adresse email invalide.'); return; }
+  if (pass.length < 6) { authMsg('Le mot de passe doit faire au moins 6 caractères.'); return; }
+  authWait(true, authMode === 'signup' ? 'Création du compte…' : 'Connexion…');
+  try {
+    if (authMode === 'signup') {
+      store.name = name.slice(0, 16); save();
+      if (await A.signUp(email, pass, name) === 'confirm') { authForm('login'); $('#auth-email').value = email; authMsg('Compte créé ! Confirme ton email (lien reçu), puis connecte-toi.', true); }
+    } else await A.signIn(email, pass);
+  } catch (err) { authMsg(A.frError(err)); }
+});
+$('#acc-btn').addEventListener('click', async () => {
+  if (A?.user) { await A.signOut(); store.guest = true; save(); toast('Déconnecté. Ta progression reste sur cet appareil.'); renderAccount(); }
+  else showAuth();
+});
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
@@ -2974,5 +3094,5 @@ ensureMissions();
 applySkins();
 renderCoins();
 show('home');
-setTimeout(maybeWelcome, 500);
+startAccount();
 })();

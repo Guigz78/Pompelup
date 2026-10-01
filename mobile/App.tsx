@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Asset } from 'expo-asset';
 import { File } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as SplashScreen from 'expo-splash-screen';
+import * as WebBrowser from 'expo-web-browser';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -34,6 +35,17 @@ function haptic(pattern: unknown) {
 export default function App() {
   const [html, setHtml] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
+  const web = useRef<WebView>(null);
+
+  // Connexion Google / Apple : feuille sécurisée du système (Google refuse les WebView),
+  // puis on rend la session au jeu via pompelup://auth#access_token=…
+  const oauth = useCallback(async (payload: unknown) => {
+    const { url, redirect } = (payload || {}) as { url?: string; redirect?: string };
+    if (!url || !redirect) return;
+    const res = await WebBrowser.openAuthSessionAsync(url, redirect).catch(() => null);
+    const back = res && res.type === 'success' ? res.url : `${redirect}#error_description=${encodeURIComponent('Connexion annulée.')}`;
+    web.current?.injectJavaScript(`window.PompeAuth && window.PompeAuth.fromRedirect(${JSON.stringify(back)}); true;`);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -47,7 +59,8 @@ export default function App() {
     try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (msg.type === 'haptic') haptic(msg.payload).catch(() => {});
     if (msg.type === 'theme') setDark(msg.payload === 'dark');
-  }, []);
+    if (msg.type === 'oauth') oauth(msg.payload);
+  }, [oauth]);
 
   return (
     <View style={styles.root}>
@@ -56,6 +69,7 @@ export default function App() {
         <ActivityIndicator style={styles.loader} color="#F97316" />
       ) : (
         <WebView
+          ref={web}
           style={styles.web}
           originWhitelist={['*']}
           source={{ html, baseUrl: ORIGIN }}

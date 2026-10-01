@@ -41,7 +41,8 @@
           "backgroundColor": "#FFF4EA"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
