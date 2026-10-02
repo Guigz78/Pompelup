@@ -2723,7 +2723,7 @@ function renderPassCard() {
 }
 function passTimer() { const d = new Date(), end = new Date(d.getFullYear(), d.getMonth() + 1, 1), ms = end - d, days = Math.floor(ms / 864e5); return days >= 1 ? `${days} j ${Math.floor(ms % 864e5 / 36e5)} h` : hms(ms); }
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-const PASS_BANDS = ['#AEB6F7', '#FBC088', '#BDEB8E', '#A6EAF5'];
+const PASS_BANDS = ['#EFE9FF', '#FFEBDD', '#E5F8DC', '#DFF6FB'];
 function renderPass() {
   const P = passState(), t = passTier(), m = new Date().getMonth(), c = seasonCat();
   renderCoins();
