@@ -2250,6 +2250,7 @@ function nextReward() {
     visual = packArt(r.gold ? 'gold' : 'std');
     action = { label: 'Ouvrir', run: () => openBooster() };
   }
+  if (RW.visual) visual = RW.visual;
   RW.action = action;
   $('#rw-kicker').textContent = RW.kicker || 'Récompense';
   $('#rw-visual').innerHTML = visual;
@@ -2668,38 +2669,49 @@ function passState() {
   return store.pass;
 }
 const passTier = () => Math.min(PASS_TIERS, Math.floor(passState().pts / PASS_STEP));
+// Saison = genre du mois : son illustration et ses vinyles en récompense
+const seasonCat = () => CATS[1 + new Date().getMonth() % (CATS.length - 1)];
+function seasonSong(k, gold) {
+  const pool = poolFor(seasonCat().id).filter(s => gold ? RANK[RARITY.get(s.id)] >= 2 : RANK[RARITY.get(s.id)] === 1);
+  const src = pool.length ? pool : SONGS;
+  return src[hashStr(`${seasonKey()}-${k}-${gold}`) % src.length].id;
+}
 function passReward(k, gold) {
   if (!gold) {
+    if (k === 1) return { item: 'skin:groovy' };
     if (k === PASS_TIERS) return { gold: 1 };
+    if (k % 2) return null;
     if (k % 10 === 0) return { item: k === 10 ? 'acc:bandana' : 'acc:stars' };
-    if (k % 5 === 0) return { boosters: 1 };
-    return { coins: 40 + k * 5 };
+    if (k % 8 === 0 || k === 6) return { song: seasonSong(k, false) };
+    if (k % 4 === 0) return { boosters: 1 };
+    return { coins: 15 + k * 2 };
   }
+  if (k === 1) return { item: 'skin:crooner' };
   if (k === PASS_TIERS) return { item: 'skin:passking' };
   if (k % 10 === 0) return { gold: 1 };
-  if (k === 5) return { item: 'acc:fedora' };
   if (k === 15) return { item: 'acc:ph-gold' };
-  if (k === 25) return { gold: 1, coins: 500 };
-  if (k % 2 === 0) return { boosters: 1 };
-  return { coins: 100 + k * 10 };
+  if (k % 4 === 3) return { song: seasonSong(k, true) };
+  if (k % 4 === 1) return { boosters: 1 };
+  return { coins: 40 + k * 10 };
 }
-const passClaimable = () => { const P = passState(), t = passTier(); let n = 0; for (let k = 1; k <= t; k++) { if (!P.free.includes(k)) n++; if (P.gold && !P.paid.includes(k)) n++; } return n; };
+const passClaimable = () => { const P = passState(), t = passTier(); let n = 0; for (let k = 1; k <= t; k++) { if (passReward(k, false) && !P.free.includes(k)) n++; if (P.gold && !P.paid.includes(k)) n++; } return n; };
 function addPassPts(n) {
   const P = passState(), before = passTier();
   P.pts = Math.min(PASS_TIERS * PASS_STEP, P.pts + n);
   if (passTier() > before) setTimeout(() => toast(`Pass de saison : palier ${passTier()} atteint !`), 700);
 }
+function rewardKind(r) { if (r.item) { const k = r.item.split(':')[0]; return k === 'skin' ? 'Skin' : k === 'acc' ? 'Accessoire' : 'Objet'; } return r.song ? 'Vinyle' : r.gold ? 'Booster Or' : r.boosters ? 'Booster' : 'Monnaie'; }
 function rewardArt(r) {
-  if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); return k === 'skin' ? `<span class="pr-char">${charHTML(it, { head: true })}</span>` : k === 'acc' ? ico('gift') : ico('vinyl'); }
-  if (r.gold) return ico('booster-gold');
-  if (r.boosters) return ico('booster');
-  return ico('coin');
+  if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); return k === 'skin' ? `<span class="pr-char">${charHTML(it, { mood: 'happy' })}</span>` : k === 'acc' ? `<span class="pr-char">${charHTML(mySkin(), { head: true, accs: myAccs(it) })}</span>` : `<span class="pr-box">${ico('vinyl')}</span>`; }
+  if (r.song) { const s = SONG.get(r.song); return `<span class="pr-sleeve">${coverHTML(s)}</span>`; }
+  return `<span class="pr-box">${ico(r.gold ? 'booster-gold' : r.boosters ? 'booster' : 'coin')}</span>`;
 }
 function rewardLabel(r) {
   if (r.item) { const [k, id] = r.item.split(':'); return itemOf(k, id)?.name || 'Objet'; }
+  if (r.song) return SONG.get(r.song)?.title || 'Vinyle';
   if (r.gold) return 'Booster Or';
   if (r.boosters) return 'Booster';
-  return `${fmt(r.coins)} jetons`;
+  return `+${fmt(r.coins)}`;
 }
 function renderPassCard() {
   const P = passState(), t = passTier();
@@ -2710,31 +2722,38 @@ function renderPassCard() {
   $('#pass-card-badge').textContent = c;
 }
 function passTimer() { const d = new Date(), end = new Date(d.getFullYear(), d.getMonth() + 1, 1), ms = end - d, days = Math.floor(ms / 864e5); return days >= 1 ? `${days} j ${Math.floor(ms % 864e5 / 36e5)} h` : hms(ms); }
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const PASS_BANDS = ['#AEB6F7', '#FBC088', '#BDEB8E', '#A6EAF5'];
 function renderPass() {
-  const P = passState(), t = passTier();
+  const P = passState(), t = passTier(), m = new Date().getMonth(), c = seasonCat();
   renderCoins();
-  $('#pass-season').textContent = `Saison ${Math.max(1, seasonNum())}`;
-  $('#pass-name').textContent = PASS_NAMES[new Date().getMonth()];
+  $('#pass-season').textContent = `Saison ${/^[aeiouy]/.test(MONTHS[m]) ? 'd’' : 'de '}${MONTHS[m]}`;
+  $('#pass-name').textContent = PASS_NAMES[m];
+  $('#pass-bg').style.backgroundImage = `url(${c.illu})`;
+  $('#pass-bg').style.backgroundPosition = c.pos;
   $('#pass-timer').textContent = passTimer();
-  $('#pass-tier').textContent = Math.min(PASS_TIERS, t + (t < PASS_TIERS ? 1 : 0));
+  $('#pass-tier').textContent = t;
+  $('#pass-next').textContent = Math.min(PASS_TIERS, t + 1);
   $('#pass-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
-  $('#pass-pts').textContent = t >= PASS_TIERS ? 'Tous les paliers atteints !' : `${P.pts % PASS_STEP} / ${PASS_STEP} notes`;
-  const buy = $('#pass-buy');
-  buy.hidden = P.gold;
-  buy.innerHTML = `Pass Or <i class="coin"></i>${fmt(PASS_PRICE)}`;
-  $('#pass-hero').classList.toggle('is-gold', P.gold);
+  $('#pass-pts').textContent = t >= PASS_TIERS ? 'Max !' : `${P.pts % PASS_STEP}/${PASS_STEP}`;
+  $('#pass-buy-tag').textContent = P.gold ? 'Activé' : `${fmt(PASS_PRICE)} jetons`;
+  $('#pass-buy').classList.toggle('is-owned', P.gold);
   const cell = (k, gold) => {
-    const r = passReward(k, gold), done = (gold ? P.paid : P.free).includes(k), reached = k <= t, locked = gold && !P.gold;
-    const st = done ? 'is-claimed' : reached && !locked ? 'is-ready' : 'is-locked';
-    return `<button class="pr ${gold ? 'pr-gold' : ''} ${st}" type="button" data-k="${k}" data-gold="${gold ? 1 : 0}" ${st === 'is-ready' ? '' : 'tabindex="-1"'}>
-      <span class="pr-art">${rewardArt(r)}</span><span class="pr-name">${esc(rewardLabel(r))}</span>
-      ${done ? `<span class="pr-state">${ico('g-check')}</span>` : locked ? `<span class="pr-state">${ico('g-lock')}</span>` : reached ? '<span class="pr-take">Prendre</span>' : ''}
+    const r = passReward(k, gold);
+    if (!r) return '<div class="pr pr-empty"></div>';
+    const done = (gold ? P.paid : P.free).includes(k), reached = k <= t, locked = gold && !P.gold;
+    const st = done ? 'is-claimed' : reached && !locked ? 'is-ready' : locked ? 'is-locked' : 'is-later';
+    return `<button class="pr ${st}" type="button" data-k="${k}" data-gold="${gold ? 1 : 0}" ${st === 'is-ready' ? '' : 'tabindex="-1"'}>
+      <span class="pr-txt"><small>${rewardKind(r)}</small><b>${esc(rewardLabel(r))}</b>${st === 'is-ready' ? '<span class="pr-take">Prendre</span>' : ''}</span>${rewardArt(r)}
+      ${done ? `<span class="pr-done">${ico('g-check')}</span>` : locked ? `<span class="pr-lock">${ico('g-lock')}</span>` : ''}
     </button>`;
   };
-  $('#pass-track').innerHTML = Array.from({ length: PASS_TIERS }, (_, i) => i + 1).map(k => `
-    <div class="pt-row${k <= t ? ' is-reached' : ''}${k === t + 1 ? ' is-next' : ''}">
-      ${cell(k, false)}<span class="pt-num">${k}</span>${cell(k, true)}
-    </div>`).join('');
+  $('#pass-track').innerHTML = Array.from({ length: PASS_TIERS }, (_, i) => i + 1).map(k => {
+    const fr = passReward(k, false), allDone = k <= t && (!fr || P.free.includes(k)) && P.paid.includes(k);
+    return `<div class="ps-row-tier${k <= t ? ' is-reached' : ''}${k === t + 1 ? ' is-next' : ''}" style="--band:${PASS_BANDS[(k - 1) % PASS_BANDS.length]}">
+      ${cell(k, true)}<span class="ps-hex${allDone ? ' is-done' : ''}">${allDone ? ico('g-check') : k}</span>${cell(k, false)}
+    </div>`;
+  }).join('');
   renderBadges();
 }
 function claimPass(k, gold) {
@@ -2743,11 +2762,16 @@ function claimPass(k, gold) {
   const list = gold ? P.paid : P.free;
   if (list.includes(k)) return;
   let r = passReward(k, gold);
+  if (!r) return;
   if (r.item) { const [kind, id] = r.item.split(':'); if (isOwned(kind, id)) r = { coins: 300 }; }
   list.push(k);
-  grantReward(r);
+  if (r.song) {
+    const e = store.coll[r.song];
+    if (e) { e.n++; store.coins += 50; } else store.coll[r.song] = { n: 1, t: Date.now(), seen: false };
+    save();
+  } else grantReward(r);
   sfx.booster(); buzz([30, 40, 30]);
-  showReward({ kicker: `Pass de saison · palier ${k}`, title: rewardLabel(r), reward: r });
+  showReward({ kicker: `Pass de saison · palier ${k}`, title: rewardLabel(r), reward: r.song ? {} : r, visual: r.song ? `<span class="rw-sleeve">${coverHTML(SONG.get(r.song))}</span>` : null, extra: r.song ? `Le vinyle « ${SONG.get(r.song).title} » rejoint ton mur` : '' });
   renderPass();
 }
 function buyPass() {

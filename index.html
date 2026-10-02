@@ -320,28 +320,25 @@
 
   <!-- ================= PASS DE SAISON ================= -->
   <section class="screen" id="screen-pass" aria-label="Pass de saison">
-    <header class="topbar">
-      <div class="page-title">Pass</div>
-      <div class="counters">
-        <span class="counter c-coins"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n">0</b></span>
+    <header class="ps-hero" id="pass-hero">
+      <div class="ps-bg" id="pass-bg" aria-hidden="true"></div>
+      <div class="ps-kicker" id="pass-season">Saison d’octobre</div>
+      <div class="ps-title" id="pass-name">Disco Fever</div>
+      <div class="ps-row">
+        <button class="ps-card" id="pass-buy" type="button"><span class="ps-buy-tag" id="pass-buy-tag">Acheter</span><b>Pass Or</b><svg class="ico"><use href="#i-crown"/></svg></button>
+        <div class="ps-end"><span>Fin de la saison</span><b id="pass-timer">12 j</b></div>
       </div>
     </header>
-    <div class="scroll pass-scroll">
-      <section class="pass-hero" id="pass-hero">
-        <div class="ph-top">
-          <div><div class="ph-kicker" id="pass-season">Saison 1</div><div class="ph-title" id="pass-name">Disco Fever</div></div>
-          <div class="ph-timer"><svg class="ico"><use href="#i-clock"/></svg><span id="pass-timer">12 j</span></div>
-        </div>
-        <div class="ph-prog">
-          <span class="ph-tier" id="pass-tier">1</span>
-          <div class="ph-bar-wrap"><span class="bar bar-gold"><span id="pass-fill"></span></span><small id="pass-pts">0 / 100 notes</small></div>
-        </div>
-        <button class="btn btn-gold btn-block" id="pass-buy" type="button">Débloquer le Pass Or</button>
-        <p class="ph-help">Gagne des notes : +10 par bonne réponse, +30 par partie, +50 pour le défi du jour.</p>
-      </section>
-      <div class="pass-cols" aria-hidden="true"><span>Gratuit</span><span></span><span class="pc-gold">Pass Or</span></div>
-      <div class="pass-track" id="pass-track"></div>
+    <div class="ps-xp">
+      <span class="ps-xp-badge">XP</span>
+      <div class="ps-xp-main">
+        <div class="ps-xp-lvl"><b id="pass-tier">1</b><svg class="ico"><use href="#i-g-chevron"/></svg><b id="pass-next">2</b></div>
+        <div class="ps-xp-bar"><span id="pass-fill"></span><small id="pass-pts">0/100</small></div>
+      </div>
     </div>
+    <div class="ps-heads"><span class="ps-h-gold"><svg class="ico"><use href="#i-crown"/></svg></span><span class="ps-h-free">Gratuit</span></div>
+    <div class="ps-track" id="pass-track"></div>
+    <p class="ps-help">Gagne de l’XP de saison : +10 par bonne réponse, +30 par partie, +50 pour le défi du jour.</p>
   </section>
 
   <!-- ================= BOUTIQUE ================= -->

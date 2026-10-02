@@ -1555,3 +1555,69 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .auth-wait { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(255,247,236,.86); font: 800 16px var(--text); color: var(--ink); }
 .auth-spin { width: 44px; height: 44px; border-radius: 50%; border: 5px solid var(--edge); border-top-color: var(--pink); animation: spin .8s linear infinite; }
 .auth .logo i { animation: letter-hop 3.6s ease-in-out infinite; }
+
+/* ================= PASS DE SAISON v2 (bandes colorées, hexagones) ================= */
+#screen-pass { background: #F7E1E6; }
+.ps-hero { position: relative; overflow: hidden; isolation: isolate; padding: calc(28px + var(--safe-t)) 10px 12px; text-align: center; border-bottom: 3px solid #1D1630; }
+.ps-bg { position: absolute; inset: 0; z-index: -2; background-size: cover; transform: scale(1.06); }
+.ps-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(20,10,40,.08), rgba(20,10,40,.28) 60%, rgba(20,10,40,.5)); }
+.ps-kicker { font: 800 20px/1 var(--display); color: #FFC21A; text-transform: uppercase; letter-spacing: .5px; -webkit-text-stroke: 4px #1D1630; paint-order: stroke fill; }
+.ps-title { margin-top: 4px; font: 800 38px/1 var(--display); color: #fff; text-transform: uppercase; -webkit-text-stroke: 6px #1D1630; paint-order: stroke fill; letter-spacing: .5px; }
+.ps-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 22px; }
+.ps-card { position: relative; display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #FFD43B; border: 3px solid #1D1630; box-shadow: 0 4px 0 #1D1630; font: 800 22px var(--display); color: #1D1630; }
+.ps-card .ico { width: 28px; height: 28px; }
+.ps-card:active { transform: translateY(3px); box-shadow: 0 1px 0 #1D1630; }
+.ps-buy-tag { position: absolute; left: 50%; top: -15px; transform: translateX(-50%); padding: 2px 10px; border-radius: 8px; background: #3DD45C; border: 2.5px solid #1D1630; font: 800 13px var(--text); color: #1D1630; white-space: nowrap; }
+.ps-card.is-owned { background: linear-gradient(#FFE27A, #FFC21A); }
+.ps-card.is-owned .ps-buy-tag { background: #fff; }
+.ps-end { display: flex; flex-direction: column; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(29,22,48,.55); color: #fff; font: 800 15px/1.2 var(--text); }
+.ps-end b { font-size: 16px; }
+.ps-xp { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 12px; background: #EEF0FB; border-bottom: 3px solid #1D1630; }
+.ps-xp-badge { padding: 2px 5px; border-radius: 6px; background: #fff; border: 2.5px solid #1D1630; font: 800 13px var(--display); transform: rotate(-8deg); margin-bottom: 18px; }
+.ps-xp-main { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.ps-xp-lvl { display: flex; align-items: center; justify-content: center; gap: 8px; font: 800 18px var(--display); color: #1D1630; }
+.ps-xp-lvl .ico { width: 14px; height: 14px; }
+.ps-xp-bar { position: relative; height: 26px; border-radius: 6px; background: #2A2340; border: 2.5px solid #1D1630; overflow: hidden; }
+.ps-xp-bar span { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#FFC94D 0 45%, #F59A23 45%); transition: width .6s var(--ease-out); }
+.ps-xp-bar small { position: absolute; inset: 0; display: grid; place-items: center; font: 800 14px var(--display); color: #fff; -webkit-text-stroke: 3px #1D1630; paint-order: stroke fill; }
+.ps-heads { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 6px; background: #F7B8C4; border-bottom: 3px solid #1D1630; }
+.ps-heads span { display: grid; place-items: center; height: 54px; border-radius: 10px; border: 2.5px solid #1D1630; box-shadow: 0 3px 0 #1D1630; font: 800 22px var(--display); color: #1D1630; }
+.ps-h-gold { background: #FFD43B; }
+.ps-h-gold .ico { width: 30px; height: 30px; }
+.ps-h-free { background: #fff; }
+.ps-track { position: relative; padding-bottom: 10px; }
+.ps-track::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: #1D1630; z-index: 1; }
+.ps-row-tier { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 84px; background: var(--band); border-bottom: 3px solid #1D1630; }
+.ps-hex { position: absolute; left: 50%; top: 50%; z-index: 2; width: 52px; height: 58px; transform: translate(-50%, -50%); display: grid; place-items: center; font: 800 22px var(--display); color: #fff; -webkit-text-stroke: 4px #1D1630; paint-order: stroke fill;
+  background: #1D1630; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.ps-hex::before { content: ''; position: absolute; inset: 4px; z-index: -1; background: linear-gradient(#FFB648, #F28A1E); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.ps-hex.is-done::before { background: linear-gradient(#5BE07A, #22B455); }
+.ps-hex .ico { width: 26px; height: 26px; color: #fff; filter: drop-shadow(0 0 1px #1D1630) drop-shadow(0 2px 0 #1D1630); }
+.ps-row-tier.is-next .ps-hex { animation: badge-bounce 1.8s ease-in-out infinite; }
+.pr { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 34px 8px 10px; text-align: left; background: none; border: 0; box-shadow: none; min-height: 84px; border-radius: 0; }
+.ps-row-tier .pr:last-child { padding: 8px 10px 8px 34px; }
+.pr-empty { pointer-events: none; }
+.pr-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pr-txt small { font: 800 11px var(--text); color: #1D1630; opacity: .8; }
+.pr-txt b { font: 800 14.5px/1.15 var(--display); color: #1D1630; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pr-box { flex: 0 0 auto; width: 50px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: #fff; border: 2.5px solid #1D1630; box-shadow: 0 3px 0 #1D1630; }
+.pr-box .ico { width: 30px; height: 30px; }
+.pr-char { flex: 0 0 auto; width: 62px; height: 66px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, #FFF6EA 0 60%, transparent 61%); }
+.pr-char .char { width: 100%; height: 100%; object-fit: contain; object-position: 50% 30%; }
+.pr-sleeve { flex: 0 0 auto; width: 44px; height: 60px; border-radius: 6px; overflow: hidden; border: 2.5px solid #1D1630; box-shadow: 0 3px 0 #1D1630; }
+.pr-sleeve .cover { height: 100%; }
+.pr-take { position: absolute; left: 10px; bottom: 6px; padding: 2px 9px; border-radius: 8px; background: #3DD45C; border: 2px solid #1D1630; font: 800 11px var(--text); color: #1D1630; }
+.ps-row-tier .pr:last-child .pr-take { left: auto; right: 10px; }
+.pr.is-ready { animation: none; }
+.pr.is-ready .pr-box, .pr.is-ready .pr-sleeve, .pr.is-ready .pr-char { animation: badge-bounce 1.8s ease-in-out infinite; }
+.pr-done, .pr-lock { position: absolute; top: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #1D1630; color: #fff; }
+.pr-done { right: 40px; background: #3DD45C; }
+.pr-lock { right: 40px; background: #8E86A6; }
+.ps-row-tier .pr:last-child .pr-done, .ps-row-tier .pr:last-child .pr-lock { right: 8px; }
+.pr-done .ico, .pr-lock .ico { width: 12px; height: 12px; }
+.pr.is-claimed > :not(.pr-done) { opacity: .5; }
+.pr.is-locked .pr-char .char, .pr.is-locked .pr-box .ico, .pr.is-locked .pr-sleeve { filter: saturate(.6); }
+.ps-help { margin: 10px 14px calc(150px + var(--safe-b)); text-align: center; font: 700 12.5px var(--text); color: #6B5F86; }
+.rw-sleeve { display: block; width: 150px; height: 150px; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 24px rgba(0,0,0,.2); }
+.pr-take, .ps-row-tier .pr:last-child .pr-take { position: static; align-self: flex-start; margin-top: 4px; }
+.pr-take, .ps-row-tier .pr:last-child .pr-take { transform: none; left: auto; padding: 1px 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; box-shadow: 0 2px 0 #1D1630; }
