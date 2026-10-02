@@ -3087,7 +3087,7 @@ document.addEventListener('visibilitychange', () => {
   } else if (G.phase === 'playing' && G.pv) player.play().catch(() => {});
 });
 
-if (/[?&]debug\b/.test(location.search)) window.__PQ = { G, store, save, openBooster, get BO() { return BO; }, RARITY, BY_RARITY, ACHS, achState, ensureMissions, checkAchievements };
+if (/[?&]debug\b/.test(location.search)) window.__PQ = { audio: () => ({ ctx: actx?.state || null, src: player.currentSrc, paused: player.paused, time: player.currentTime }), G, store, save, openBooster, get BO() { return BO; }, RARITY, BY_RARITY, ACHS, achState, ensureMissions, checkAchievements };
 // Le son se débloque au tout premier toucher, quel que soit l'endroit (iOS / WebView)
 ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once: true, passive: true }));
 ensureMissions();
