@@ -22,24 +22,30 @@
 
   <!-- ================= ACCUEIL ================= -->
   <section class="screen is-active" id="screen-home" aria-label="Accueil">
-    <header class="topbar">
-      <button class="me-btn" id="me-btn" type="button" aria-label="Mon profil"><span class="tab-avatar" id="tab-avatar" aria-hidden="true"></span><i class="tab-badge" id="tb-prof" hidden></i></button>
-      <div class="logo" aria-label="Pompelup"><i class="l0">p</i><i class="l1 lo" aria-hidden="true"></i><i class="l2">m</i><i class="l3">p</i><i class="l4">e</i><i class="l5">l</i><i class="l6">u</i><i class="l7">p</i></div>
-      <div class="counters">
-        <button class="counter c-streak" id="home-streak" type="button" aria-label="Série de jours joués">
-          <svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg><b id="home-streak-n">0</b>
+    <header class="hh">
+      <div class="hh-card">
+        <button class="hh-av" id="me-btn" type="button" aria-label="Mon profil"><span class="tab-avatar" id="tab-avatar" aria-hidden="true"></span><i class="tab-badge" id="tb-prof" hidden></i></button>
+        <div class="hh-id"><b id="hh-name">Joueur</b><span class="hh-status" id="hh-status"></span></div>
+        <button class="hh-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique"><b class="coins-n" id="home-coins-n">0</b><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg></button>
+      </div>
+      <div class="hh-row">
+        <button class="hh-xp" id="hh-xp" type="button" aria-label="Niveau et XP">
+          <span class="hh-xp-tag">XP</span>
+          <span class="hh-lvl"><b id="hh-lvl">1</b></span>
+          <span class="hh-bar"><span id="hh-xp-fill"></span><small id="hh-xp-txt">0/300</small></span>
         </button>
-        <button class="counter c-coins" id="home-coins" type="button" aria-label="Jetons — ouvrir la boutique">
-          <svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n" id="home-coins-n">0</b>
-        </button>
-        <button class="counter c-boost" id="home-boosters" type="button" aria-label="Boosters à ouvrir">
-          <svg class="ico" aria-hidden="true"><use href="#i-booster"/></svg><b id="home-boosters-n">0</b>
+        <button class="hh-quest" id="mis-card" type="button">
+          <svg class="ico hh-q-ico" aria-hidden="true"><use href="#i-quest"/></svg>
+          <span class="hh-q-txt"><b>Quête journalière</b><small id="mis-next">Prêt à relever le défi ?</small></span>
+          <span class="hh-q-btn" id="hh-q-btn">+50</span>
+          <span class="dot-badge" id="mis-badge" hidden>!</span>
         </button>
       </div>
+      <span hidden><button id="home-streak" type="button"><b id="home-streak-n">0</b></button><button id="home-boosters" type="button"><b id="home-boosters-n">0</b><svg><use href="#i-booster"/></svg></button></span>
     </header>
 
     <div class="scroll">
-      <section class="hero hero-booster" id="booster-card" aria-label="Boosters de vinyles">
+      <section class="hero hero-booster" id="booster-card" aria-label="Boosters de vinyles" hidden>
         <div class="hero-txt">
           <div class="hero-kicker">Boosters de vinyles</div>
           <div class="hero-title" id="bcard-title">1 booster à ouvrir</div>
@@ -72,14 +78,6 @@
           <span class="daily-title" id="daily-title">Chanson mystère</span>
           <span class="daily-sub" id="daily-sub">3 essais · +1 booster</span>
           <span class="daily-cta" id="daily-cta">Jouer</span>
-        </button>
-        <button class="card-btn quests" id="mis-card" type="button">
-          <svg class="ico quests-ico" aria-hidden="true"><use href="#i-chest"/></svg>
-          <span class="quests-tag">Missions du jour</span>
-          <span class="quests-num"><b id="mis-done">0</b><small>/3</small></span>
-          <span class="quests-dots" id="mis-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="quests-next" id="mis-next">Trouve 10 chansons</span>
-          <span class="dot-badge" id="mis-badge" hidden>!</span>
         </button>
       </div>
 

@@ -1751,3 +1751,41 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .mpr-pos.p1 { background: var(--yellow); } .mpr-pos.p2 { background: #DADADA; } .mpr-pos.p3 { background: #F2B987; }
 .mpr-sc { display: flex; flex-direction: column; align-items: flex-end; font: 800 16px var(--text); color: var(--violet); }
 .mpr-sc small { font: 700 11px var(--text); color: var(--ink-2); }
+
+/* ================= EN-TÊTE DE L'ACCUEIL (carte joueur, XP, quête) ================= */
+#screen-home { background: linear-gradient(180deg, #F7D5A9 0, #F6C7AE 230px, transparent 420px); }
+.hh { display: flex; flex-direction: column; gap: 10px; padding: calc(14px + var(--safe-t)) 14px 4px; }
+.hh-card, .hh-xp, .hh-quest { border: 3px solid #1D1630; box-shadow: 0 5px 0 #1D1630; border-radius: 18px; }
+.hh-card { display: flex; align-items: center; gap: 14px; padding: 12px 12px 12px 14px; background: #fff; }
+.hh-av { position: relative; flex: 0 0 auto; }
+.hh-av .tab-avatar { display: block; width: 66px; height: 66px; border: 3px solid #1D1630; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #A9E3D0, #5AC79F); }
+.hh-av .tab-badge { top: -4px; right: -4px; left: auto; }
+.hh-id { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hh-id b { font: 800 21px/1.1 var(--display); color: #1D1630; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hh-status { display: inline-flex; align-items: center; gap: 8px; font: 800 15px var(--display); color: #7A7488; }
+.hh-status .ico { width: 30px; height: 30px; }
+.hh-status:not(.is-premium) .ico { width: 22px; height: 22px; }
+.hh-status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hh-coins { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 3px solid #1D1630; border-radius: 12px; box-shadow: 0 4px 0 #1D1630; background: #fff; font: 800 17px var(--display); color: #1D1630; transition: transform .1s, box-shadow .1s; }
+.hh-coins .ico { width: 30px; height: 30px; }
+.hh-coins:active, .hh-xp:active, .hh-quest:active { transform: translateY(4px); box-shadow: 0 1px 0 #1D1630; }
+.hh-row { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.hh-xp { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 92px; padding: 8px 8px 10px; background: #fff; transition: transform .1s, box-shadow .1s; }
+.hh-xp-tag { position: absolute; left: 12px; top: 22px; padding: 1px 6px; border-radius: 6px; background: #fff; border: 2.5px solid #1D1630; font: 800 14px var(--display); color: #1D1630; transform: rotate(-8deg); box-shadow: 0 2px 0 #1D1630; z-index: 2; }
+.hh-lvl { position: absolute; left: 50%; top: -22px; transform: translateX(-30%); width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; background: #EE9B4F; border: 3px solid #1D1630; box-shadow: inset 0 0 0 7px #F6B375; }
+.hh-lvl b { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #1D1630; color: #fff; font: 800 21px var(--display); box-shadow: 0 0 0 4px #FFE9D2; }
+.hh-bar { position: relative; z-index: 1; height: 22px; border-radius: 6px; background: #2A2340; border: 2.5px solid #1D1630; overflow: hidden; }
+.hh-bar span { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#FFC94D 0 45%, #F59A23 45%); transition: width .6s var(--ease-out); }
+.hh-bar small { position: absolute; inset: 0; display: grid; place-items: center; font: 800 13px var(--display); color: #fff; -webkit-text-stroke: 3px #1D1630; paint-order: stroke fill; }
+.hh-quest { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 12px; background: #232836; text-align: left; transition: transform .1s, box-shadow .1s; }
+.hh-q-ico { flex: 0 0 auto; width: 46px; height: 46px; transform: rotate(-10deg); filter: drop-shadow(0 2px 0 #1D1630); }
+.hh-q-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hh-q-txt b { font: 800 17px/1.1 var(--display); color: #fff; }
+.hh-q-txt small { font: 800 12.5px/1.2 var(--display); color: #8FB7FF; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.hh-q-btn { flex: 0 0 auto; display: grid; place-items: center; min-width: 64px; height: 56px; padding: 0 8px; border-radius: 10px; background: #FBE06A; border: 2.5px solid #1D1630; box-shadow: 0 4px 0 #1D1630; font: 800 15px var(--display); color: #fff; -webkit-text-stroke: 3px #1D1630; paint-order: stroke fill; }
+.hh-quest.is-claim .hh-q-btn { animation: badge-bounce 1.6s ease-in-out infinite; background: #7FE07A; }
+.hh-quest .dot-badge { top: -9px; right: -6px; }
+.duo { grid-template-columns: 1fr; }
+.daily { min-height: 0; display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto auto; column-gap: 12px; align-items: center; }
+.daily .daily-ico { grid-row: 1 / 4; }
+.daily .daily-cta { grid-column: 3; grid-row: 1 / 4; margin: 0; }

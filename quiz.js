@@ -846,6 +846,7 @@ function renderHome() {
   $('#pm-solo-sub').textContent = $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
+  renderHomeHeader();
   renderStoryCard();
   renderPassCard();
   renderDaily();
@@ -873,12 +874,21 @@ function renderBoosterCard() {
 function ownedIds() { return Object.keys(store.coll).filter(id => SONG.has(id)); }
 function renderMissionsCard() {
   const M = ensureMissions(), done = M.list.filter(m => m.p >= m.target).length;
-  $('#mis-done').textContent = done;
-  $$('#mis-dots i').forEach((d, i) => { const m = M.list[i]; d.className = m?.claimed ? 'is-claimed' : m && m.p >= m.target ? 'is-done' : ''; });
-  const next = M.list.find(m => m.p < m.target);
-  const claim = missionsClaimable();
-  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer` : next ? `${next.text} (${next.max ? fmt(next.p) : next.p}/${next.max ? fmt(next.target) : next.target})` : 'Toutes les missions sont faites !';
+  const next = M.list.find(m => m.p < m.target), claim = missionsClaimable(), todo = M.list.find(m => !m.claimed);
+  $('#mis-next').textContent = claim ? `${plural(claim, 'récompense', 'récompenses')} à récupérer !` : done === 0 ? 'Prêt à relever le défi ?' : next ? `${done}/3 · ${next.text}` : 'Toutes les quêtes sont faites !';
+  $('#hh-q-btn').textContent = todo ? `+${todo.reward}` : 'OK';
+  $('#mis-card').classList.toggle('is-claim', !!claim);
   $('#mis-badge').hidden = !claim;
+}
+// En-tête de l'accueil : carte joueur, niveau, quête du jour
+function renderHomeHeader() {
+  const L = levelOf(store.xp), P = passState();
+  $('#hh-name').textContent = displayName();
+  $('#hh-status').innerHTML = P.gold ? `${ico('crown')}<span>Premium</span>` : `${ico('note')}<span>${esc(titleFor(L.lvl))}</span>`;
+  $('#hh-status').classList.toggle('is-premium', P.gold);
+  $('#hh-lvl').textContent = L.lvl;
+  $('#hh-xp-fill').style.width = `${Math.round(L.pct * 100)}%`;
+  $('#hh-xp-txt').textContent = `${fmt(L.rest)}/${fmt(L.need)}`;
 }
 function dailyToday() { return store.daily && store.daily.date === dayKey() ? store.daily : null; }
 function renderDaily() {
@@ -3068,6 +3078,7 @@ $('#btn-play').addEventListener('click', quickPlay);
 $('#home-boosters').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 $('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); show(t.dataset.tab); } });
 $('#home-coins').addEventListener('click', () => show('shop'));
+$('#hh-xp').addEventListener('click', () => show('profile'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', playDaily);
 $('#home-streak').addEventListener('click', () => {
