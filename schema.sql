@@ -30,3 +30,18 @@ create table if not exists public.match_history (
 alter table public.match_history enable row level security;
 create policy "history_select" on public.match_history for select using (auth.uid() = user_id);
 create policy "history_insert" on public.match_history for insert with check (auth.uid() = user_id);
+
+-- Sauvegarde cloud de la progression (utilisée par auth.js : loadSave / pushSave)
+-- Une ligne par compte ; l'upsert du client se base sur la clé primaire user_id.
+create table if not exists public.saves (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.saves enable row level security;
+drop policy if exists "saves_select" on public.saves;
+create policy "saves_select" on public.saves for select using (auth.uid() = user_id);
+drop policy if exists "saves_insert" on public.saves;
+create policy "saves_insert" on public.saves for insert with check (auth.uid() = user_id);
+drop policy if exists "saves_update" on public.saves;
+create policy "saves_update" on public.saves for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
