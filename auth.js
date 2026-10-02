@@ -95,7 +95,7 @@ async function ensureProfile(name) {
 async function loadSave() {
   if (!user) return null;
   const { data, error } = await sb.from('saves').select('data, updated_at').eq('user_id', user.id).maybeSingle();
-  if (error) throw error;
+  if (error) { console.warn('[Pompelup] Chargement de la sauvegarde cloud impossible :', error); throw error; }
   return data;
 }
 let pushTimer = null, pending = null;
@@ -105,7 +105,10 @@ function pushSave(obj, now) {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
     const d = pending; pending = null;
-    try { await sb.from('saves').upsert({ user_id: user.id, data: d, updated_at: new Date().toISOString() }); } catch (e) {}
+    try {
+      const { error } = await sb.from('saves').upsert({ user_id: user.id, data: d, updated_at: new Date().toISOString() });
+      if (error) console.warn('[Pompelup] Sauvegarde cloud impossible :', error);
+    } catch (e) { console.warn('[Pompelup] Sauvegarde cloud impossible :', e); }
   }, now ? 0 : 3000);
 }
 // Pseudo affiché pour un compte
