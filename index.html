@@ -136,6 +136,7 @@
       <span class="game-round" id="game-round">Manche 1/10</span>
       <span class="game-score" aria-live="polite"><svg class="ico"><use href="#i-xp"/></svg><span id="game-score">0</span></span>
     </div>
+    <div class="mp-live" id="mp-live" hidden></div>
     <h1 class="game-title" id="game-title">Quelle est cette chanson ?</h1>
 
     <div class="host" id="host">
@@ -206,6 +207,7 @@
       <div class="res-line" id="res-line">0/10 trouvées</div>
       <div class="res-record" id="res-record" hidden><svg class="ico"><use href="#i-trophy"/></svg>Nouveau record !</div>
     </div>
+    <section class="panel mp-rank" id="mp-rank" hidden></section>
     <div class="rcards">
       <div class="rcard rc-gold"><div class="rc-head">Score</div><div class="rc-body"><svg class="ico"><use href="#i-xp"/></svg><b id="res-score">0</b></div></div>
       <div class="rcard rc-green"><div class="rc-head" id="res-acc-label">Précision</div><div class="rc-body"><svg class="ico"><use href="#i-target"/></svg><b id="res-acc">0 %</b></div></div>
@@ -341,6 +343,45 @@
     <p class="ps-help">Gagne de l’XP de saison : +10 par bonne réponse, +30 par partie, +50 pour le défi du jour.</p>
   </section>
 
+  <!-- ================= MULTIJOUEUR ================= -->
+  <section class="screen" id="screen-multi" aria-label="Multijoueur">
+    <header class="topbar">
+      <div class="page-head-l"><button class="icon-btn" id="mp-back" type="button" aria-label="Retour"><svg class="ico"><use href="#i-g-back"/></svg></button><div class="page-title">Multijoueur</div></div>
+    </header>
+    <div class="scroll">
+      <div class="mp-start" id="mp-start">
+        <section class="mp-hero">
+          <div class="mp-hero-chars" id="mp-hero-chars" aria-hidden="true"></div>
+          <b>Blind test entre potes</b>
+          <small>Mêmes extraits, mêmes réponses : le plus rapide gagne.</small>
+        </section>
+        <button class="btn btn-green btn-block" id="mp-create" type="button">Créer une salle</button>
+        <div class="panel mp-join">
+          <b>Rejoindre une salle</b>
+          <div class="mp-join-row"><input id="mp-code" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CODE" aria-label="Code de la salle"><button class="btn btn-blue" id="mp-join" type="button">Rejoindre</button></div>
+          <p class="mp-err" id="mp-err" role="alert"></p>
+        </div>
+      </div>
+      <div class="mp-room" id="mp-room" hidden>
+        <section class="mp-code-card">
+          <small>Code de la salle</small>
+          <b id="mp-room-code">-----</b>
+          <button class="btn btn-sm btn-white" id="mp-share" type="button"><svg class="ico"><use href="#i-g-share"/></svg>Inviter</button>
+        </section>
+        <h2 class="sec-title">Joueurs <small id="mp-count">1/8</small></h2>
+        <div class="mp-players" id="mp-players"></div>
+        <div class="mp-settings" id="mp-settings">
+          <h2 class="sec-title">Réglages</h2>
+          <div class="chips-row" id="mp-cats"></div>
+          <div class="seg" id="mp-rounds"><button type="button" data-r="5" aria-checked="false">5 manches</button><button type="button" data-r="10" aria-checked="true">10 manches</button></div>
+        </div>
+        <p class="mp-wait" id="mp-wait">En attente de l’hôte…</p>
+        <button class="btn btn-fun btn-block" id="mp-go" type="button">Lancer la partie</button>
+        <button class="btn btn-ghost-red btn-block" id="mp-leave" type="button">Quitter la salle</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= BOUTIQUE ================= -->
   <section class="screen" id="screen-shop" aria-label="Boutique">
     <header class="topbar">
@@ -436,7 +477,17 @@
 
   <!-- ================= BARRE DE NAVIGATION ================= -->
   <nav class="tabbar" id="tabbar" aria-label="Navigation">
-    <button class="nav-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="nav-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
+    <div class="play-menu" id="play-menu" hidden>
+      <button class="pm-item" type="button" data-play="solo"><span class="pm-ico pm-solo"><svg class="ico"><use href="#i-g-headphones"/></svg></span><span class="pm-txt"><b>Partie solo</b><small id="pm-solo-sub">Tout mélangé · 10 manches</small></span></button>
+      <button class="pm-item" type="button" data-play="multi"><span class="pm-ico pm-multi"><svg class="ico"><use href="#i-g-user"/></svg></span><span class="pm-txt"><b>Multijoueur</b><small>Crée une salle et défie tes potes</small></span><span class="pm-new">Nouveau</span></button>
+      <button class="pm-item" type="button" data-play="daily"><span class="pm-ico pm-daily"><svg class="ico"><use href="#i-g-star"/></svg></span><span class="pm-txt"><b>Défi du jour</b><small>Chanson mystère · 3 essais</small></span></button>
+      <button class="pm-item" type="button" data-play="rapid"><span class="pm-ico pm-rapid"><svg class="ico"><use href="#i-g-bolt"/></svg></span><span class="pm-txt"><b>Partie rapide</b><small>Voix, guitare, batterie… maintiens pour écouter</small></span></button>
+      <button class="pm-item" type="button" data-play="story"><span class="pm-ico pm-story"><svg class="ico"><use href="#i-g-book"/></svg></span><span class="pm-txt"><b>Mode histoire</b><small>Découvre les légendes, étape par étape</small></span></button>
+    </div>
+    <div class="nav-split">
+      <button class="nav-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="nav-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
+      <button class="nav-more" id="btn-play-more" type="button" aria-label="Plus de modes de jeu" aria-expanded="false"><svg class="ico"><use href="#i-g-arrow-up"/></svg></button>
+    </div>
     <div class="nav-tiles">
       <button class="tab is-active" type="button" data-tab="home" aria-label="Accueil"><svg class="ico"><use href="#i-house"/></svg><span>Accueil</span></button>
       <button class="tab" type="button" data-tab="boosters" aria-label="Boosters"><svg class="ico"><use href="#i-booster"/></svg><span>Boosters</span><i class="tab-badge" id="tb-story" hidden></i></button>

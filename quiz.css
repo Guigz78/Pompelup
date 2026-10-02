@@ -1672,3 +1672,82 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .pass-card .bar { background: #fff; border-color: var(--edge); --bar: var(--orange); }
 .pass-card .story-card-go { color: var(--ink-3); }
 .ps-kicker { color: #fff; opacity: .95; }
+
+/* ================= JOUER scindé + menu qui s'agrandit ================= */
+.nav-split { display: flex; gap: 6px; }
+.nav-split .nav-play { flex: 1; border-radius: 14px 6px 6px 14px; }
+.nav-more { flex: 0 0 52px; display: grid; place-items: center; border-radius: 6px 14px 14px 6px; color: #fff; background: linear-gradient(135deg, var(--orange), var(--yellow)); box-shadow: 0 4px 0 #D6307F; transition: transform .1s, box-shadow .1s; }
+.nav-more .ico { width: 24px; height: 24px; transition: transform .25s var(--ease-back); }
+.nav-more:active { transform: translateY(4px); box-shadow: 0 0 0 #D6307F; }
+.tabbar.is-open .nav-more .ico { transform: rotate(180deg); }
+.play-menu { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 4px; animation: pm-in .25s var(--ease-out); }
+@keyframes pm-in { from { opacity: 0; transform: translateY(14px); } }
+.pm-item { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; border-radius: 14px; background: #fff; border: 2px solid var(--edge); box-shadow: 0 3px 0 var(--edge); text-align: left; transition: transform .1s; }
+.pm-item:active { transform: translateY(3px); box-shadow: none; }
+.pm-ico { flex: 0 0 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; }
+.pm-ico .ico { width: 24px; height: 24px; }
+.pm-solo { background: var(--cyan); box-shadow: 0 3px 0 #0FA3BC; }
+.pm-multi { background: var(--violet); box-shadow: 0 3px 0 var(--violet-lip); }
+.pm-daily { background: var(--blue); box-shadow: 0 3px 0 var(--blue-lip); }
+.pm-rapid { background: var(--pink); box-shadow: 0 3px 0 #D6307F; }
+.pm-story { background: var(--green); box-shadow: 0 3px 0 var(--green-lip); }
+.pm-txt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pm-txt b { font: 800 15px var(--text); color: var(--ink); }
+.pm-txt small { font: 700 12px var(--text); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-new { padding: 2px 8px; border-radius: 99px; background: var(--pink); color: #fff; font: 800 10px var(--text); letter-spacing: .5px; text-transform: uppercase; }
+.tabbar.is-open { box-shadow: 0 -20px 50px rgba(42,27,77,.18); }
+
+/* ================= MULTIJOUEUR ================= */
+.mp-start { display: flex; flex-direction: column; gap: 14px; }
+.mp-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px; border-radius: 22px; text-align: center; color: #fff;
+  background: radial-gradient(90% 70% at 50% 30%, #B58CFF, transparent 70%), linear-gradient(160deg, var(--violet), #5A3DE0 60%, #D6307F 130%); box-shadow: 0 5px 0 #4A2FC0; }
+.mp-hero b { font: 800 24px var(--display); }
+.mp-hero small { font: 700 14px var(--text); opacity: .92; }
+.mp-hero-chars { display: flex; justify-content: center; margin-bottom: 4px; }
+.mp-hero-chars span { width: 96px; height: 106px; margin: 0 -10px; }
+.mp-hero-chars span:nth-child(2) { transform: translateY(-8px) scale(1.08); z-index: 1; }
+.mp-hero-chars .char { width: 100%; height: 100%; object-fit: contain; }
+.mp-join { display: flex; flex-direction: column; gap: 10px; }
+.mp-join b { font: 800 16px var(--text); }
+.mp-join-row { display: flex; gap: 8px; }
+.mp-join-row input { flex: 1; min-width: 0; height: 52px; padding: 0 14px; border-radius: 14px; border: 2px solid var(--edge); background: var(--polar); font: 800 22px var(--display); letter-spacing: 6px; text-transform: uppercase; color: var(--ink); text-align: center; }
+.mp-join-row input:focus { outline: none; border-color: var(--violet); background: #fff; }
+.mp-join-row .btn { margin-bottom: 4px; }
+.mp-err { margin: 0; min-height: 18px; font: 700 13px var(--text); color: var(--red-lip); }
+.mp-room { display: flex; flex-direction: column; gap: 14px; }
+.mp-code-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; border-radius: 20px; color: #fff; background: linear-gradient(135deg, var(--violet), var(--pink)); box-shadow: 0 5px 0 #4A2FC0; }
+.mp-code-card small { font: 800 12px var(--text); letter-spacing: 1px; text-transform: uppercase; opacity: .9; }
+.mp-code-card b { font: 800 44px/1 var(--display); letter-spacing: 8px; }
+.mp-code-card .btn { --fg: var(--violet); margin-top: 4px; }
+.sec-title small { font: 800 14px var(--text); color: var(--ink-3); margin-left: 6px; }
+.mp-players { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mpp { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 8px; border-radius: 14px; background: #fff; border: 2px solid var(--edge); box-shadow: 0 3px 0 var(--edge); text-align: center; animation: pop-in .3s var(--ease-back); }
+.mpp.is-me { border-color: var(--violet); }
+.mpp-av { width: 64px; height: 70px; }
+.mpp-av .char { width: 100%; height: 100%; object-fit: contain; }
+.mpp b { font: 800 12px var(--text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mpp-host { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 2px; padding: 1px 7px 1px 3px; border-radius: 99px; background: var(--yellow); font: 800 10px var(--text); box-shadow: 0 2px 0 #E5B400; white-space: nowrap; }
+.mpp-host .ico { width: 14px; height: 14px; }
+.mpp-empty { border-style: dashed; box-shadow: none; justify-content: center; color: var(--ink-3); }
+.mpp-q { width: 48px; height: 48px; margin: 10px 0 6px; border-radius: 50%; display: grid; place-items: center; background: var(--polar); font: 800 22px var(--display); }
+.mp-settings { display: flex; flex-direction: column; gap: 10px; }
+.mp-wait { margin: 0; text-align: center; font: 700 14px var(--text); color: var(--ink-2); }
+/* Classement en direct pendant la partie */
+.mp-live { display: flex; gap: 6px; padding: 8px 14px 0; overflow-x: auto; scrollbar-width: none; }
+.mpl { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 3px; border-radius: 99px; background: #fff; border: 2px solid var(--edge); font: 800 12px var(--text); white-space: nowrap; }
+.mpl.is-me { border-color: var(--violet); background: #F1EAFF; }
+.mpl i { font-style: normal; width: 18px; text-align: center; color: var(--ink-3); }
+.mpl-av { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; background: #FFE7D6; }
+.mpl-av .char { width: 100%; height: 100%; object-fit: cover; }
+.mpl em { font-style: normal; color: var(--violet); }
+/* Classement de fin de partie */
+.mp-rank { display: flex; flex-direction: column; gap: 8px; }
+.mp-rank-t { font: 800 20px var(--display); color: var(--ink); text-align: center; }
+.mpr { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; background: var(--polar); }
+.mpr.is-me { background: #F1EAFF; }
+.mpr .mpl-av { flex-basis: 38px; width: 38px; height: 38px; }
+.mpr b { flex: 1; font: 800 15px var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mpr-pos { flex: 0 0 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--edge); font: 800 14px var(--text); }
+.mpr-pos.p1 { background: var(--yellow); } .mpr-pos.p2 { background: #DADADA; } .mpr-pos.p3 { background: #F2B987; }
+.mpr-sc { display: flex; flex-direction: column; align-items: flex-end; font: 800 16px var(--text); color: var(--violet); }
+.mpr-sc small { font: 700 11px var(--text); color: var(--ink-2); }

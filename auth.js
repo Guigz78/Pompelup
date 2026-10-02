@@ -116,7 +116,7 @@ const displayName = () => user?.user_metadata?.username || user?.user_metadata?.
 
 window.PompeAuth = {
   ready: !!sb, init, oauth, fromRedirect, signUp, signIn, resetPassword, signOut, ensureProfile, loadSave, pushSave, frError,
-  get user() { return user; }, displayName,
+  get user() { return user; }, displayName, client: sb,
   onChange: f => listeners.add(f), onError: f => errListeners.add(f),
 };
 })();

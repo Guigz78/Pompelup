@@ -720,7 +720,7 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
-const TAB_SCREENS = ['home', 'boosters', 'story', 'pass', 'collection', 'shop', 'profile'];
+const TAB_SCREENS = ['home', 'boosters', 'story', 'pass', 'collection', 'shop', 'profile', 'multi'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
@@ -734,6 +734,8 @@ function show(id) {
   if (id === 'shop') renderShop();
   if (id === 'pass') renderPass();
   if (id === 'boosters') renderBoosters();
+  if (id === 'multi') renderMulti();
+  closePlayMenu();
   if (id === 'profile') renderProfile();
   if (id === 'story') { renderStory(); requestAnimationFrame(() => scrollToCurrent(false)); }
   renderBadges();
@@ -841,7 +843,7 @@ function renderHome() {
   $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
   $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
+  $('#pm-solo-sub').textContent = $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
   renderStoryCard();
@@ -904,11 +906,11 @@ const NO_AUTO = /[?&]noauto\b/.test(location.search);   // tests automatisés un
 
 function startGame(cfg) {
   unlockAudio();
-  const pool = cfg.daily ? cfg.candidates.slice() : shuffle(poolFor(cfg.cat).slice());
+  const pool = cfg.daily ? cfg.candidates.slice() : cfg.fixed ? cfg.fixed.map(id => SONG.get(id)).filter(Boolean) : shuffle(poolFor(cfg.cat).slice());
   const rounds = Math.min(cfg.rounds, pool.length);
   Object.assign(G, {
     cfg, token: G.token + 1, phase: 'loading',
-    songs: pool.slice(0, rounds), spares: pool.slice(rounds, rounds + 12),
+    songs: pool.slice(0, rounds), spares: cfg.fixed ? [] : pool.slice(rounds, rounds + 12),
     i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false,
     dur: cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20,
   });
@@ -943,8 +945,8 @@ async function resolveRound(i) {
   return { song: G.songs[i], pv: null };
 }
 
-function distractors(song, n = 3) {
-  const src = G.cfg.daily ? SONGS : poolFor(G.cfg.cat);
+function distractors(song, n = 3, srcIn) {
+  const src = srcIn || (G.cfg.daily ? SONGS : poolFor(G.cfg.cat));
   const seen = new Set([cleanTitle(song.title)]);
   const same = shuffle(src.filter(s => s.genre === song.genre && s.id !== song.id));
   const other = shuffle(src.filter(s => s.genre !== song.genre && s.id !== song.id));
@@ -1010,7 +1012,7 @@ async function startRound() {
     $('#attempts').hidden = !G.cfg.daily;
     renderAttempts();
   } else {
-    const opts = shuffle([song, ...distractors(song)]);
+    const opts = G.cfg.fixedOptions?.[G.i] ? G.cfg.fixedOptions[G.i].map(id => SONG.get(id)).filter(Boolean) : shuffle([song, ...distractors(song)]);
     $('#choices').innerHTML = opts.map((s, k) => `
       <button class="choice" type="button" data-id="${s.id}" disabled>
         <span class="choice-key" aria-hidden="true">${k + 1}</span>
@@ -1140,6 +1142,7 @@ function finishRound(ok, reason, sourceEl) {
     buzz([50, 40, 50]);
   }
   G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || knownArt(song.id) });
+  if (G.cfg.multi) mpReport(false);
 
   $('#disc').classList.remove('is-spinning');
   $('#disc').classList.add('is-revealed');
@@ -1536,7 +1539,9 @@ function endGame() {
       <span class="recap-txt"><b>${esc(r.song.title)}</b><span>${esc(r.song.artist)} · ${r.song.year}</span></span>
       <span class="recap-pts">${r.ok ? (G.cfg.daily ? 'Trouvé' : `+${fmt(r.pts)}`) : '—'}</span>
     </li>`).join('');
-  $('#btn-replay').textContent = G.cfg.daily ? 'Accueil' : 'Rejouer';
+  $('#btn-replay').textContent = G.cfg.daily ? 'Accueil' : G.cfg.multi ? 'Salon' : 'Rejouer';
+  $('#mp-rank').hidden = !G.cfg.multi;
+  if (G.cfg.multi) { MP.inGame = false; mpReport(true); renderRank(); }
   renderResBooster();
   show('results');
 
@@ -2901,6 +2906,162 @@ $('#acc-btn').addEventListener('click', async () => {
   else showAuth();
 });
 
+
+/* ================= MENU JOUER (bouton scindé) ================= */
+function closePlayMenu() { $('#play-menu').hidden = true; $('#btn-play-more').setAttribute('aria-expanded', 'false'); $('#tabbar').classList.remove('is-open'); }
+function togglePlayMenu() {
+  const open = $('#play-menu').hidden;
+  $('#play-menu').hidden = !open;
+  $('#btn-play-more').setAttribute('aria-expanded', String(open));
+  $('#tabbar').classList.toggle('is-open', open);
+  if (open) sfx.pop();
+}
+function playDaily() {
+  if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())}`); return; }
+  startGame({ daily: true, mode: 'type', rounds: 1, attempts: 3, candidates: dailySongCandidates() });
+}
+
+/* ================= MULTIJOUEUR (Supabase Realtime) ================= */
+// Chaque salle est un canal temps réel « pompelup:CODE ». Pas de base de données :
+// présence par battements, l'hôte (le plus ancien arrivé) choisit les extraits et les réponses.
+const MP_LOCAL = /[?&]localmp\b/.test(location.search);   // tests : BroadcastChannel entre onglets
+const MP_MAX = 8;
+const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10 }, inGame: false, game: null };
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+const mpHost = () => [...MP.players.values()].sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
+const iAmHost = () => mpHost()?.id === MP.me?.id;
+function mpTransport(code, onMsg) {
+  if (MP_LOCAL || !window.PompeAuth?.client) {
+    if (!MP_LOCAL) return null;
+    const bc = new BroadcastChannel(`pompelup-${code}`);
+    bc.onmessage = e => onMsg(e.data);
+    return { ready: Promise.resolve(), send: m => bc.postMessage(m), close: () => bc.close() };
+  }
+  const ch = window.PompeAuth.client.channel(`pompelup:${code}`, { config: { broadcast: { self: false } } });
+  ch.on('broadcast', { event: 'm' }, ({ payload }) => onMsg(payload));
+  const ready = new Promise((res, rej) => {
+    const to = setTimeout(() => rej(new Error('timeout')), 8000);
+    ch.subscribe(st => { if (st === 'SUBSCRIBED') { clearTimeout(to); res(); } else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { clearTimeout(to); rej(new Error(st)); } });
+  });
+  return { ready, send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => { try { window.PompeAuth.client.removeChannel(ch); } catch (e) {} } };
+}
+function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done }; }
+function mpErr(msg) { $('#mp-err').textContent = msg || ''; }
+async function mpOpen(code) {
+  mpLeave(true);
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { mpErr('Le code fait 5 caractères.'); return; }
+  const tx = mpTransport(code, mpOnMsg);
+  if (!tx) { mpErr('Le multijoueur a besoin d’une connexion internet.'); return; }
+  MP.code = code; MP.tx = tx; MP.players.clear(); MP.inGame = false;
+  MP.me = { id: 'p' + Math.random().toString(36).slice(2, 10), joined: Date.now() };
+  MP.players.set(MP.me.id, Object.assign(mpSelf(), { seen: Date.now() }));
+  renderMulti();
+  try { await tx.ready; } catch (e) { mpLeave(true); mpErr('Impossible de rejoindre la salle. Vérifie ta connexion.'); renderMulti(); return; }
+  tx.send({ t: 'hello', p: mpSelf() });
+  clearInterval(MP.hb);
+  MP.hb = setInterval(() => {
+    if (!MP.tx) return;
+    MP.tx.send({ t: 'here', p: mpSelf() });
+    const now = Date.now();
+    let changed = false;
+    MP.players.forEach((p, id) => { if (id !== MP.me.id && now - p.seen > 13000) { MP.players.delete(id); changed = true; } });
+    if (changed) renderMulti();
+  }, 4000);
+  sfx.pop();
+}
+function mpLeave(silent) {
+  if (MP.tx) { try { MP.tx.send({ t: 'bye', id: MP.me.id }); } catch (e) {} MP.tx.close(); }
+  clearInterval(MP.hb);
+  MP.tx = null; MP.code = null; MP.players.clear(); MP.inGame = false;
+  if (!silent) renderMulti();
+}
+function mpUpsert(p) {
+  if (!p || p.id === MP.me?.id) return;
+  const was = MP.players.get(p.id);
+  if (!was && MP.players.size >= MP_MAX) return;
+  MP.players.set(p.id, Object.assign(was || {}, p, { seen: Date.now() }));
+}
+function mpOnMsg(m) {
+  if (!m || !MP.code) return;
+  if (m.t === 'hello') {
+    const isNew = !MP.players.has(m.p.id);
+    mpUpsert(m.p);
+    MP.tx.send({ t: 'here', p: mpSelf() });
+    if (iAmHost()) MP.tx.send({ t: 'cfg', cfg: MP.cfg });
+    if (isNew) { toast(`${m.p.name} a rejoint la salle`); sfx.pop(); }
+  } else if (m.t === 'here') mpUpsert(m.p);
+  else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
+  else if (m.t === 'cfg') MP.cfg = m.cfg;
+  else if (m.t === 'start') { if (!MP.inGame) mpPlay(m.game); }
+  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
+  if (currentScreen() === 'multi') renderMulti();
+}
+// L'hôte prépare la partie : extraits disponibles en priorité, mêmes 4 réponses pour tous
+function mpStart() {
+  if (!iAmHost()) return;
+  const all = shuffle(poolFor(MP.cfg.cat).slice());
+  const pool = [...all.filter(s => catalogPreview(s.id)), ...all.filter(s => !catalogPreview(s.id))];
+  const songs = pool.slice(0, Math.min(MP.cfg.rounds, pool.length));
+  const src = poolFor(MP.cfg.cat);
+  const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
+  MP.tx.send({ t: 'start', game });
+  mpPlay(game);
+}
+function mpPlay(game) {
+  MP.inGame = true; MP.game = game;
+  Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false });
+  MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false }));
+  startGame({ cat: game.cat, mode: 'choice', rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
+  renderLive();
+}
+function mpReport(done) {
+  if (!MP.tx || !MP.me) return;
+  Object.assign(MP.me, { score: G.score, found: G.results.filter(r => r.ok).length, i: G.results.length, done });
+  const me = MP.players.get(MP.me.id); if (me) Object.assign(me, mpSelf());
+  MP.tx.send(Object.assign({ t: 'score' }, { id: MP.me.id, score: MP.me.score, found: MP.me.found, i: MP.me.i, done }));
+  renderLive();
+}
+const mpRanked = () => [...MP.players.values()].sort((a, b) => (b.score || 0) - (a.score || 0));
+const headHTML = p => charHTML(window.PompeChar.byId(p.skin), { head: true });
+function renderLive() {
+  const box = $('#mp-live');
+  box.hidden = !(G.cfg?.multi && MP.code);
+  if (box.hidden) return;
+  box.innerHTML = mpRanked().slice(0, 4).map((p, k) => `<span class="mpl${p.id === MP.me.id ? ' is-me' : ''}"><i>${k + 1}</i><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me.id ? 'Toi' : p.name)}</b><em>${fmt(p.score || 0)}</em></span>`).join('');
+}
+function renderRank() {
+  const list = mpRanked(), me = list.findIndex(p => p.id === MP.me?.id);
+  $('#mp-rank').innerHTML = `<h2 class="mp-rank-t">${me === 0 ? 'Tu gagnes la partie !' : `${me + 1}${me === 0 ? 'er' : 'e'} sur ${list.length}`}</h2>` +
+    list.map((p, k) => `<div class="mpr${p.id === MP.me?.id ? ' is-me' : ''}"><span class="mpr-pos p${k + 1}">${k + 1}</span><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me?.id ? `${p.name} (toi)` : p.name)}</b><span class="mpr-sc">${fmt(p.score || 0)}<small>${p.done ? `${p.found} trouvées` : `manche ${p.i}…`}</small></span></div>`).join('');
+}
+function renderMulti() {
+  const inRoom = !!MP.code;
+  $('#mp-start').hidden = inRoom;
+  $('#mp-room').hidden = !inRoom;
+  if (!inRoom) {
+    $('#mp-hero-chars').innerHTML = ['rookie', 'disco', 'mc'].map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('');
+    return;
+  }
+  const host = iAmHost(), list = [...MP.players.values()].sort((a, b) => a.joined - b.joined);
+  $('#mp-room-code').textContent = MP.code;
+  $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
+  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}"><span class="mpp-av">${charHTML(window.PompeChar.byId(p.skin), { mood: 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}</div>`).join('') +
+    (list.length < 2 ? '<div class="mpp mpp-empty"><span class="mpp-q">?</span><b>Invite un ami</b></div>' : '');
+  $('#mp-settings').hidden = !host;
+  if (host) {
+    if (!$('#mp-cats').children.length) $('#mp-cats').innerHTML = CATS.map(c => `<button class="rf" type="button" role="radio" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+    $$('#mp-cats .rf').forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === MP.cfg.cat)));
+    $$('#mp-rounds button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.r === MP.cfg.rounds)));
+  }
+  $('#mp-wait').hidden = host;
+  $('#mp-wait').textContent = `En attente de l’hôte… (${catById(MP.cfg.cat).name} · ${MP.cfg.rounds} manches)`;
+  $('#mp-go').hidden = !host;
+  $('#mp-go').disabled = list.length < 2;
+  $('#mp-go').textContent = list.length < 2 ? 'En attente de joueurs…' : `Lancer la partie (${list.length} joueurs)`;
+}
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
@@ -2908,10 +3069,7 @@ $('#home-boosters').addEventListener('click', () => { totalBoosters() ? openBoos
 $('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); show(t.dataset.tab); } });
 $('#home-coins').addEventListener('click', () => show('shop'));
 $('#mis-card').addEventListener('click', openMissions);
-$('#daily-card').addEventListener('click', () => {
-  if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())}`); return; }
-  startGame({ daily: true, mode: 'type', rounds: 1, attempts: 3, candidates: dailySongCandidates() });
-});
+$('#daily-card').addEventListener('click', playDaily);
 $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
   toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
@@ -2958,7 +3116,7 @@ $('#quit-cancel').addEventListener('click', () => { $('#quit-sheet').hidden = tr
 $('#quit-confirm').addEventListener('click', quitGame);
 $('#quit-sheet').addEventListener('click', e => { if (e.target.id === 'quit-sheet') $('#quit-sheet').hidden = true; });
 $('#btn-home').addEventListener('click', () => show('home'));
-$('#btn-replay').addEventListener('click', () => { if (G.cfg?.daily) show('home'); else startGame(G.cfg); });
+$('#btn-replay').addEventListener('click', () => { if (G.cfg?.daily) show('home'); else if (G.cfg?.multi) show('multi'); else startGame(G.cfg); });
 $('#btn-share').addEventListener('click', share);
 $('#rb-open').addEventListener('click', openBooster);
 $('#streak-ok').addEventListener('click', () => { $('#streak-overlay').hidden = true; });
@@ -3005,6 +3163,34 @@ $('#pf-back').addEventListener('click', () => show('home'));
 $('#pass-card').addEventListener('click', () => show('pass'));
 $('#pass-buy').addEventListener('click', buyPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pr.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
+// Menu Jouer & multijoueur
+$('#btn-play-more').addEventListener('click', e => { e.stopPropagation(); togglePlayMenu(); });
+$('#play-menu').addEventListener('click', e => {
+  const b = e.target.closest('[data-play]'); if (!b) return;
+  closePlayMenu(); unlockAudio();
+  const p = store.prefs, k = b.dataset.play;
+  if (k === 'solo') quickPlay();
+  else if (k === 'multi') show('multi');
+  else if (k === 'daily') playDaily();
+  else if (k === 'rapid') startGame({ cat: p.cat, mode: 'stems', rounds: p.rounds });
+  else if (k === 'story') show('story');
+});
+document.addEventListener('click', e => { if (!$('#play-menu').hidden && !e.target.closest('#tabbar')) closePlayMenu(); });
+$('#mp-back').addEventListener('click', () => { if (MP.code) mpLeave(); show('home'); });
+$('#mp-create').addEventListener('click', () => { mpErr(''); mpOpen(newCode()); });
+$('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').value); });
+$('#mp-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#mp-join').click(); });
+$('#mp-code').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+$('#mp-leave').addEventListener('click', () => mpLeave());
+$('#mp-go').addEventListener('click', mpStart);
+$('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
+$('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
+$('#mp-share').addEventListener('click', () => {
+  const url = `${location.href.split(/[?#]/)[0]}?room=${MP.code}`, text = `Rejoins ma salle Pompelup ! Code : ${MP.code}`;
+  if (navigator.share) navigator.share({ title: 'Pompelup', text, url }).catch(() => {});
+  else navigator.clipboard?.writeText(`${text}\n${url}`).then(() => toast('Lien copié !'), () => toast(`Code : ${MP.code}`));
+});
+window.addEventListener('pagehide', () => { if (MP.code) mpLeave(true); });
 // Histoire
 $('#story-card').addEventListener('click', () => show('story'));
 $('#story-back').addEventListener('click', () => scrollToCurrent(true));
@@ -3119,4 +3305,6 @@ applySkins();
 renderCoins();
 show('home');
 startAccount();
+const roomParam = (location.search.match(/[?&]room=([A-Za-z0-9]{5})/) || [])[1];
+if (roomParam) setTimeout(() => { show('multi'); mpOpen(roomParam); }, 1200);
 })();
