@@ -27,8 +27,9 @@ async function getJSON(url, tries = 3) {
 }
 // Le bon morceau : même titre et même artiste (tolérant aux « feat. », accents…)
 function best(list, song, title, artist) {
-  const t = norm(song.title), a = norm(song.artist).split(' ')[0];
-  const score = x => (norm(title(x)) === t ? 3 : norm(title(x)).includes(t) || t.includes(norm(title(x))) ? 2 : 0) + (norm(artist(x)).includes(a) ? 2 : 0);
+  const t = norm(song.title), words = norm(song.artist).split(' ').filter(w => w.length > 2 && !['the', 'and', 'feat'].includes(w));
+  const artistOk = x => { const n = norm(artist(x)); return words.length ? words.some(w => n.includes(w)) : n.includes(norm(song.artist)); };
+  const score = x => (norm(title(x)) === t ? 3 : norm(title(x)).includes(t) || t.includes(norm(title(x))) ? 2 : 0) + (artistOk(x) ? 2 : 0);
   const ranked = list.map(x => [score(x), x]).filter(([s]) => s >= 3).sort((p, q) => q[0] - p[0]);
   return ranked[0]?.[1] || null;
 }
@@ -42,10 +43,19 @@ async function deezer(song) {
   return null;
 }
 const itCache = new Map();
+// Plusieurs essais : boutique FR puis US, « titre artiste » puis titre seul (l'artiste reste vérifié)
 async function itunesTrack(song) {
   if (itCache.has(song.id)) return itCache.get(song.id);
-  const d = await getJSON(`https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=10&country=fr`);
-  const t = d?.results && best(d.results.filter(x => x.previewUrl), song, x => x.trackName, x => x.artistName || '');
+  let t = null;
+  const terms = [`${song.title} ${song.artist}`, song.title.replace(/\(.*?\)|\[.*?\]/g, '').trim()];
+  outer: for (const country of ['fr', 'us']) {
+    for (const term of terms) {
+      const d = await getJSON(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=25&country=${country}`);
+      t = d?.results && best(d.results.filter(x => x.previewUrl), song, x => x.trackName, x => x.artistName || '');
+      if (t) break outer;
+      await sleep(3100);
+    }
+  }
   itCache.set(song.id, t || null);
   return t || null;
 }
