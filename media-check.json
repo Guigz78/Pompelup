@@ -1,0 +1,431 @@
+{
+ "checkedAt": "2026-10-02T16:34:55.582Z",
+ "previews": {
+  "s1": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s55": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s146": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s10": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s145": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s11": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s104": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s172": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s196": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s226": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s250": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s274": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s298": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s322": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s346": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s370": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s394": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s418": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s442": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s466": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s490": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s514": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s538": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s562": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s586": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s610": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s634": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s658": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s683": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s707": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s731": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s759": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4a",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s786": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s812": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s836": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s860": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s885": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s910": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s934": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  },
+  "s958": {
+   "ok": true,
+   "status": 206,
+   "type": "audio/x-m4p",
+   "bytes": 2048,
+   "magic": "ftypM4A "
+  }
+ },
+ "covers": {
+  "s1": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s147": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s142": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s170": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s204": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s255": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s304": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s353": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s402": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s451": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s500": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s549": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s598": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s647": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s697": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s748": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s803": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s852": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s902": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  },
+  "s952": {
+   "ok": true,
+   "status": 206,
+   "type": "image/jpeg",
+   "bytes": 2048,
+   "magic": "\u0000\u0010JFIF\u0000\u0001"
+  }
+ },
+ "summary": {
+  "previews": "40/40",
+  "covers": "20/20"
+ }
+}
