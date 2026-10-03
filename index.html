@@ -329,25 +329,32 @@
 
   <!-- ================= PASS DE SAISON ================= -->
   <section class="screen" id="screen-pass" aria-label="Pass de saison">
-    <header class="ps-hero" id="pass-hero">
-      <div class="ps-bg" id="pass-bg" aria-hidden="true"></div>
-      <div class="ps-kicker" id="pass-season">Saison d’octobre</div>
-      <div class="ps-title" id="pass-name">Disco Fever</div>
-      <div class="ps-row">
-        <button class="ps-card" id="pass-buy" type="button"><span class="ps-buy-tag" id="pass-buy-tag">Acheter</span><b>Pass Or</b><svg class="ico"><use href="#i-crown"/></svg></button>
-        <div class="ps-end"><span>Fin de la saison</span><b id="pass-timer">12 j</b></div>
+    <header class="pv-head">
+      <div class="pv-top">
+        <div class="pv-id"><small id="pass-season">Saison d’octobre</small><b id="pass-name">Disco Fever</b></div>
+        <span class="pv-timer"><svg class="ico"><use href="#i-clock"/></svg><span id="pass-timer">12 j</span></span>
       </div>
+      <div class="pv-prog">
+        <span class="pv-lvl"><small>Palier</small><b id="pass-tier">1</b></span>
+        <div class="pv-bar-wrap">
+          <div class="pv-bar"><span id="pass-fill"></span></div>
+          <div class="pv-bar-legend"><span id="pass-pts">0/100 XP</span><span>Palier <b id="pass-next">2</b></span></div>
+        </div>
+      </div>
+      <p class="pv-help">+10 XP par bonne réponse · +30 par partie · +50 pour le défi du jour</p>
     </header>
-    <div class="ps-xp">
-      <span class="ps-xp-badge">XP</span>
-      <div class="ps-xp-main">
-        <div class="ps-xp-lvl"><b id="pass-tier">1</b><svg class="ico"><use href="#i-g-chevron"/></svg><b id="pass-next">2</b></div>
-        <div class="ps-xp-bar"><span id="pass-fill"></span><small id="pass-pts">0/100</small></div>
-      </div>
+
+    <div class="pv-body">
+      <button class="pv-gold" id="pass-buy" type="button">
+        <span class="pv-gold-ico"><svg class="ico"><use href="#i-crown"/></svg></span>
+        <span class="pv-gold-txt"><b>Pass Or</b><small id="pass-gold-sub">Débloque la colonne Or : skins exclusifs, Boosters Or, jokers</small></span>
+        <span class="pv-gold-cta" id="pass-buy-tag">1 500</span>
+      </button>
+      <button class="pv-claim-all" id="pass-claim-all" type="button" hidden><svg class="ico"><use href="#i-gift"/></svg><span id="pass-claim-txt">Tout récupérer</span></button>
+
+      <div class="pv-cols"><span>Gratuit</span><span></span><span class="pv-col-gold"><svg class="ico"><use href="#i-crown"/></svg>Pass Or</span></div>
+      <div class="pv-track" id="pass-track"></div>
     </div>
-    <div class="ps-heads"><span class="ps-h-gold"><svg class="ico"><use href="#i-crown"/></svg></span><span class="ps-h-free">Gratuit</span></div>
-    <div class="ps-track" id="pass-track"></div>
-    <p class="ps-help">Gagne de l’XP de saison : +10 par bonne réponse, +30 par partie, +50 pour le défi du jour.</p>
   </section>
 
   <!-- ================= MULTIJOUEUR ================= -->

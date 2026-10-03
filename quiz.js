@@ -748,7 +748,7 @@ function show(id) {
   if (id === 'collection') renderCollection();
   ambience.stop();
   if (id === 'shop') renderShop();
-  if (id === 'pass') renderPass();
+  if (id === 'pass') { renderPass(); requestAnimationFrame(() => { const r = $(`#pass-track .pv-row[data-tier="${Math.max(1, passTier())}"]`); if (r && passTier() > 2) window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 220); }); }
   if (id === 'boosters') renderBoosters();
   if (id === 'multi') renderMulti();
   if (id === 'profile') renderProfile();
@@ -3296,46 +3296,50 @@ function rewardLabel(r) {
 }
 function passTimer() { const d = new Date(), end = new Date(d.getFullYear(), d.getMonth() + 1, 1), ms = end - d, days = Math.floor(ms / 864e5); return days >= 1 ? `${days} j ${Math.floor(ms % 864e5 / 36e5)} h` : hms(ms); }
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-const PASS_BANDS = ['#EFE9FF', '#FFEBDD', '#E5F8DC', '#DFF6FB'];
 function renderPass() {
-  const P = passState(), t = passTier(), m = new Date().getMonth(), c = seasonCat();
+  const P = passState(), t = passTier(), m = new Date().getMonth(), max = t >= PASS_TIERS;
   renderCoins();
   $('#pass-season').textContent = `Saison ${/^[aeiouy]/.test(MONTHS[m]) ? 'd’' : 'de '}${MONTHS[m]}`;
   $('#pass-name').textContent = PASS_NAMES[m];
-  $('#pass-bg').style.backgroundImage = `url(${c.illu})`;
-  $('#pass-bg').style.backgroundPosition = c.pos;
   $('#pass-timer').textContent = passTimer();
   $('#pass-tier').textContent = t;
   $('#pass-next').textContent = Math.min(PASS_TIERS, t + 1);
-  $('#pass-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
-  $('#pass-pts').textContent = t >= PASS_TIERS ? 'Max !' : `${P.pts % PASS_STEP}/${PASS_STEP}`;
-  $('#pass-buy-tag').textContent = P.gold ? 'Activé' : `${fmt(PASS_PRICE)} jetons`;
-  $('#pass-buy').classList.toggle('is-owned', P.gold);
+  $('#pass-fill').style.width = `${max ? 100 : P.pts % PASS_STEP}%`;
+  $('#pass-pts').textContent = max ? 'Pass terminé !' : `${P.pts % PASS_STEP}/${PASS_STEP} XP`;
+  const gb = $('#pass-buy');
+  gb.classList.toggle('is-owned', P.gold);
+  $('#pass-gold-sub').textContent = P.gold ? 'Activé : toutes les récompenses Or sont à toi' : 'Débloque la colonne Or : skins exclusifs, Boosters Or, jokers';
+  $('#pass-buy-tag').innerHTML = P.gold ? ico('g-check') : `<i class="coin"></i>${fmt(PASS_PRICE)}`;
+  const n = passClaimable();
+  $('#pass-claim-all').hidden = !n;
+  $('#pass-claim-txt').textContent = `Tout récupérer (${n})`;
   const cell = (k, gold) => {
     const r = passReward(k, gold);
-    if (!r) return '<div class="pr pr-empty"></div>';
+    if (!r) return '<span class="pv-cell pv-none"></span>';
     const done = (gold ? P.paid : P.free).includes(k), reached = k <= t, locked = gold && !P.gold;
     const st = done ? 'is-claimed' : reached && !locked ? 'is-ready' : locked ? 'is-locked' : 'is-later';
-    return `<button class="pr ${st}" type="button" data-k="${k}" data-gold="${gold ? 1 : 0}" ${st === 'is-ready' ? '' : 'tabindex="-1"'}>
-      <span class="pr-txt"><small>${rewardKind(r)}</small><b>${esc(rewardLabel(r))}</b>${st === 'is-ready' ? '<span class="pr-take">Prendre</span>' : ''}</span>${rewardArt(r)}
-      ${done ? `<span class="pr-done">${ico('g-check')}</span>` : locked ? `<span class="pr-lock">${ico('g-lock')}</span>` : ''}
+    return `<button class="pv-cell pvc ${st}${gold ? ' is-gold' : ''}" type="button" data-k="${k}" data-gold="${gold ? 1 : 0}" ${st === 'is-ready' ? '' : 'tabindex="-1"'} aria-label="${esc(rewardLabel(r))}">
+      <span class="pv-art">${rewardArt(r)}</span>
+      <span class="pv-txt"><small>${rewardKind(r)}</small><b>${esc(rewardLabel(r))}</b></span>
+      ${st === 'is-ready' ? '<span class="pv-take">Prendre</span>' : done ? `<span class="pv-state is-ok">${ico('g-check')}</span>` : locked ? `<span class="pv-state">${ico('g-lock')}</span>` : ''}
     </button>`;
   };
   $('#pass-track').innerHTML = Array.from({ length: PASS_TIERS }, (_, i) => i + 1).map(k => {
-    const fr = passReward(k, false), allDone = k <= t && (!fr || P.free.includes(k)) && P.paid.includes(k);
-    return `<div class="ps-row-tier${k <= t ? ' is-reached' : ''}${k === t + 1 ? ' is-next' : ''}" style="--band:${PASS_BANDS[(k - 1) % PASS_BANDS.length]}">
-      ${cell(k, true)}<span class="ps-hex${allDone ? ' is-done' : ''}">${allDone ? ico('g-check') : k}</span>${cell(k, false)}
+    const reached = k <= t, cur = k === t + 1;
+    return `<div class="pv-row${reached ? ' is-reached' : ''}${cur ? ' is-next' : ''}${k === t ? ' is-last' : ''}" data-tier="${k}">
+      ${cell(k, false)}<span class="pv-node"><b>${k}</b></span>${cell(k, true)}
     </div>`;
   }).join('');
   renderBadges();
 }
-function claimPass(k, gold) {
+// Récupère une récompense sans interface ; renvoie ce qui a été donné
+function takePass(k, gold) {
   const P = passState();
-  if (k > passTier() || (gold && !P.gold)) return;
+  if (k > passTier() || (gold && !P.gold)) return null;
   const list = gold ? P.paid : P.free;
-  if (list.includes(k)) return;
+  if (list.includes(k)) return null;
   let r = passReward(k, gold);
-  if (!r) return;
+  if (!r) return null;
   if (r.item) { const [kind, id] = r.item.split(':'); if (isOwned(kind, id)) r = { coins: 300 }; }
   list.push(k);
   if (r.song) {
@@ -3343,8 +3347,28 @@ function claimPass(k, gold) {
     if (e) { e.n++; store.coins += 50; } else store.coll[r.song] = { n: 1, t: Date.now(), seen: false };
     save();
   } else grantReward(r);
+  return r;
+}
+function claimPass(k, gold) {
+  const r = takePass(k, gold);
+  if (!r) return;
   sfx.booster(); buzz([30, 40, 30]);
   showReward({ kicker: `Pass de saison · palier ${k}`, title: rewardLabel(r), reward: r.song ? {} : r, visual: r.song ? `<span class="rw-sleeve">${coverHTML(SONG.get(r.song))}</span>` : null, extra: r.song ? `Le vinyle « ${SONG.get(r.song).title} » rejoint ton mur` : '' });
+  renderPass();
+}
+function claimAllPass() {
+  const P = passState(), t = passTier(), got = [];
+  for (let k = 1; k <= t; k++) for (const gold of [false, true]) { if (gold && !P.gold) continue; const r = takePass(k, gold); if (r) got.push(r); }
+  if (!got.length) return;
+  const sum = { coins: 0, boosters: 0, gold: 0, jokers: { x2: 0, steal: 0 } }, extra = [];
+  got.forEach(r => {
+    sum.coins += r.coins || 0; sum.boosters += r.boosters || 0; sum.gold += r.gold || 0;
+    if (r.jokers) { sum.jokers.x2 += r.jokers.x2 || 0; sum.jokers.steal += r.jokers.steal || 0; }
+    if (r.item || r.song) extra.push(rewardLabel(r));
+  });
+  const shown = { coins: sum.coins || undefined, boosters: sum.boosters || undefined, gold: sum.gold || undefined, jokers: sum.jokers.x2 || sum.jokers.steal ? sum.jokers : undefined };
+  sfx.fanfare(); buzz([30, 60, 30]); confetti(50);
+  showReward({ kicker: 'Pass de saison', title: `${plural(got.length, 'récompense récupérée', 'récompenses récupérées')} !`, reward: shown, extra: extra.length ? `+ ${extra.join(', ')}` : '' });
   renderPass();
 }
 function buyPass() {
@@ -3813,7 +3837,8 @@ $('#story-home').addEventListener('click', () => show('home'));
 $('#me-btn').addEventListener('click', () => show('profile'));
 $('#pf-back').addEventListener('click', () => show('home'));
 $('#pass-buy').addEventListener('click', buyPass);
-$('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pr.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
+$('#pass-claim-all').addEventListener('click', claimAllPass);
+$('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pvc.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
 $('#mode-multi').addEventListener('click', () => { unlockAudio(); show('multi'); });
 $('#mode-story').addEventListener('click', () => { unlockAudio(); show('story'); });
