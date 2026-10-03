@@ -390,10 +390,34 @@
     <header class="topbar">
       <div class="page-title">Boutique</div>
       <div class="counters">
-        <span class="counter c-coins" aria-label="Tes jetons"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n" id="shop-coins-n">0</b></span>
+        <button class="counter c-coins shop-coin-btn" id="shop-coin-btn" type="button" aria-label="Tes jetons — en obtenir plus"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n" id="shop-coins-n">0</b><i class="plus-badge" aria-hidden="true">+</i></button>
       </div>
     </header>
-    <div class="scroll">
+    <div class="scroll shop-scroll">
+      <nav class="shop-nav" id="shop-nav" aria-label="Rayons de la boutique">
+        <button type="button" data-go="sh-top" aria-current="true">À la une</button>
+        <button type="button" data-go="sh-bundles">Packs</button>
+        <button type="button" data-go="coin-shop" id="nav-coins">Jetons</button>
+        <button type="button" data-go="sh-boosters">Boosters</button>
+        <button type="button" data-go="sh-skins">Skins</button>
+        <button type="button" data-go="sh-vinyls">Vinyles</button>
+        <button type="button" data-go="sh-jokers">Jokers</button>
+        <button type="button" data-go="sh-style">Style</button>
+      </nav>
+
+      <section class="showcase" id="sh-top" aria-label="À la une">
+        <div class="sc-track" id="sc-track"></div>
+        <div class="sc-dots" id="sc-dots"></div>
+      </section>
+
+      <div class="shop-duo">
+        <button class="row gift-mini" id="gift-card" type="button">
+          <span class="row-art"><svg class="ico gift-ico" aria-hidden="true"><use href="#i-chest"/></svg></span>
+          <span class="row-txt"><b id="gift-title">Coffre du jour</b><small id="gift-sub">50 jetons offerts</small></span>
+          <span class="btn btn-sm btn-green row-cta" id="gift-cta">Récupérer</span>
+        </button>
+      </div>
+
       <button class="hero hero-deal" id="deal-card" type="button">
         <span class="deal-preview" id="deal-preview"></span>
         <span class="deal-body">
@@ -404,39 +428,46 @@
         </span>
       </button>
 
-      <section class="coin-shop" id="coin-shop">
+      <section id="sh-bundles" class="shop-sec">
+        <div class="b-head"><h2 class="shop-h shop-h-hot">Packs du moment</h2><span class="b-timer"><svg class="ico"><use href="#i-clock"/></svg><span id="bundle-timer">lundi</span></span></div>
+        <div class="bundles" id="shop-bundles"></div>
+      </section>
+
+      <section class="coin-shop shop-sec" id="coin-shop">
         <h2 class="shop-h">Jetons <small>paiement sécurisé Stripe</small></h2>
         <div class="coin-grid" id="shop-coins"></div>
         <p class="coin-note" id="coin-note">Paiement par carte, Apple Pay ou Google Pay. Les jetons sont liés à ton compte.</p>
       </section>
 
-      <h2 class="shop-h">Cadeaux</h2>
-      <button class="row" id="gift-card" type="button">
-        <span class="row-art"><svg class="ico gift-ico" aria-hidden="true"><use href="#i-chest"/></svg></span>
-        <span class="row-txt"><b id="gift-title">Coffre du jour</b><small id="gift-sub">50 jetons offerts</small></span>
-        <span class="btn btn-sm btn-green row-cta" id="gift-cta">Récupérer</span>
-      </button>
+      <section id="sh-boosters" class="shop-sec">
+        <h2 class="shop-h">Boosters <small>3 vinyles par pack</small></h2>
+        <div class="pk-cards" id="shop-packs"></div>
+      </section>
 
-      <h2 class="shop-h">Vinyles <small>complète ta collection</small></h2>
-      <div class="vshop">
-        <div class="vshop-search"><svg class="ico"><use href="#i-g-search"/></svg><input id="vs-q" type="search" placeholder="Titre ou artiste…" autocomplete="off" aria-label="Rechercher un vinyle"></div>
-        <div class="chips-row" id="vs-rar"></div>
-        <div class="vshop-grid" id="vs-results"></div>
-        <button class="btn btn-outline btn-block" id="vs-more" type="button" hidden>Voir plus</button>
-      </div>
+      <section id="sh-skins" class="shop-sec">
+        <h2 class="shop-h shop-h-premium">Premium <small>tenues de scène ultra détaillées</small></h2>
+        <div class="item-grid premium-grid" id="shop-premium"></div>
 
-      <h2 class="shop-h">Jokers <small>à utiliser en partie</small></h2>
-      <div class="rows" id="shop-jokers"></div>
+        <h2 class="shop-h">Skins <small>ton personnage</small></h2>
+        <div class="item-grid" id="shop-skin"></div>
+      </section>
 
-      <h2 class="shop-h">Boosters</h2>
-      <div class="rows" id="shop-packs"></div>
+      <section id="sh-vinyls" class="shop-sec">
+        <h2 class="shop-h">Vinyles <small>complète ta collection</small></h2>
+        <div class="vshop">
+          <div class="vshop-search"><svg class="ico"><use href="#i-g-search"/></svg><input id="vs-q" type="search" placeholder="Titre ou artiste…" autocomplete="off" aria-label="Rechercher un vinyle"></div>
+          <div class="chips-row" id="vs-rar"></div>
+          <div class="vshop-grid" id="vs-results"></div>
+          <button class="btn btn-outline btn-block" id="vs-more" type="button" hidden>Voir plus</button>
+        </div>
+      </section>
 
-      <h2 class="shop-h shop-h-premium">Premium <small>tenues de scène ultra détaillées</small></h2>
-      <div class="item-grid premium-grid" id="shop-premium"></div>
+      <section id="sh-jokers" class="shop-sec">
+        <h2 class="shop-h">Jokers <small>à utiliser en partie</small></h2>
+        <div class="rows" id="shop-jokers"></div>
+      </section>
 
-      <h2 class="shop-h">Skins <small>ton personnage</small></h2>
-      <div class="item-grid" id="shop-skin"></div>
-
+      <span id="sh-style" class="shop-anchor"></span>
       <h2 class="shop-h">Accessoires <small>aussi dans les boosters</small></h2>
       <div class="item-grid item-grid-3" id="shop-acc"></div>
 

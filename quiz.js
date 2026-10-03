@@ -33,7 +33,7 @@ const defaults = () => ({
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null, pass: null,
-  jokers: { x2: 2, steal: 1 },
+  jokers: { x2: 2, steal: 1 }, bundles: [],
   room: { pins: [], wall: 'peach', couch: 'teal', frame: 'wood' },
   settings: { sound: true, haptics: true },
   prefs: { cat: 'all', mode: 'choice', rounds: 10 },
@@ -2246,6 +2246,7 @@ let shopTicker = null;
 function packArt(id) {
   return `<span class="row-art">${ico(id === 'gold' ? 'booster-gold' : 'booster')}</span>`;
 }
+const NEW_ITEMS = new Set(['beatle', 'jul', 'angele', 'aya', 'mozart', 'rockstar']);
 function itemCardHTML(kind, it, deal) {
   const owned = isOwned(kind, it.id), eq = isEquipped(kind, it.id), locked = !owned && !it.price;
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
@@ -2253,12 +2254,13 @@ function itemCardHTML(kind, it, deal) {
   const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? `<span class="item-state">${ico('g-lock')}${it.unlock === 'pass' ? 'Pass Or' : 'Succès'}</span>` : `<span class="item-price"><i class="coin"></i>${fmt(price)}</span>`;
   const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${it.premium ? ' is-premium' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
   const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
-  return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${it.premium ? '<span class="prem-tag">Premium</span>' : ''}${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
+  return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${it.premium ? '<span class="prem-tag">Premium</span>' : NEW_ITEMS.has(it.id) && !owned ? '<span class="prem-tag new-tag">Nouveau</span>' : ''}${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
 }
 function renderShopTimers() {
   const t = hms(msToMidnight());
   if (store.gift === dayKey()) $('#gift-sub').textContent = `Prochain cadeau dans ${t}`;
   $('#deal-timer').textContent = `Encore ${t}`;
+  $('#bundle-timer').textContent = passLike(msToMonday());
 }
 function renderShop() {
   renderCoins();
@@ -2280,18 +2282,149 @@ function renderShop() {
   }
   renderShopTimers();
   $('#shop-packs').innerHTML = PACKS.map(p => `
-    <button class="row pk" type="button" data-pack="${p.id}">${p.tag ? `<span class="row-tag">${p.tag}</span>` : ''}
-      ${packArt(p.id)}<span class="row-txt"><b>${p.name}</b><small>${p.desc}</small></span>
-      <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
+    <button class="pk pk-card pk-${p.id}" type="button" data-pack="${p.id}">${p.tag ? `<span class="pk-tag">${p.tag}</span>` : p.id === 'gold' ? '<span class="pk-tag is-gold">Épique garanti</span>' : ''}
+      <span class="pk-art">${p.id === 'bundle' ? `${ico('booster')}${ico('booster')}${ico('booster')}` : ico(p.id === 'gold' ? 'booster-gold' : 'booster')}</span>
+      <b>${p.name}</b><small>${p.short}</small>
+      <span class="pk-price"><i class="coin"></i>${fmt(p.price)}</span>
     </button>`).join('');
   $('#shop-premium').innerHTML = COSMETICS.skin.filter(it => it.premium).map(it => itemCardHTML('skin', it, d)).join('');
   for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].filter(it => !it.premium).map(it => itemCardHTML(kind, it, d)).join('');
+  renderShowcase();
+  renderBundles();
   renderCoinShop();
   renderJokerShop();
   renderVinylShop();
   clearInterval(shopTicker);
   shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
 }
+/* ===== Vitrine « À la une » : les skins Premium sur scène ===== */
+const SC = { i: 0, timer: null, ids: [] };
+function renderShowcase() {
+  const prem = COSMETICS.skin.filter(it => it.premium);
+  // Ce que le joueur n'a pas encore d'abord
+  const list = [...prem.filter(it => !isOwned('skin', it.id)), ...prem.filter(it => isOwned('skin', it.id))];
+  const sig = list.map(it => it.id + isOwned('skin', it.id) + isEquipped('skin', it.id)).join();
+  if (SC.sig !== sig) {
+    SC.sig = sig; SC.ids = list.map(it => it.id);
+    $('#sc-track').innerHTML = list.map((it, k) => {
+      const owned = isOwned('skin', it.id), eq = isEquipped('skin', it.id);
+      return `<article class="sc-slide sc-${k % 4}" data-id="${it.id}">
+        <span class="sc-rays" aria-hidden="true"></span><span class="sc-spot sc-spot-l" aria-hidden="true"></span><span class="sc-spot sc-spot-r" aria-hidden="true"></span>
+        <span class="sc-stage" aria-hidden="true"></span>
+        <span class="sc-char">${charHTML(it, { mood: 'happy' })}</span>
+        <span class="sc-info">
+          <span class="sc-kicker">${ico('crown')}Premium · Légendaire</span>
+          <b class="sc-name">${esc(it.name)}</b>
+          <span class="sc-desc">${esc(it.desc)}</span>
+          <span class="sc-cta">${eq ? 'Équipé' : owned ? 'Équiper' : `Obtenir · <i class="coin"></i>${fmt(it.price)}`}</span>
+        </span>
+      </article>`;
+    }).join('');
+    $('#sc-dots').innerHTML = list.map((_, k) => `<button type="button" data-sc="${k}" aria-label="Skin ${k + 1}"></button>`).join('');
+    SC.i = 0;
+  }
+  scDots();
+  clearInterval(SC.timer);
+  if (!REDUCED) SC.timer = setInterval(() => {
+    if (currentScreen() !== 'shop') { clearInterval(SC.timer); return; }
+    if (SC.hold > Date.now()) return;
+    scGo((SC.i + 1) % SC.ids.length);
+  }, 5000);
+}
+function scGo(k) { const t = $('#sc-track'); SC.i = k; t.scrollTo({ left: k * t.clientWidth, behavior: REDUCED ? 'auto' : 'smooth' }); scDots(); }
+function scDots() { $$('#sc-dots button').forEach((b, k) => b.classList.toggle('is-on', k === SC.i)); }
+
+/* ===== Packs du moment : renouvelés chaque lundi ===== */
+const weekKey = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return dayKey(d); };
+const msToMonday = () => { const n = new Date(), m = new Date(n); m.setHours(24, 0, 0, 0); while (m.getDay() !== 1) m.setDate(m.getDate() + 1); return m - n; };
+const VALUE = { booster: 500, gold: 700, x2: JOKERS.x2.price, steal: JOKERS.steal.price };
+function bundleList() {
+  const w = hashStr(`bundle-${weekKey()}`), out = [];
+  const pick = arr => arr.length ? arr[w % arr.length] : null;
+  if (!(store.bundles || []).includes('starter')) out.push({ id: 'starter', name: 'Pack Starter', kicker: 'Une seule fois', cls: 'b-starter', give: { boosters: 3, jokers: { x2: 2, steal: 1 } }, price: 900 });
+  const epic = pick(COSMETICS.skin.filter(it => it.rarity === 'epic' && it.price && !isOwned('skin', it.id)));
+  if (epic) out.push({ id: `star-${epic.id}`, name: 'Pack Rockstar', kicker: 'Cette semaine', cls: 'b-rock', skin: epic.id, give: { gold: 1, jokers: { x2: 1 } }, price: Math.round((epic.price + 700) * .7 / 50) * 50 });
+  const prem = pick(COSMETICS.skin.filter(it => it.premium && !isOwned('skin', it.id)));
+  if (prem) out.push({ id: `legend-${prem.id}`, name: 'Pack Légende', kicker: 'Cette semaine', cls: 'b-legend', skin: prem.id, give: { gold: 2, jokers: { x2: 2, steal: 1 } }, price: Math.round((prem.price + 1400) * .72 / 50) * 50 });
+  out.forEach(b => {
+    const g = b.give;
+    b.value = (b.skin ? itemOf('skin', b.skin).price : 0) + (g.boosters || 0) * VALUE.booster + (g.gold || 0) * VALUE.gold + (g.jokers?.x2 || 0) * VALUE.x2 + (g.jokers?.steal || 0) * VALUE.steal;
+    b.off = Math.round((1 - b.price / b.value) * 100);
+  });
+  return out;
+}
+function bundleChips(b) {
+  const g = b.give, c = [];
+  if (b.skin) c.push(`<span class="bc bc-skin">${ico('crown')}Skin ${esc(itemOf('skin', b.skin).name)}</span>`);
+  if (g.gold) c.push(`<span class="bc">${ico('booster-gold')}${g.gold} Booster${g.gold > 1 ? 's' : ''} Or</span>`);
+  if (g.boosters) c.push(`<span class="bc">${ico('booster')}${g.boosters} Boosters</span>`);
+  if (g.jokers?.x2) c.push(`<span class="bc"><i class="mini-joker">×2</i>${g.jokers.x2} Joker${g.jokers.x2 > 1 ? 's' : ''} ×2</span>`);
+  if (g.jokers?.steal) c.push(`<span class="bc"><i class="mini-joker">${ico('g-bolt')}</i>${g.jokers.steal} Voleur</span>`);
+  return c.join('');
+}
+function bundleArt(b) {
+  if (b.skin) return `<span class="b-char">${charHTML(itemOf('skin', b.skin), { mood: 'happy' })}</span>${b.give.gold ? `<span class="b-pack">${ico('booster-gold')}</span>` : ''}`;
+  return `<span class="b-packs">${ico('booster')}${ico('booster')}${ico('booster')}</span>`;
+}
+function renderBundles() {
+  const list = bundleList();
+  $('#sh-bundles').hidden = !list.length;
+  $('#bundle-timer').textContent = passLike(msToMonday());
+  $('#shop-bundles').innerHTML = list.map(b => `
+    <button class="bundle ${b.cls}" type="button" data-bundle="${b.id}">
+      <span class="b-off">−${b.off} %</span>
+      <span class="b-art">${bundleArt(b)}</span>
+      <span class="b-body">
+        <small class="b-kicker">${b.kicker}</small>
+        <b class="b-name">${b.name}</b>
+        <span class="b-chips">${bundleChips(b)}</span>
+        <span class="b-price"><s>${fmt(b.value)}</s><span class="b-btn"><i class="coin"></i>${fmt(b.price)}</span></span>
+      </span>
+    </button>`).join('');
+}
+const passLike = ms => { const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5); return d >= 1 ? `${d} j ${h} h` : hms(ms); };
+function openBundle(id) {
+  const b = bundleList().find(x => x.id === id); if (!b) return;
+  IS = { bundle: b };
+  $('#is-preview').innerHTML = `<span class="b-sheet-art">${bundleArt(b)}</span>`;
+  const pill = $('#is-rarity');
+  pill.className = 'rar-pill r-legendary';
+  pill.textContent = `${b.name} · −${b.off} %`;
+  $('#is-name').textContent = `${fmt(b.price)} jetons au lieu de ${fmt(b.value)}`;
+  $('#is-desc').innerHTML = `<span class="b-chips b-chips-sheet">${bundleChips(b)}</span>`;
+  $('#is-lock').hidden = true;
+  const btn = $('#is-action');
+  btn.disabled = store.coins < b.price;
+  if (btn.disabled) btn.textContent = `Il te manque ${fmt(b.price - store.coins)} jetons`;
+  else btn.innerHTML = `Je prends · <i class="coin"></i>${fmt(b.price)}`;
+  $('#item-sheet').hidden = false;
+}
+function buyBundle() {
+  const b = IS.bundle;
+  if (!spendCoins(b.price)) { toast('Pas assez de jetons'); return; }
+  if (b.skin) own('skin', b.skin);
+  if (b.id === 'starter') store.bundles = [...(store.bundles || []), 'starter'];
+  grantReward(b.give);
+  sfx.fanfare(); buzz([30, 60, 30]); confetti(70);
+  closeItem();
+  showReward({ kicker: b.name, title: 'Pack débloqué !', reward: b.skin ? { item: `skin:${b.skin}` } : b.give, extra: b.skin ? rewardParts(b.give).join(' · ') : '' });
+  renderShop(); renderBadges();
+}
+// Rayons : défilement vers la section et onglet actif qui suit la lecture
+const shopTopOffset = () => ($('#screen-shop .topbar')?.offsetHeight || 0) + ($('#shop-nav')?.offsetHeight || 0) + 8;
+function shopNavTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - shopTopOffset(), behavior: REDUCED ? 'auto' : 'smooth' });
+}
+function shopNavSync() {
+  if (currentScreen() !== 'shop') return;
+  const nav = $('#shop-nav'), lim = shopTopOffset() + 30;
+  let cur = 'sh-top';
+  $$('button', nav).forEach(b => { const el = document.getElementById(b.dataset.go); if (el && !el.hidden && el.getClientRects().length && el.getBoundingClientRect().top <= lim) cur = b.dataset.go; });
+  $$('button', nav).forEach(b => { const on = b.dataset.go === cur; if (on !== (b.getAttribute('aria-current') === 'true')) { b.setAttribute('aria-current', String(on)); if (on) nav.scrollTo({ left: b.offsetLeft - 16, behavior: 'smooth' }); } });
+}
+
 /* Jetons en vrai argent (Stripe) — prix fixés côté serveur, affichés ici */
 const COIN_PACKS = [
   { id: 'p500', coins: 500, price: '0,99 €' },
@@ -3662,6 +3795,7 @@ $('#deal-card').addEventListener('click', e => openItem(e.currentTarget.dataset.
 $('#screen-shop').addEventListener('click', e => {
   const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
   const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id);
+  const bd = e.target.closest('[data-bundle]'); if (bd) { openBundle(bd.dataset.bundle); return; }
   const jk = e.target.closest('[data-joker]'); if (jk) { buyJoker(jk.dataset.joker); return; }
   const cp = e.target.closest('[data-coins]'); if (cp) { buyCoinPack(cp.dataset.coins); return; }
   const v = e.target.closest('[data-vid]'); if (v) { buyVinyl(v.dataset.vid); return; }
@@ -3671,7 +3805,14 @@ let vsTimer = null;
 $('#vs-q').addEventListener('input', e => { clearTimeout(vsTimer); vsTimer = setTimeout(() => { VS.q = e.target.value.trim(); VS.shown = 30; renderVinylShop(); }, 120); });
 $('#vs-more').addEventListener('click', () => { VS.shown += 30; renderVinylShop(); });
 $('#is-close').addEventListener('click', closeItem);
-$('#is-action').addEventListener('click', () => { if (!IS) return; IS.pack ? buyPack() : itemAction(); });
+$('#is-action').addEventListener('click', () => { if (!IS) return; IS.bundle ? buyBundle() : IS.pack ? buyPack() : itemAction(); });
+$('#shop-nav').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) { sfx.tap(); shopNavTo(b.dataset.go); } });
+window.addEventListener('scroll', () => { if (!shopNavSync.raf) shopNavSync.raf = requestAnimationFrame(() => { shopNavSync.raf = 0; shopNavSync(); }); }, { passive: true });
+$('#shop-coin-btn').addEventListener('click', () => shopNavTo(coinShopOn() ? 'coin-shop' : 'sh-bundles'));
+$('#sc-dots').addEventListener('click', e => { const b = e.target.closest('[data-sc]'); if (b) { SC.hold = Date.now() + 8000; scGo(+b.dataset.sc); } });
+$('#sc-track').addEventListener('scroll', e => { const t = e.target, k = Math.round(t.scrollLeft / Math.max(1, t.clientWidth)); if (k !== SC.i) { SC.i = k; scDots(); } }, { passive: true });
+$('#sc-track').addEventListener('pointerdown', () => { SC.hold = Date.now() + 8000; });
+$('#sc-track').addEventListener('click', e => { const s = e.target.closest('.sc-slide'); if (s) openItem('skin', s.dataset.id); });
 $('#item-sheet').addEventListener('click', e => { if (e.target.id === 'item-sheet') closeItem(); });
 
 // Missions
