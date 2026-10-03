@@ -2251,9 +2251,9 @@ function itemCardHTML(kind, it, deal) {
   const isDeal = !owned && deal && deal.kind === kind && deal.it.id === it.id;
   const price = isDeal ? deal.price : it.price;
   const state = eq ? '<span class="item-state">Équipé</span>' : owned ? '<span class="item-state">Possédé</span>' : locked ? `<span class="item-state">${ico('g-lock')}${it.unlock === 'pass' ? 'Pass Or' : 'Succès'}</span>` : `<span class="item-price"><i class="coin"></i>${fmt(price)}</span>`;
-  const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
+  const cls = `item r-${it.rarity}${kind === 'skin' ? ' skin-item' : ''}${it.premium ? ' is-premium' : ''}${eq ? ' is-equipped' : ''}${owned ? ' is-owned' : ''}${locked ? ' is-locked' : ''}${isDeal ? ' is-deal' : ''}`;
   const label = `${itemName(kind, it)}, ${R_NAME[it.rarity].toLowerCase()}`;
-  return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
+  return `<button class="${cls}" type="button" data-kind="${kind}" data-id="${it.id}" aria-label="${esc(label)}"><span class="rar-dot"></span>${it.premium ? '<span class="prem-tag">Premium</span>' : ''}${itemPreviewHTML(kind, it)}<span class="item-name">${esc(it.name)}</span><span class="item-foot">${state}</span></button>`;
 }
 function renderShopTimers() {
   const t = hms(msToMidnight());
@@ -2284,7 +2284,8 @@ function renderShop() {
       ${packArt(p.id)}<span class="row-txt"><b>${p.name}</b><small>${p.desc}</small></span>
       <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
     </button>`).join('');
-  for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
+  $('#shop-premium').innerHTML = COSMETICS.skin.filter(it => it.premium).map(it => itemCardHTML('skin', it, d)).join('');
+  for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].filter(it => !it.premium).map(it => itemCardHTML(kind, it, d)).join('');
   renderCoinShop();
   renderJokerShop();
   renderVinylShop();

@@ -291,6 +291,33 @@ function humanHair(g, sk) {
   if (t === 'long') g.add(mesh(sph(1, 32, 20), m, [0, 1.86, -.28], null, [.9, .78, .52]));
   if (t === 'bun') g.add(mesh(sph(.26, 20, 14), m, [0, 2.9, -.25]));
   if (t === 'mohawk') for (let k = 0; k < 6; k++) g.add(mesh(new T.ConeGeometry(.1, .32, 12), m, [0, 2.86 - Math.abs(k - 2.5) * .03, .45 - k * .18], [-.2, 0, 0]));
+  // Banane rock'n'roll : grosse vague sur le front
+  if (t === 'pompadour') {
+    g.add(mesh(sph(1, 32, 20), m, [0, 2.86, .2], [.35, 0, 0], [.62, .36, .58]));
+    g.add(mesh(sph(1, 32, 20), m, [0, 2.97, .42], [.6, 0, 0], [.42, .22, .34]));
+    [-1, 1].forEach(s => g.add(mesh(sph(1, 20, 14), m, [.8 * s, 2.32, -.08], null, [.12, .32, .26])));
+  }
+  // Queue de cheval haute avec élastique
+  if (t === 'ponytail') {
+    g.add(mesh(sph(.13, 16, 12), clay('#FF4FA3', .6), [0, 2.74, -.62]));
+    g.add(capsule(.15, m, [0, 2.72, -.72], [0, 2.3, -.98]));
+    g.add(capsule(.12, m, [0, 2.3, -.98], [0, 1.95, -.9]));
+  }
+  // Tresses de chaque côté, perles dorées au bout
+  if (t === 'braids') [-1, 1].forEach(s => {
+    for (let k = 0; k < 5; k++) g.add(mesh(sph(.11, 14, 10), m, [.78 * s, 2.25 - k * .17, -.22 + k * .02]));
+    g.add(mesh(sph(.07, 12, 8), gloss('#FBBF24', .2), [.78 * s, 1.36, -.14]));
+  });
+  // Pics façon manga
+  if (t === 'spiky') for (let k = 0; k < 9; k++) {
+    const a = (k / 8 - .5) * 2.2;
+    g.add(mesh(new T.ConeGeometry(.15, .5, 12), m, [Math.sin(a) * .62, 2.82 - Math.abs(a) * .1, -.1 + Math.cos(a) * .2], [-.25, 0, -a * .55]));
+  }
+  // Coupe au bol des sixties : frange droite sur le front
+  if (t === 'bowl') {
+    g.add(mesh(new T.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, Math.PI * .44), m, [0, 2.16, 0], [-.12, 0, 0], [1.03, .84, .9]));
+    [-1, 1].forEach(s => g.add(mesh(sph(1, 20, 14), m, [.86 * s, 2.24, -.05], null, [.14, .34, .5])));
+  }
 }
 // Couvre-chefs taillés pour la grosse tête (calotte qui épouse le crâne)
 function humanHat(g, a) {
@@ -316,7 +343,7 @@ function humanHat(g, a) {
 }
 function buildHuman(sk, opts) {
   const g = new T.Group(), skin = skinMat(sk.skin || '#F5D2BE');
-  const top = clay(sk.top || '#E07A3A'), shirt = clay(sk.shirt || '#F4F1EA'), pants = clay(sk.pants || '#3F4A63'), shoes = clay(sk.shoes || '#2B2B33', .6);
+  const top = sk.fit?.finish ? finishMat(sk.top || '#E07A3A', sk.fit.finish) : clay(sk.top || '#E07A3A'), shirt = clay(sk.shirt || '#F4F1EA'), pants = clay(sk.pants || '#3F4A63'), shoes = clay(sk.shoes || '#2B2B33', .6);
   // jambes et chaussures
   [-1, 1].forEach(s => {
     g.add(mesh(sph(.19, 20, 14), shoes, [.21 * s, .09, .08], null, [1, .55, 1.45]));
@@ -326,7 +353,8 @@ function buildHuman(sk, opts) {
   // torse trapu (veste + chemise au milieu)
   const torso = mesh(sph(.57, 40, 28), top, [0, 1.02, 0], null, [1.02, 1, .82]);
   g.add(torso);
-  if ((sk.shirt || '#F4F1EA') !== (sk.top || '#E07A3A')) g.add(mesh(sph(.57, 32, 24), shirt, [0, 1.0, .05], null, [.34, .95, .8]));
+  let shirtMesh = null;
+  if ((sk.shirt || '#F4F1EA') !== (sk.top || '#E07A3A')) { shirtMesh = mesh(sph(.57, 32, 24), shirt, [0, 1.0, .05], null, [.34, .95, .8]); g.add(shirtMesh); }
   // bras et mains en moufle
   [-1, 1].forEach(s => {
     g.add(capsule(.14, top, [.5 * s, 1.34, 0], [.7 * s, .86, .06]));
@@ -355,8 +383,73 @@ function buildHuman(sk, opts) {
     g.add(h);
   }
   if (accs.neck) { S = surface([torso]); neckAcc(g, accs.neck, 'human'); }
+  if (sk.fit) outfit(g, sk, torso, shirtMesh);
   g.userData.human = true;
   return g;
+}
+// Matières de veste : paillettes, métal, cuir
+function finishMat(c, f) {
+  if (f === 'leather') return gloss(c, .32);
+  const m = keep(new T.MeshPhysicalMaterial({ color: lin(c), metalness: f === 'metal' ? .75 : .55, roughness: f === 'metal' ? .28 : .38, clearcoat: .5, clearcoatRoughness: .3 }));
+  if (f === 'sequin') { m.bumpMap = grain(); m.bumpScale = .03; m.emissive = lin(c).multiplyScalar(.12); }
+  return m;
+}
+const glowMat = c => keep(new T.MeshStandardMaterial({ color: lin(c), emissive: lin(c), emissiveIntensity: .9 }));
+// Anneau ajusté au torse (sphère r .57 centrée en y 1.02, échelle 1.02 × .82)
+function torsoRing(y, tube, mat, pad = .012) {
+  const r = Math.sqrt(Math.max(.01, .57 * .57 - (y - 1.02) ** 2));
+  return mesh(new T.TorusGeometry(1, tube, 12, 64), mat, [0, y, 0], [Math.PI / 2, 0, 0], [r * 1.02 + pad, r * .82 + pad, 1]);
+}
+function star(r, depth) {
+  const sh = new T.Shape();
+  for (let k = 0; k < 10; k++) { const an = Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * .45 : r; k ? sh.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : sh.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+  return new T.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: .01, bevelSize: .01, bevelSegments: 2 });
+}
+// Détails de tenue des skins haut de gamme
+function outfit(g, sk, torso, shirtMesh) {
+  const f = sk.fit, parts = [torso]; if (shirtMesh) parts.push(shirtMesh);
+  S = surface(parts);
+  if (f.lapels) {
+    const m = f.lapelFinish ? finishMat(f.lapels, f.lapelFinish) : gloss(f.lapels, .3);
+    [-1, 1].forEach(s => { const x = .17 * s, y = 1.27; g.add(mesh(new T.BoxGeometry(.11, .46, .04), m, [x, y, S.z(x, y) + .005], [-.25, s * .1, -s * .38])); });
+  }
+  if (f.buttons) [0.86, 1.02, 1.18].forEach(y => g.add(mesh(sph(.035, 12, 8), gloss(f.buttons, .2), [0, y, S.z(0, y) + .01])));
+  if (f.stripes) { const m = clay(f.stripes, .7); [.92, 1.08].forEach(y => g.add(torsoRing(y, .028, m))); [-1, 1].forEach(s => g.add(capsule(.032, m, [.55 * s, 1.36, .1], [.74 * s, .9, .17]))); }
+  if (f.belt) {
+    const m = f.beltFinish === 'leather' ? gloss(f.belt, .35) : finishMat(f.belt, 'metal');
+    g.add(torsoRing(.66, .055, m, .02));
+    const z = S.z(0, .66) + .05;
+    g.add(mesh(new T.BoxGeometry(.24, .16, .05), finishMat(f.buckle || '#FBBF24', 'metal'), [0, .66, z]));
+    if (f.buckleGem) g.add(mesh(sph(.045, 16, 12), gloss(f.buckleGem, .05), [0, .66, z + .035]));
+  }
+  if (f.trim) { const m = f.trimGlow === false ? finishMat(f.trim, 'metal') : glowMat(f.trim); g.add(torsoRing(1.47, .025, m, .01)); g.add(torsoRing(.6, .025, m, .03)); [-1, 1].forEach(s => g.add(mesh(new T.TorusGeometry(.15, .022, 8, 24), m, [.7 * s, .87, .06], [Math.PI / 2 - .3, 0, s * .3]))); }
+  if (f.pin) { const y = 1.3, x = -.27; g.add(mesh(star(.09, .025), finishMat(f.pin, 'metal'), [x, y, S.z(x, y) + .01])); }
+  if (f.gloves) [-1, 1].forEach(s => g.add(mesh(sph(.172, 20, 14), clay(f.gloves, .6), [.72 * s, .72, .1], null, [1, 1.12, .9])));
+  if (f.earrings) { const m = finishMat(f.earrings, 'metal'); [-1, 1].forEach(s => g.add(mesh(new T.TorusGeometry(.07, .016, 8, 24), m, [.95 * s, 1.84, .02], [0, Math.PI / 2, 0]))); }
+  if (f.sneakers) [-1, 1].forEach(s => { g.add(mesh(sph(.2, 20, 14), clay('#FFFFFF', .6), [.21 * s, .04, .09], null, [1.02, .25, 1.5])); g.add(mesh(new T.BoxGeometry(.03, .1, .2), clay(f.sneakers, .6), [.21 * s + .17 * s, .12, .1])); });
+  if (f.cape) {
+    const m = velvet(f.cape); m.side = T.DoubleSide;
+    g.add(mesh(new T.CylinderGeometry(.6, .95, 1.25, 40, 1, true, Math.PI / 2 + .25, Math.PI - .5), m, [0, .9, -.08]));
+    g.add(mesh(new T.CylinderGeometry(.56, .62, .22, 40, 1, true, Math.PI / 2 - .05, Math.PI + .1), m, [0, 1.6, -.06]));   // col montant
+    if (f.capeTrim) g.add(mesh(new T.TorusGeometry(.95, .03, 8, 48, Math.PI - .5), finishMat(f.capeTrim, 'metal'), [0, .28, -.08], [Math.PI / 2, 0, Math.PI + .25]));
+  }
+  if (f.prop === 'mic') {
+    const metal = finishMat(f.propColor || '#2A2A33', 'metal');
+    g.add(mesh(new T.CylinderGeometry(.065, .042, .46, 16), metal, [.72, .9, .24], [-.4, 0, -.1]));
+    g.add(mesh(sph(.15, 28, 20), keep(new T.MeshPhysicalMaterial({ color: lin('#C9CED6'), metalness: .9, roughness: .35, bumpMap: grain(), bumpScale: .03 })), [.75, 1.16, .33]));
+    g.add(mesh(new T.TorusGeometry(.15, .02, 8, 28), metal, [.75, 1.1, .32], [Math.PI / 2 - .4, 0, 0]));
+  }
+  if (f.prop === 'guitar') {
+    const wood = gloss(f.propColor || '#C2410C', .25), gtr = new T.Group();
+    gtr.add(mesh(sph(.3, 32, 20), wood, [0, 0, 0], null, [1, 1.1, .32]));
+    gtr.add(mesh(sph(.24, 32, 20), wood, [0, .34, 0], null, [1, 1, .32]));
+    gtr.add(mesh(new T.CylinderGeometry(.08, .08, .02, 24), matte('#1E1A22'), [0, .18, .1], [Math.PI / 2, 0, 0]));
+    gtr.add(mesh(new T.BoxGeometry(.09, .9, .05), matte('#3B2A20'), [0, .95, .02]));
+    gtr.add(mesh(new T.BoxGeometry(.13, .2, .05), matte('#1E1A22'), [0, 1.48, .02]));
+    gtr.scale.setScalar(1.3); gtr.position.set(-.12, .74, .66); gtr.rotation.set(.1, 0, -1.05);
+    g.add(gtr);
+    g.add(capsule(.03, clay(f.strap || '#1E1A22', .6), [.45, 1.45, .3], [-.42, .72, .45]));
+  }
 }
 // Cadre la caméra sur une boîte (personnage entier, tête seule…)
 function fitCamera(cam, box, pad) {
@@ -526,7 +619,7 @@ function flock(d, mk, W, H, k) {
 
 /* ---------- cache + file de rendu ---------- */
 // BUDGET (en caractères) : laisse toujours de la place à la sauvegarde de la partie
-const STORE = 'pompelup_blob3d_v4', KEEP = 16, BUDGET = 1.2e6;
+const STORE = 'pompelup_blob3d_v5', KEEP = 16, BUDGET = 1.2e6;
 const cache = new Map();
 try { ['pompelup_blob3d_v1', 'pompelup_blob3d_v2', 'pompelup_blob3d_v3'].forEach(k => localStorage.removeItem(k)); JSON.parse(localStorage.getItem(STORE) || '[]').forEach(([k, v]) => cache.set(k, v)); } catch (e) {}
 let saveT = null;

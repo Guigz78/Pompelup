@@ -2055,3 +2055,12 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .upsell-cta { min-width: 0; height: 38px; padding: 0 12px; font-size: 13.5px; }
 .upsell-txt em .coin { width: 14px; height: 14px; }
 .upsell-cta { display: inline-flex; gap: 4px; align-items: center; } .upsell-cta .coin { width: 18px; height: 18px; }
+
+/* ===== Skins Premium ===== */
+.premium-grid { grid-template-columns: repeat(2, 1fr); }
+.item.is-premium { border: 2px solid #E5B400 !important; box-shadow: 0 4px 0 #C98A00 !important; background: radial-gradient(120% 70% at 50% 0%, #FFF3C4, #fff 65%); overflow: hidden; }
+.item.is-premium::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.65) 50%, transparent 62%) -200% 0 / 200% 100% no-repeat; animation: upsell-shine 3.6s ease-in-out infinite; }
+.item.is-premium .item-name { color: #8A5A00; }
+.item.is-premium .item-price { color: #8A5A00; }
+.prem-tag { position: absolute; top: 10px; left: 10px; z-index: 2; padding: 2px 8px; border-radius: 99px; background: linear-gradient(135deg, #FFD54A, #F59E0B); color: #4A2E00; font: 800 10px var(--text); letter-spacing: .6px; text-transform: uppercase; box-shadow: 0 2px 0 #C98A00; }
+.shop-h-premium { --hl: #FFE07A; }
