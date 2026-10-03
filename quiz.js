@@ -742,8 +742,6 @@ function show(id) {
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
   window.PompeNative?.post('theme', 'light');
   $('#tabbar').hidden = !TAB_SCREENS.includes(id);
-  // Le bouton JOUER ne vit que sur l'accueil ; ailleurs la barre ne garde que les onglets
-  document.body.classList.toggle('no-play', id !== 'home');
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
@@ -753,7 +751,6 @@ function show(id) {
   if (id === 'pass') renderPass();
   if (id === 'boosters') renderBoosters();
   if (id === 'multi') renderMulti();
-  closePlayMenu();
   if (id === 'profile') renderProfile();
   if (id === 'story') { renderStory(); requestAnimationFrame(() => scrollToCurrent(false)); }
   renderBadges();
@@ -861,7 +858,7 @@ function renderHome() {
   $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
   $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · piste par piste' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
   renderHomeHeader();
@@ -996,6 +993,7 @@ function startGame(cfg) {
   // Pré-rendu des autres humeurs : pas d'à-coup au moment de la réponse
   ['wow', 'sad', 'wink'].forEach(mood => charHTML(HOST, { head: true, mood }));
   $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
+  $('#screen-game').classList.toggle('is-type', cfg.mode === 'type');
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
   startRound();
@@ -1322,14 +1320,15 @@ const HOST_LINES = {
   end: ratio => ratio >= .8 ? 'Quelle partie, bravo !' : ratio >= .5 ? 'Belle partie !' : 'On remet ça ?',
 };
 
-/* ================= PARTIE RAPIDE : écoute au doigt + stems ================= */
+/* ================= PISTE PAR PISTE : écoute au doigt + stems ================= */
 const RAPID_MAX = 12;            // secondes d'écoute avant que la jauge soit pleine
+// Piste par piste : on part de la rythmique, la voix arrive en dernier
 const STEMS = [
-  { id: 'voice', label: 'Voix', icon: 'g-mic', cost: 0 },
-  { id: 'guitar', label: 'Guitare', icon: 'g-guitar', cost: 100 },
-  { id: 'drums', label: 'Batterie', icon: 'g-drum', cost: 100 },
+  { id: 'drums', label: 'Batterie', icon: 'g-drum', cost: 0 },
   { id: 'bass', label: 'Basse', icon: 'g-bass', cost: 100 },
-  { id: 'full', label: 'Tout', icon: 'g-sliders', cost: 150 },
+  { id: 'guitar', label: 'Guitare', icon: 'g-guitar', cost: 100 },
+  { id: 'voice', label: 'Voix', icon: 'g-mic', cost: 200 },
+  { id: 'full', label: 'Tout', icon: 'g-sliders', cost: 100 },
 ];
 const stemAudio = new Audio();
 stemAudio.crossOrigin = 'anonymous';
@@ -1367,12 +1366,12 @@ function buildStemGraph() {
 function setStemLevel(stage) {
   if (!stemGraph) return;
   const t = actx.currentTime, set = (g, v) => { g.gain.cancelScheduledValues(t); g.gain.linearRampToValueAtTime(v, t + .25); };
-  const fullOn = stage >= 4;
-  set(stemGraph.voice, fullOn ? 0 : 1.2);
-  set(stemGraph.guitar, fullOn ? 0 : stage >= 1 ? 1.4 : 0);
-  set(stemGraph.drums, fullOn ? 0 : stage >= 2 ? 1.3 : 0);
-  set(stemGraph.kick, fullOn ? 0 : stage >= 2 ? .8 : 0);
-  set(stemGraph.bass, fullOn ? 0 : stage >= 3 ? 1.1 : 0);
+  const on = new Set(STEMS.slice(0, stage + 1).map(s => s.id)), fullOn = on.has('full');
+  set(stemGraph.voice, !fullOn && on.has('voice') ? 1.2 : 0);
+  set(stemGraph.guitar, !fullOn && on.has('guitar') ? 1.4 : 0);
+  set(stemGraph.drums, !fullOn && on.has('drums') ? 1.3 : 0);
+  set(stemGraph.kick, !fullOn && on.has('drums') ? .8 : 0);
+  set(stemGraph.bass, !fullOn && on.has('bass') ? 1.1 : 0);
   set(stemGraph.full, fullOn ? 1 : 0);
 }
 // Charge l'extrait pour les stems ; si le serveur refuse le CORS, on retombe sur l'écoute complète.
@@ -1434,7 +1433,7 @@ function addStem() {
   setStemLevel(G.stem);
   const s = STEMS[G.stem];
   sfx.tap(); buzz(20);
-  say(s.id === 'full' ? 'Et voilà le morceau complet !' : `Et voilà ${s.id === 'drums' ? 'la batterie' : s.id === 'bass' ? 'la basse' : 'la guitare'} !`, 'wink');
+  say(s.id === 'full' ? 'Et voilà le morceau complet !' : `Et voilà ${{ drums: 'la batterie', bass: 'la basse', guitar: 'la guitare', voice: 'la voix' }[s.id]} !`, 'wink');
   renderStems();
   $('#stage-status').textContent = `${fmt(rapidPoints())} pts en jeu`;
 }
@@ -1664,7 +1663,7 @@ function endGame() {
   const ratio = n ? found / n : 0;
   $('#res-char').innerHTML = meHTML({ mood: record ? 'grin' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'smirk' : 'sad' });
   $('#res-title').textContent = G.cfg.daily ? (found ? 'Défi réussi !' : 'Défi raté…') : found === n && n > 0 ? 'Partie parfaite !' : ratio >= .5 ? 'Partie terminée !' : 'On remet ça ?';
-  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'partie rapide' : '4 choix'}`;
+  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'piste par piste' : '4 choix'}`;
   $('#res-record').hidden = !record;
   $('#res-acc').textContent = `${Math.round(ratio * 100)} %`;
   $('#res-acc-label').textContent = ratio === 1 ? 'Parfait' : ratio >= .8 ? 'Génial' : ratio >= .5 ? 'Bien' : 'Précision';
@@ -2969,8 +2968,8 @@ function stepLabel(a, step) {
 }
 function renderStoryCard() {
   const d = storyDone();
-  $('#pm-story-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} légendes à découvrir, étape par étape`;
-  $('#pm-story-dot').hidden = $('#tb-more').hidden = !chestReady();
+  $('#pm-story-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} légendes à découvrir`;
+  $('#pm-story-dot').hidden = !chestReady();
 }
 let POP = null;
 function renderStory() {
@@ -3441,14 +3440,6 @@ $('#acc-btn').addEventListener('click', async () => {
 
 
 /* ================= MENU JOUER (bouton scindé) ================= */
-function closePlayMenu() { $('#play-menu').hidden = true; $('#btn-play-more').setAttribute('aria-expanded', 'false'); $('#tabbar').classList.remove('is-open'); }
-function togglePlayMenu() {
-  const open = $('#play-menu').hidden;
-  $('#play-menu').hidden = !open;
-  $('#btn-play-more').setAttribute('aria-expanded', String(open));
-  $('#tabbar').classList.toggle('is-open', open);
-  if (open) sfx.pop();
-}
 function playDaily() {
   if (dailyToday()) { toast(`Nouveau défi dans ${hms(msToMidnight())}`); return; }
   startGame({ daily: true, mode: 'type', rounds: 1, attempts: 3, candidates: dailySongCandidates() });
@@ -3651,6 +3642,13 @@ function mpFloat(e, name) {
   setTimeout(() => el.remove(), 2600);
 }
 
+// Saisie : le champ reste collé en bas, juste au-dessus du clavier virtuel
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const kb = () => document.documentElement.style.setProperty('--kb', `${Math.max(0, window.innerHeight - vv.height - vv.offsetTop)}px`);
+  vv.addEventListener('resize', kb); vv.addEventListener('scroll', kb);
+}
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
@@ -3768,15 +3766,8 @@ $('#pf-back').addEventListener('click', () => show('home'));
 $('#pass-buy').addEventListener('click', buyPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pr.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
-$('#btn-play-more').addEventListener('click', e => { e.stopPropagation(); togglePlayMenu(); });
-$('#play-menu').addEventListener('click', e => {
-  const b = e.target.closest('[data-play]'); if (!b) return;
-  closePlayMenu(); unlockAudio();
-  const k = b.dataset.play;
-  if (k === 'multi') show('multi');
-  else if (k === 'story') show('story');
-});
-document.addEventListener('click', e => { if (!$('#play-menu').hidden && !e.target.closest('#tabbar')) closePlayMenu(); });
+$('#mode-multi').addEventListener('click', () => { unlockAudio(); show('multi'); });
+$('#mode-story').addEventListener('click', () => { unlockAudio(); show('story'); });
 $('#mp-back').addEventListener('click', () => { if (MP.code) mpLeave(); show('home'); });
 $('#mp-create').addEventListener('click', () => { mpErr(''); mpOpen(newCode()); });
 $('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').value); });

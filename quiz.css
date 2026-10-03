@@ -2177,3 +2177,33 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 
 /* JOUER uniquement sur l'accueil */
 body.no-play .nav-split, body.no-play .play-menu { display: none; }
+
+/* ===== Mode saisie : champ fixé en bas de l'écran ===== */
+.screen-game.is-type .type-box:not([hidden]) {
+  position: fixed; left: 50%; bottom: var(--kb, 0px); z-index: 40; transform: translateX(-50%);
+  width: 100%; max-width: 480px; padding: 10px 14px calc(12px + var(--safe-b)); gap: 8px;
+  background: rgba(255,247,236,.97); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-top: 2px solid var(--edge); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 24px rgba(42,27,77,.1);
+}
+.screen-game.is-type .type-box .suggest:empty { display: none; }
+.screen-game.is-type .type-box .btn-send { min-height: 46px; }
+.screen-game.is-type .answer { padding-bottom: 170px; }
+.screen-game.is-type.is-reveal .type-box { display: none; }
+
+/* ===== Accueil : bouton Jouer dans « Ta partie » + autres modes ===== */
+.home-play { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; margin-top: 8px; padding: 0 18px; border-radius: 16px; color: #fff; background: linear-gradient(90deg, var(--pink), var(--orange)); box-shadow: 0 5px 0 #D6307F; transition: transform .1s, box-shadow .1s; }
+.home-play:active { transform: translateY(5px); box-shadow: none; }
+.home-play .ico { width: 26px; height: 26px; }
+.home-play-lbl { font: 800 24px/1 var(--display); letter-spacing: .6px; text-transform: uppercase; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+.home-play small { margin-left: auto; max-width: 58%; font: 800 12.5px var(--text); opacity: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.more-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mm { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 18px; border: 2px solid var(--edge); box-shadow: 0 4px 0 var(--edge); background: #fff; text-align: left; transition: transform .1s, box-shadow .1s; }
+.mm:active { transform: translateY(4px); box-shadow: none; }
+.mm-ico { flex: 0 0 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: #fff; }
+.mm-ico .ico { width: 24px; height: 24px; }
+.mm-multi { background: var(--violet); box-shadow: 0 3px 0 var(--violet-lip); }
+.mm-story { background: var(--green); box-shadow: 0 3px 0 var(--green-lip); }
+.mm-txt { display: flex; flex-direction: column; min-width: 0; }
+.mm-txt b { font: 800 15px/1.15 var(--display); color: var(--ink); }
+.mm-txt small { font: 700 11.5px/1.25 var(--text); color: var(--ink-2); }
+.mm .mm-dot { top: -8px; right: -6px; }

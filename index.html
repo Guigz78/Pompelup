@@ -97,7 +97,7 @@
           </button>
           <button class="mode" type="button" role="radio" data-mode="stems" aria-checked="false">
             <span class="mode-ico m-rapid"><svg class="ico"><use href="#i-g-bolt"/></svg></span>
-            <span class="mode-txt"><b>Rapide</b><small>Voix, puis guitare, batterie… maintiens pour écouter</small></span>
+            <span class="mode-txt"><b>Piste par piste</b><small>Batterie, basse, guitare… la voix en dernier</small></span>
             <span class="mode-radio" aria-hidden="true"></span>
           </button>
         </div>
@@ -110,7 +110,13 @@
             <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
           </div>
         </div>
+        <button class="home-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="home-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
       </section>
+
+      <div class="more-modes">
+        <button class="mm" id="mode-multi" type="button"><span class="mm-ico mm-multi"><svg class="ico"><use href="#i-g-user"/></svg></span><span class="mm-txt"><b>Multijoueur</b><small>Défie tes potes en direct</small></span></button>
+        <button class="mm" id="mode-story" type="button"><span class="mm-ico mm-story"><svg class="ico"><use href="#i-g-book"/></svg></span><span class="mm-txt"><b>Mode histoire</b><small id="pm-story-sub">Les légendes, étape par étape</small></span><i class="dot-badge mm-dot" id="pm-story-dot" hidden>!</i></button>
+      </div>
     </div>
   </section>
 
@@ -531,14 +537,6 @@
 
   <!-- ================= BARRE DE NAVIGATION ================= -->
   <nav class="tabbar" id="tabbar" aria-label="Navigation">
-    <div class="play-menu" id="play-menu" hidden>
-      <button class="pm-item" type="button" data-play="multi"><span class="pm-ico pm-multi"><svg class="ico"><use href="#i-g-user"/></svg></span><span class="pm-txt"><b>Multijoueur</b><small>Crée une salle et défie tes potes</small></span><span class="pm-new">Nouveau</span></button>
-      <button class="pm-item" type="button" data-play="story"><span class="pm-ico pm-story"><svg class="ico"><use href="#i-g-book"/></svg></span><span class="pm-txt"><b>Mode histoire</b><small id="pm-story-sub">Découvre les légendes, étape par étape</small></span><i class="dot-badge pm-dot" id="pm-story-dot" hidden>!</i></button>
-    </div>
-    <div class="nav-split">
-      <button class="nav-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="nav-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
-      <button class="nav-more" id="btn-play-more" type="button" aria-label="Plus de modes de jeu" aria-expanded="false"><svg class="ico"><use href="#i-g-arrow-up"/></svg><i class="tab-badge" id="tb-more" hidden>!</i></button>
-    </div>
     <div class="nav-tiles">
       <button class="tab is-active" type="button" data-tab="home" aria-label="Accueil"><svg class="ico"><use href="#i-house"/></svg><span>Accueil</span></button>
       <button class="tab" type="button" data-tab="boosters" aria-label="Boosters"><svg class="ico"><use href="#i-booster"/></svg><span>Boosters</span><i class="tab-badge" id="tb-story" hidden></i></button>
