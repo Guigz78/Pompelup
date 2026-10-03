@@ -92,7 +92,7 @@
           </button>
           <button class="mode" type="button" role="radio" data-mode="type" aria-checked="false">
             <span class="mode-ico m-type"><svg class="ico"><use href="#i-g-keyboard"/></svg></span>
-            <span class="mode-txt"><b>Saisie <em>×1,5</em></b><small>Écris le titre, plus de points</small></span>
+            <span class="mode-txt"><b>Saisie <em>×1,5</em></b><small>Titre et/ou artiste, plus de points</small></span>
             <span class="mode-radio" aria-hidden="true"></span>
           </button>
           <button class="mode" type="button" role="radio" data-mode="stems" aria-checked="false">
@@ -172,8 +172,13 @@
       <form class="type-box" id="type-box" autocomplete="off" hidden>
         <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions"></div>
         <div class="attempts" id="attempts" hidden></div>
-        <input id="type-input" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
-               autocorrect="off" spellcheck="false" placeholder="Écris le titre…" aria-label="Ta réponse">
+        <div class="type-fields">
+          <input id="type-input" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" placeholder="Titre…" aria-label="Titre de la chanson">
+          <input id="type-artist" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" placeholder="Artiste…" aria-label="Artiste">
+        </div>
+        <p class="type-scale" id="type-scale">Titre <b>ou</b> artiste : des points · les <b>deux</b> : bonus ×1,5</p>
         <button class="btn btn-green btn-block btn-send" type="submit">Vérifier</button>
       </form>
 

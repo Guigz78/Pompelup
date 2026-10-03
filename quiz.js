@@ -1042,7 +1042,7 @@ async function startRound() {
   $('#rapid').hidden = true;
   $('#btn-next').hidden = true;
   $('#game-prog').style.width = `${G.i / G.songs.length * 100}%`;
-  $('#game-title').textContent = G.cfg.daily ? 'Chanson mystère du jour' : G.cfg.mode === 'type' ? 'Écris le titre de cette chanson' : G.cfg.mode === 'stems' ? 'Maintiens le disque pour écouter' : 'Quelle est cette chanson ?';
+  $('#game-title').textContent = G.cfg.daily ? 'Chanson mystère du jour' : G.cfg.mode === 'type' ? 'Trouve le titre et l’artiste' : G.cfg.mode === 'stems' ? 'Maintiens le disque pour écouter' : 'Quelle est cette chanson ?';
   G.holding = false;
   if (!G.cfg.daily) say(G.i === G.songs.length - 1 && G.i > 0 ? HOST_LINES.last() : HOST_LINES.start(G.i + 1));
   else say('Le défi du jour : 3 essais, pas un de plus !');
@@ -1067,10 +1067,15 @@ async function startRound() {
   $('#disc-label').style.background = song.color || 'var(--orange)';
   $('#btn-replay-audio').hidden = G.cfg.mode === 'stems';
 
+  G.typePart = null;
   if (G.cfg.mode === 'type') {
     $('#type-box').hidden = false;
     $('#type-input').value = '';
     $('#type-input').classList.remove('is-wrong');
+    $('#type-artist').value = '';
+    $('#type-artist').classList.remove('is-wrong');
+    $('#type-artist').hidden = $('#type-scale').hidden = !!G.cfg.daily;
+    $('#type-input').placeholder = G.cfg.daily ? 'Écris le titre…' : 'Titre…';
     $('#suggest').innerHTML = '';
     $('#attempts').hidden = !G.cfg.daily;
     renderAttempts();
@@ -1153,7 +1158,9 @@ function points() {
   const comboMult = 1 + Math.min(.5, .1 * (G.combo - 1));
   const modeMult = G.cfg.mode === 'type' ? 1.5 : 1;
   const hintMult = G.hint ? .7 : 1;
-  return Math.round(base * comboMult * modeMult * hintMult / 10) * 10;
+  // Saisie : titre seul ×1, artiste seul ×0,6, les deux ×1,5
+  const partMult = G.typePart === 'both' ? 1.5 : G.typePart === 'artist' ? .6 : 1;
+  return Math.round(base * comboMult * modeMult * hintMult * partMult / 10) * 10;
 }
 
 function finishRound(ok, reason, sourceEl) {
@@ -1496,7 +1503,38 @@ function submitText(text, pickedId) {
     if (G.tries >= G.cfg.attempts) return finishRound(false, 'wrong');
   }
 }
+// Artiste : nom complet ou l'un des artistes crédités (feat., &, x…)
+function artistMatch(input, song) {
+  const a = normalize(input).replace(/^the /, ''), full = normalize(song.artist).replace(/^the /, '');
+  if (a.length < 2) return false;
+  if (a === full || similarity(a, full) >= .85) return true;
+  if (a.length >= 4 && full.includes(a) && a.length >= full.length * .5) return true;
+  return full.split(/\s+(?:feat|ft|featuring|and|x|et|with|vs)\s+|\s*,\s*/).some(p => p.length >= 2 && (a === p.replace(/^the /, '') || similarity(a, p) >= .85));
+}
+function submitBoth() {
+  if (G.phase !== 'playing') return;
+  const ti = $('#type-input'), ai = $('#type-artist'), t = ti.value.trim(), a = ai.value.trim();
+  if (!t && !a) return;
+  const tv = t ? judge(t, G.song) : null;
+  const titleOk = tv === 'title', artistOk = (a && artistMatch(a, G.song)) || (!a && tv === 'artist');
+  if (titleOk || artistOk) {
+    G.typePart = titleOk && artistOk ? 'both' : titleOk ? 'title' : 'artist';
+    finishRound(true, 'right', titleOk ? ti : ai);
+    if (G.typePart === 'both') toast('Titre + artiste : bonus ×1,5 !');
+    else if (G.typePart === 'title') toast(a ? 'Bon titre, mais pas le bon artiste' : 'Bon titre ! L’artiste en plus = bonus');
+    else toast(t ? 'Bon artiste, mais pas le bon titre' : 'Bon artiste ! Le titre rapporte plus');
+    return;
+  }
+  G.tries++;
+  [[ti, t], [ai, a]].forEach(([el, v]) => { if (!v) return; el.classList.remove('is-wrong'); void el.offsetWidth; el.classList.add('is-wrong'); el.value = ''; });
+  sfx.wrong(); buzz(40);
+  $('#suggest').innerHTML = '';
+  (t ? ti : ai).focus();
+}
+let typeField = 'title';
 function renderSuggestions(q) {
+  if (!G.cfg?.daily && typeField === 'artist') return renderArtistSuggestions(q);
+  if (!G.cfg?.daily) return renderTitleSuggestions(q);
   const box = $('#suggest'), n = normalize(q);
   if (n.length < 2 || G.phase !== 'playing') { box.innerHTML = ''; return; }
   const scored = [];
@@ -1510,6 +1548,28 @@ function renderSuggestions(q) {
   const top = scored.map(x => x[1]).filter(s => { const k = `${cleanTitle(s.title)}|${s.artist}`; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 3);
   box.innerHTML = top.map(s => `<button class="sug" type="button" role="option" data-id="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.artist)}</span></button>`).join('');
 }
+// Suggestions séparées : titres seuls (sans l'artiste qui donnerait la réponse) ou artistes seuls
+function renderTitleSuggestions(q) {
+  const box = $('#suggest'), n = normalize(q);
+  if (n.length < 2 || G.phase !== 'playing') { box.innerHTML = ''; return; }
+  const seen = new Set(), out = [];
+  for (const s of SONGS) {
+    const t = normalize(s.title), k = cleanTitle(s.title);
+    const sc = t.startsWith(n) ? 3 : t.includes(` ${n}`) ? 2 : t.includes(n) ? 1 : 0;
+    if (sc && !seen.has(k)) { seen.add(k); out.push([sc - t.length / 1000, s.title]); }
+  }
+  out.sort((x, y) => y[0] - x[0]);
+  box.innerHTML = out.slice(0, 3).map(([, t]) => `<button class="sug" type="button" role="option" data-fill="title" data-v="${esc(t)}"><b>${esc(t)}</b></button>`).join('');
+}
+const ALL_ARTISTS = [...new Set(SONGS.map(s => s.artist))];
+function renderArtistSuggestions(q) {
+  const box = $('#suggest'), n = normalize(q);
+  if (n.length < 2 || G.phase !== 'playing') { box.innerHTML = ''; return; }
+  const out = [];
+  for (const a of ALL_ARTISTS) { const k = normalize(a); const sc = k.startsWith(n) ? 3 : k.includes(` ${n}`) ? 2 : k.includes(n) ? 1 : 0; if (sc) out.push([sc - k.length / 1000, a]); }
+  out.sort((x, y) => y[0] - x[0]);
+  box.innerHTML = out.slice(0, 3).map(([, a]) => `<button class="sug sug-artist" type="button" role="option" data-fill="artist" data-v="${esc(a)}"><b>${esc(a)}</b></button>`).join('');
+}
 function useHint() {
   if (G.phase !== 'playing' || G.hint) return;
   G.hint = 1;
@@ -1518,9 +1578,11 @@ function useHint() {
   $('#btn-hint').disabled = true;
   sfx.tap();
   if (G.cfg.mode === 'type') {
-    const first = G.song.title.split(/\s+/).map(w => w[0] + '·'.repeat(Math.max(0, Math.min(w.length - 1, 8)))).join(' ');
+    // Indice volontairement léger : la forme du titre et sa première lettre, rien sur l'artiste
+    const words = G.song.title.replace(/\(.*?\)|\[.*?\]/g, '').trim().split(/\s+/);
+    const shape = words.map((w, k) => (k === 0 ? w[0] : '·') + '·'.repeat(Math.max(0, Math.min(w.length - 1, 8)))).join(' ');
     $('#clues').hidden = false;
-    $('#clues').innerHTML = `<span class="clue">Artiste : <b>${esc(G.song.artist)}</b></span><span class="clue"><b>${esc(first)}</b></span>`;
+    $('#clues').innerHTML = `<span class="clue">${plural(words.length, 'mot', 'mots')}</span><span class="clue"><b>${esc(shape)}</b></span>`;
   } else {
     shuffle($$('.choice').filter(b => b.dataset.id !== G.song.id)).slice(0, 2).forEach(b => { b.disabled = true; b.classList.add('is-gone'); });
   }
@@ -3646,10 +3708,22 @@ $('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); tot
 $('#booster-card').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 
 $('#choices').addEventListener('click', e => { const b = e.target.closest('.choice'); if (b) onChoice(b); });
-$('#type-box').addEventListener('submit', e => { e.preventDefault(); submitText($('#type-input').value); });
-$('#type-input').addEventListener('input', e => renderSuggestions(e.target.value));
+$('#type-box').addEventListener('submit', e => { e.preventDefault(); G.cfg?.daily ? submitText($('#type-input').value) : submitBoth(); });
+$('#type-input').addEventListener('input', e => { typeField = 'title'; renderSuggestions(e.target.value); });
+$('#type-artist').addEventListener('input', e => { typeField = 'artist'; renderSuggestions(e.target.value); });
+$('#type-input').addEventListener('focus', () => { typeField = 'title'; $('#suggest').innerHTML = ''; });
+$('#type-artist').addEventListener('focus', () => { typeField = 'artist'; $('#suggest').innerHTML = ''; });
 $('#suggest').addEventListener('click', e => {
   const b = e.target.closest('.sug'); if (!b) return;
+  if (b.dataset.fill) {
+    // Saisie libre : la suggestion remplit seulement son champ
+    const el = b.dataset.fill === 'artist' ? $('#type-artist') : $('#type-input');
+    el.value = b.dataset.v;
+    $('#suggest').innerHTML = '';
+    const other = b.dataset.fill === 'artist' ? $('#type-input') : $('#type-artist');
+    if (!other.value && matchMedia('(pointer: fine)').matches) other.focus();
+    return;
+  }
   $('#type-input').value = b.querySelector('b').textContent;
   submitText(b.querySelector('b').textContent, b.dataset.id);
 });

@@ -2215,3 +2215,15 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .host-say { font-size: 14.5px; }
 @media (max-height: 760px) { .host { min-height: 0; } }
 .wl-sub { margin: -2px 0 12px !important; }
+
+/* ===== Saisie : titre + artiste ===== */
+.type-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.type-fields input { width: 100%; min-width: 0; min-height: 52px; padding: 0 14px; border-radius: var(--r-card); border: var(--stk); box-shadow: 0 3px 0 var(--edge); background: #fff; font: 700 16px var(--text); color: var(--ink); }
+.type-fields input:focus { outline: none; border-color: var(--violet); }
+.type-fields input.is-wrong { animation: shake .4s; border-color: var(--ko-line); background: var(--ko); }
+.type-fields input[hidden] { display: none; }
+.type-fields:has(#type-artist[hidden]) { grid-template-columns: 1fr; }
+.type-scale { margin: -2px 0 0; text-align: center; font: 700 12px var(--text); color: var(--ink-2); }
+.type-scale b { color: var(--violet); }
+.type-scale[hidden] { display: none; }
+.sug-artist b::before { content: '♪ '; color: var(--violet); }
