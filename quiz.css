@@ -2006,3 +2006,19 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .cpk-price { align-self: stretch; display: grid; place-items: center; height: 38px; border-radius: 12px; background: var(--green); box-shadow: 0 3px 0 var(--green-lip); color: #fff; font: 800 16px var(--text); }
 .cpk.is-busy .cpk-price { background: var(--ink-3); box-shadow: none; }
 .coin-note { margin: 0; font: 700 12px/1.4 var(--text); color: var(--ink-3); text-align: center; }
+
+/* ===== Accueil sans doublons : défi du jour en bandeau ===== */
+.daily-bar { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 12px 12px 14px; border-radius: 20px; border: 2px solid #1689C9; box-shadow: 0 4px 0 #1689C9; background: linear-gradient(135deg, #3FC6FF, #1CB0F6 55%, #7B5CFF 140%); text-align: left; color: #fff; transition: transform .1s, box-shadow .1s; }
+.daily-bar:active { transform: translateY(4px); box-shadow: none; }
+.daily-bar-ico { flex: 0 0 auto; width: 46px; height: 46px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.18)); }
+.daily-bar-txt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.daily-bar-txt small { font: 800 11px var(--text); letter-spacing: .8px; text-transform: uppercase; opacity: .85; }
+.daily-bar-txt b { font: 800 18px/1.15 var(--display); }
+.daily-bar-txt em { font: 700 12.5px var(--text); font-style: normal; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.daily-bar-cta { flex: 0 0 auto; display: grid; place-items: center; min-width: 76px; height: 42px; padding: 0 12px; border-radius: 12px; background: #fff; color: #1689C9; font: 800 15px var(--text); box-shadow: 0 3px 0 rgba(0,0,0,.15); font-variant-numeric: tabular-nums; }
+.daily-bar.is-done { background: #fff; border-color: var(--edge); box-shadow: 0 4px 0 var(--edge); color: var(--ink); }
+.daily-bar.is-done .daily-bar-txt small, .daily-bar.is-done .daily-bar-txt em { color: var(--ink-2); opacity: 1; }
+.daily-bar.is-done .daily-bar-cta { background: #F3EEF9; color: var(--ink-2); box-shadow: none; }
+.nav-more { position: relative; }
+.nav-more .tab-badge { top: -4px; right: -4px; left: auto; }
+.pm-item .pm-dot { position: static; margin-left: auto; }

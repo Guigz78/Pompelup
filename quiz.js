@@ -859,12 +859,11 @@ function renderHome() {
   $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
   $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
   $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  $('#pm-solo-sub').textContent = $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · rapide' : ''}`;
   renderBoosterCard();
   renderMissionsCard();
   renderHomeHeader();
   renderStoryCard();
-  renderPassCard();
   renderDaily();
   clearInterval(dailyTicker);
   dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
@@ -2776,7 +2775,8 @@ function stepLabel(a, step) {
 }
 function renderStoryCard() {
   const d = storyDone();
-  $('#story-card-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes à découvrir`;
+  $('#pm-story-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} légendes à découvrir, étape par étape`;
+  $('#pm-story-dot').hidden = $('#tb-more').hidden = !chestReady();
 }
 let POP = null;
 function renderStory() {
@@ -3063,14 +3063,6 @@ function rewardLabel(r) {
   if (r.boosters) return 'Booster';
   if (r.jokers) return r.jokers.x2 ? `Joker ×2${r.jokers.x2 > 1 ? ` (${r.jokers.x2})` : ''}` : `Voleur${r.jokers.steal > 1 ? ` (${r.jokers.steal})` : ''}`;
   return `+${fmt(r.coins)}`;
-}
-function renderPassCard() {
-  const P = passState(), t = passTier();
-  $('#pass-card-title').textContent = t >= PASS_TIERS ? 'Pass terminé !' : `Palier ${t + 1} · ${P.pts % PASS_STEP} %`;
-  $('#pass-card-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
-  const c = passClaimable();
-  $('#pass-card-badge').hidden = !c;
-  $('#pass-card-badge').textContent = c;
 }
 function passTimer() { const d = new Date(), end = new Date(d.getFullYear(), d.getMonth() + 1, 1), ms = end - d, days = Math.floor(ms / 864e5); return days >= 1 ? `${days} j ${Math.floor(ms % 864e5 / 36e5)} h` : hms(ms); }
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -3474,7 +3466,6 @@ $('#home-coins').addEventListener('click', () => show('shop'));
 $('#hh-xp').addEventListener('click', () => show('profile'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', playDaily);
-$('#multi-tile').addEventListener('click', () => { unlockAudio(); show('multi'); });
 $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
   toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
@@ -3578,7 +3569,6 @@ $('#screen-boosters').addEventListener('click', e => {
 $('#story-home').addEventListener('click', () => show('home'));
 $('#me-btn').addEventListener('click', () => show('profile'));
 $('#pf-back').addEventListener('click', () => show('home'));
-$('#pass-card').addEventListener('click', () => show('pass'));
 $('#pass-buy').addEventListener('click', buyPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pr.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
@@ -3586,11 +3576,8 @@ $('#btn-play-more').addEventListener('click', e => { e.stopPropagation(); toggle
 $('#play-menu').addEventListener('click', e => {
   const b = e.target.closest('[data-play]'); if (!b) return;
   closePlayMenu(); unlockAudio();
-  const p = store.prefs, k = b.dataset.play;
-  if (k === 'solo') quickPlay();
-  else if (k === 'multi') show('multi');
-  else if (k === 'daily') playDaily();
-  else if (k === 'rapid') startGame({ cat: p.cat, mode: 'stems', rounds: p.rounds });
+  const k = b.dataset.play;
+  if (k === 'multi') show('multi');
   else if (k === 'story') show('story');
 });
 document.addEventListener('click', e => { if (!$('#play-menu').hidden && !e.target.closest('#tabbar')) closePlayMenu(); });
@@ -3613,7 +3600,6 @@ $('#mp-share').addEventListener('click', () => {
 });
 window.addEventListener('pagehide', () => { if (MP.code) mpLeave(true); });
 // Histoire
-$('#story-card').addEventListener('click', () => show('story'));
 $('#story-back').addEventListener('click', () => scrollToCurrent(true));
 $('#story-list').addEventListener('click', e => {
   const go = e.target.closest('.pop-go'); if (go) { openStep(go.dataset.artist, +go.dataset.k); return; }
