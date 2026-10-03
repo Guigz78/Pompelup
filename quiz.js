@@ -1853,6 +1853,8 @@ function openBooster() {
 function closeBooster() {
   if (!BO) return;
   BO = null;
+  boPvToken++;
+  try { listen.pause(); } catch (e) {}
   $('#booster').hidden = true;
   $('#bo-fx').innerHTML = '';
   document.body.style.overflow = '';
@@ -2030,9 +2032,22 @@ function revealCard() {
       if (!BO) return;
       el.classList.add('is-open');
       BO.state = 'revealed';
+      boPreview(c.song);
       $('#bo-hint').textContent = BO.idx < BO.cards.length - 1 ? 'Tape pour le vinyle suivant' : 'Tape pour voir ton butin';
     }, 700);
   }, charge);
+}
+// Pendant l'ouverture d'un booster, chaque vinyle révélé joue son extrait
+let boPvToken = 0;
+async function boPreview(song) {
+  const t = ++boPvToken;
+  try { listen.pause(); } catch (e) {}
+  if (!store.settings.sound || !song) return;
+  const pv = await fetchPreview(song);
+  if (t !== boPvToken || !BO || !pv) return;
+  listen.src = pv.url;
+  listen.currentTime = 0;
+  listen.play().catch(() => {});
 }
 function rarityImpact(r) {
   const bo = $('#booster');
@@ -2223,6 +2238,9 @@ function openVinyl(id) {
   $('#vinyl-sheet').hidden = false;
   if (!art) getArt(s).then(a => { if (a && vsSong === s) { fillCover(vis, a); $('.vs-label', vis).innerHTML = `<img src="${esc(a)}" alt="">`; } });
   kbFocus($('#vs-close'));
+  // L'extrait démarre tout seul à l'ouverture du vinyle
+  try { listen.pause(); } catch (e) {}
+  if (store.settings.sound) toggleListen();
 }
 function closeVinyl() {
   try { listen.pause(); } catch (e) {}
