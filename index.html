@@ -51,7 +51,7 @@
           <div class="hero-title" id="bcard-title">1 booster à ouvrir</div>
           <div class="hero-gauge">
             <span class="bar bar-sm bar-light"><span id="bcard-gauge-fill"></span></span>
-            <small id="bcard-gauge-txt">0/6 bonnes réponses</small>
+            <small id="bcard-gauge-txt">0/10 bonnes réponses</small>
           </div>
           <button class="btn btn-white" id="btn-open-booster" type="button">Ouvrir</button>
         </div>
@@ -63,35 +63,36 @@
         <span class="hero-badge" id="bcard-badge" aria-hidden="true">1</span>
       </section>
 
-      <button class="card-btn pass-card" id="pass-card" type="button">
-        <svg class="ico pass-card-ico" aria-hidden="true"><use href="#i-crown"/></svg>
-        <span class="pass-card-txt"><span class="pass-card-tag">Pass de saison</span><b id="pass-card-title">Palier 1</b>
-          <span class="bar bar-sm bar-gold"><span id="pass-card-fill"></span></span></span>
-        <span class="dot-badge" id="pass-card-badge" hidden>!</span>
-        <svg class="ico story-card-go" aria-hidden="true"><use href="#i-g-chevron"/></svg>
-      </button>
-
-      <div class="duo">
-        <button class="card-btn daily" id="daily-card" type="button">
-          <svg class="ico daily-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
-          <span class="daily-tag">Défi du jour</span>
-          <span class="daily-title" id="daily-title">Chanson mystère</span>
-          <span class="daily-sub" id="daily-sub">3 essais · +1 booster</span>
-          <span class="daily-cta" id="daily-cta">Jouer</span>
+      <div class="tiles">
+        <button class="tile t-daily" id="daily-card" type="button">
+          <svg class="ico tile-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
+          <b id="daily-title">Chanson mystère</b><small id="daily-sub">3 essais · +1 booster</small>
+          <span class="tile-cta" id="daily-cta">Jouer</span>
+        </button>
+        <button class="tile t-multi" id="multi-tile" type="button">
+          <svg class="ico tile-ico" aria-hidden="true"><use href="#i-headphones"/></svg>
+          <b>Multijoueur</b><small>Défie tes potes en direct</small>
+          <span class="tile-cta">Créer / rejoindre</span>
+        </button>
+        <button class="tile t-story" id="story-card" type="button">
+          <svg class="ico tile-ico" aria-hidden="true"><use href="#i-book"/></svg>
+          <b>Mode histoire</b><small id="story-card-sub">8 artistes à découvrir</small>
+          <span class="tile-cta">Continuer</span>
+        </button>
+        <button class="tile t-pass" id="pass-card" type="button">
+          <svg class="ico tile-ico" aria-hidden="true"><use href="#i-crown"/></svg>
+          <b>Pass de saison</b><small id="pass-card-title">Palier 1</small>
+          <span class="bar bar-sm"><span id="pass-card-fill"></span></span>
+          <span class="dot-badge" id="pass-card-badge" hidden>!</span>
         </button>
       </div>
 
-      <button class="card-btn story-card" id="story-card" type="button">
-        <span class="story-card-art" id="story-card-art" aria-hidden="true"></span>
-        <span class="story-card-txt"><span class="story-tag">Mode histoire</span><b>Découvre les légendes</b><small id="story-card-sub">8 artistes · écoute, anecdotes, quiz</small></span>
-        <svg class="ico story-card-go" aria-hidden="true"><use href="#i-g-chevron"/></svg>
-      </button>
-
-      <section class="play-sec" aria-label="Lancer une partie">
-        <h2 class="sec-title">Choisis ta playlist</h2>
+      <section class="play-sec panel" aria-label="Ta partie">
+        <div class="ps-head"><h2 class="sec-title">Ta partie</h2><small>Règle-la ici, lance avec <b>JOUER</b> en bas</small></div>
+        <h3 class="ps-sub">Playlist</h3>
         <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
 
-        <h2 class="sec-title">Mode de jeu</h2>
+        <h3 class="ps-sub">Mode</h3>
         <div class="modes" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
           <button class="mode" type="button" role="radio" data-mode="choice" aria-checked="true">
             <span class="mode-ico m-listen"><svg class="ico"><use href="#i-g-headphones"/></svg></span>
@@ -111,7 +112,7 @@
         </div>
 
         <div class="rounds-row">
-          <h2 class="sec-title">Manches</h2>
+          <h3 class="ps-sub">Manches</h3>
           <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
             <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
             <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
@@ -127,14 +128,16 @@
     <header class="game-head">
       <button class="icon-btn" id="btn-quit" type="button" aria-label="Quitter la partie"><svg class="ico"><use href="#i-g-close"/></svg></button>
       <span class="bar bar-lesson" aria-hidden="true"><span id="game-prog"></span></span>
+      <span class="game-x2" id="game-x2" hidden>×2</span>
       <span class="game-combo" id="game-combo" hidden><svg class="ico"><use href="#i-flame"/></svg><b id="game-combo-n">2</b></span>
-      <span class="game-gauge" id="game-gauge" aria-label="Jauge booster"><svg class="ico"><use href="#i-booster"/></svg><b id="game-gauge-n">0/6</b></span>
+      <span class="game-gauge" id="game-gauge" aria-label="Jauge booster"><svg class="ico"><use href="#i-booster"/></svg><b id="game-gauge-n">0/10</b></span>
     </header>
     <div class="game-meta">
       <span class="game-round" id="game-round">Manche 1/10</span>
       <span class="game-score" aria-live="polite"><svg class="ico"><use href="#i-xp"/></svg><span id="game-score">0</span></span>
     </div>
     <div class="mp-live" id="mp-live" hidden></div>
+    <div class="mp-react" id="mp-react" hidden></div>
     <h1 class="game-title" id="game-title">Quelle est cette chanson ?</h1>
 
     <div class="host" id="host">
@@ -180,6 +183,10 @@
 
       <div class="answer-foot">
         <button class="btn btn-outline btn-hint" id="btn-hint" type="button"><svg class="ico"><use href="#i-bulb"/></svg><span id="hint-label">Indice</span></button>
+        <div class="jokers" id="jokers">
+          <button class="joker jk-x2" id="jk-x2" type="button" aria-label="Joker double points"><span class="jk-ico">×2</span><b id="jk-x2-n">0</b></button>
+          <button class="joker jk-steal" id="jk-steal" type="button" aria-label="Joker voleur de points"><svg class="ico"><use href="#i-g-bolt"/></svg><span class="jk-lbl">Voleur</span><b id="jk-steal-n">0</b></button>
+        </div>
       </div>
     </div>
 
@@ -227,7 +234,7 @@
       <div class="rb-body">
         <b id="rb-title">Jauge booster</b>
         <span class="bar bar-sm bar-purple"><span id="rb-fill"></span></span>
-        <small id="rb-txt">0/6 bonnes réponses</small>
+        <small id="rb-txt">0/10 bonnes réponses</small>
       </div>
       <button class="btn btn-purple rb-btn" id="rb-open" type="button" hidden>Ouvrir</button>
     </div>
@@ -247,6 +254,7 @@
         <h1 class="page-title">Mon salon</h1>
         <small class="room-count"><b id="coll-n">0</b> <span id="coll-of">/ 1000 vinyles</span> · <em id="coll-pct">0 %</em></small>
       </div>
+      <button class="btn btn-sm btn-outline room-edit" id="room-edit" type="button"><svg class="ico"><use href="#i-g-pencil"/></svg>Décorer</button>
       <button class="counter c-boost" id="coll-open" type="button" aria-label="Ouvrir un booster"><svg class="ico" aria-hidden="true"><use href="#i-booster"/></svg><b id="coll-boosters">0</b></button>
     </header>
     <div class="scroll">
@@ -305,7 +313,7 @@
         <button class="btn btn-white btn-block bx-open" id="bx-open" type="button">Ouvrir</button>
       </section>
       <section class="panel bx-gauge">
-        <div class="bx-g-top"><b>Prochain booster gratuit</b><small id="bx-g-txt">0/6 bonnes réponses</small></div>
+        <div class="bx-g-top"><b>Prochain booster gratuit</b><small id="bx-g-txt">0/10 bonnes réponses</small></div>
         <span class="bar bar-purple"><span id="bx-g-fill"></span></span>
         <small class="bx-g-help">Chaque bonne réponse remplit la jauge. Tu gagnes aussi des boosters en montant de niveau, avec les missions et le pass.</small>
       </section>
@@ -373,6 +381,12 @@
           <div class="chips-row" id="mp-cats"></div>
           <div class="seg" id="mp-rounds"><button type="button" data-r="5" aria-checked="false">5 manches</button><button type="button" data-r="10" aria-checked="true">10 manches</button></div>
         </div>
+        <section class="panel mp-chat">
+          <h2 class="sec-title">Chat</h2>
+          <div class="mp-msgs" id="mp-msgs"><p class="mp-msg-empty">Dis bonjour à la salle !</p></div>
+          <div class="mp-emojis" id="mp-emojis"></div>
+          <form class="mp-send" id="mp-send" autocomplete="off"><input id="mp-text" type="text" maxlength="120" placeholder="Écris un message…" aria-label="Message"><button class="btn btn-blue" type="submit" aria-label="Envoyer"><svg class="ico"><use href="#i-g-arrow-right"/></svg></button></form>
+        </section>
         <p class="mp-wait" id="mp-wait">En attente de l’hôte…</p>
         <button class="btn btn-fun btn-block" id="mp-go" type="button">Lancer la partie</button>
         <button class="btn btn-ghost-red btn-block" id="mp-leave" type="button">Quitter la salle</button>
@@ -405,6 +419,17 @@
         <span class="row-txt"><b id="gift-title">Coffre du jour</b><small id="gift-sub">50 jetons offerts</small></span>
         <span class="btn btn-sm btn-green row-cta" id="gift-cta">Récupérer</span>
       </button>
+
+      <h2 class="shop-h">Vinyles <small>complète ta collection</small></h2>
+      <div class="vshop">
+        <div class="vshop-search"><svg class="ico"><use href="#i-g-search"/></svg><input id="vs-q" type="search" placeholder="Titre ou artiste…" autocomplete="off" aria-label="Rechercher un vinyle"></div>
+        <div class="chips-row" id="vs-rar"></div>
+        <div class="vshop-grid" id="vs-results"></div>
+        <button class="btn btn-outline btn-block" id="vs-more" type="button" hidden>Voir plus</button>
+      </div>
+
+      <h2 class="shop-h">Jokers <small>à utiliser en partie</small></h2>
+      <div class="rows" id="shop-jokers"></div>
 
       <h2 class="shop-h">Boosters</h2>
       <div class="rows" id="shop-packs"></div>
@@ -586,6 +611,22 @@
         <button class="btn btn-outline" id="is-close" type="button">Fermer</button>
         <button class="btn btn-green" id="is-action" type="button">Acheter</button>
       </div>
+    </div>
+  </div>
+
+  <div class="overlay overlay-sheet" id="room-sheet" hidden>
+    <div class="sheet room-sheet" role="dialog" aria-modal="true" aria-labelledby="rm-title">
+      <div class="rm-head"><div class="sheet-title" id="rm-title">Mon mur</div><button class="icon-btn" id="rm-close" type="button" aria-label="Fermer"><svg class="ico"><use href="#i-g-close"/></svg></button></div>
+      <div class="seg rm-tabs" id="rm-tabs"><button type="button" data-rt="pins" aria-checked="true">Vinyles</button><button type="button" data-rt="wall" aria-checked="false">Mur</button><button type="button" data-rt="couch" aria-checked="false">Canapé</button><button type="button" data-rt="frame" aria-checked="false">Cadres</button></div>
+      <div class="rm-panel" id="rm-pins">
+        <p class="rm-help">Touche un cadre, puis choisis le vinyle à accrocher.</p>
+        <div class="rm-slots" id="rm-slots"></div>
+        <div class="vshop-search"><svg class="ico"><use href="#i-g-search"/></svg><input id="rm-q" type="search" placeholder="Chercher dans ta collection…" autocomplete="off" aria-label="Chercher un vinyle"></div>
+        <div class="rm-list" id="rm-list"></div>
+      </div>
+      <div class="rm-panel rm-swatches" id="rm-wall" hidden></div>
+      <div class="rm-panel rm-swatches" id="rm-couch" hidden></div>
+      <div class="rm-panel rm-swatches" id="rm-frame" hidden></div>
     </div>
   </div>
 

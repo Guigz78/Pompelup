@@ -20,7 +20,8 @@ function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCode
 
 /* ---------------- Sauvegarde ---------------- */
 const STORE_KEY = 'pompelup_quiz_v1';
-const GAUGE_MAX = 6;
+const GAUGE_MAX = 10;
+const LEVELS_PER_BOOSTER = 3;
 const defaults = () => ({
   xp: 0, best: 0, games: 0, found: 0, played: 0,
   streak: { count: 0, last: null },
@@ -32,6 +33,8 @@ const defaults = () => ({
   story: {},
   stats: { bestCombo: 0, fast: 0, perfect: 0, dailyWins: 0, bestStreak: 0 },
   ach: {}, achSeen: {}, missions: null, pass: null,
+  jokers: { x2: 2, steal: 1 },
+  room: { pins: [], wall: 'peach', couch: 'teal', frame: 'wood' },
   settings: { sound: true, haptics: true },
   prefs: { cat: 'all', mode: 'choice', rounds: 10 },
 });
@@ -40,7 +43,7 @@ const store = (() => {
   try {
     const raw = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
     const merged = Object.assign(d, raw);
-    for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen', 'story']) merged[k] = Object.assign(defaults()[k], raw[k]);
+    for (const k of ['prefs', 'streak', 'equip', 'stats', 'settings', 'ach', 'achSeen', 'story', 'jokers', 'room']) merged[k] = Object.assign(defaults()[k], raw[k]);
     delete merged.equip.avatar;
     merged.equip.acc = Object.assign(defaults().equip.acc, (raw.equip || {}).acc);
     for (const k of Object.keys(merged.equip.acc)) if (!(k in defaults().equip.acc)) delete merged.equip.acc[k];
@@ -76,12 +79,14 @@ function levelOf(xp) {
   while (rest >= need) { rest -= need; lvl++; need = Math.round(need * 1.15); }
   return { lvl, rest, need, pct: rest / need };
 }
-// Chaque niveau gagné offre un booster.
+// Chaque niveau donne 100 jetons ; un booster tous les 3 niveaux.
 function addXP(n) {
   const before = levelOf(store.xp).lvl;
   store.xp += n;
-  const gained = levelOf(store.xp).lvl - before;
-  if (gained > 0) { store.boosters += gained; store.coins += 100 * gained; }
+  const after = levelOf(store.xp).lvl, gained = after - before;
+  const boosters = Math.floor((after - 1) / LEVELS_PER_BOOSTER) - Math.floor((before - 1) / LEVELS_PER_BOOSTER);
+  if (gained > 0) { store.boosters += boosters; store.coins += 100 * gained; }
+  addXP.boosters = boosters;
   return gained;
 }
 // Retourne le nombre de boosters gagnés par la jauge.
@@ -284,12 +289,15 @@ function rewardParts(r) {
   if (r.coins) parts.push(`+${fmt(r.coins)} jetons`);
   if (r.boosters) parts.push(`+${plural(r.boosters, 'booster', 'boosters')}`);
   if (r.gold) parts.push(`+${plural(r.gold, 'Booster Or', 'Boosters Or')}`);
+  if (r.jokers?.x2) parts.push(`+${plural(r.jokers.x2, 'joker ×2', 'jokers ×2')}`);
+  if (r.jokers?.steal) parts.push(`+${plural(r.jokers.steal, 'joker Voleur', 'jokers Voleur')}`);
   if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); parts.push(`${KIND_NAME[k]} « ${itemName(k, it).replace('Avatar ', '')} »`); }
   return parts;
 }
 function rewardInline(r) {
   if (r.item) { const [k, id] = r.item.split(':'); return k === 'skin' ? `<span class="rw-mini">${charHTML(itemOf(k, id), { head: true })}</span>` : ico('palette'); }
   if (r.gold) return '<i class="mini-booster mp-gold"></i>';
+  if (r.jokers) return r.jokers.x2 ? '<i class="mini-joker">×2</i>' : `<i class="mini-joker">${ico('g-bolt')}</i>`;
   if (r.boosters) return '<i class="mini-booster"></i>';
   return `<i class="coin"></i>${fmt(r.coins)}`;
 }
@@ -298,6 +306,7 @@ function grantReward(r) {
   if (r.boosters) store.boosters += r.boosters;
   if (r.gold) store.goldBoosters += r.gold;
   if (r.item) { const [k, id] = r.item.split(':'); own(k, id); }
+  if (r.jokers) for (const k in r.jokers) store.jokers[k] = (store.jokers[k] || 0) + r.jokers[k];
   save();
   renderCoins(true);
 }
@@ -381,8 +390,9 @@ function claimMissionBonus() {
   const M = ensureMissions();
   if (M.bonus || !M.list.every(m => m.claimed)) return;
   M.bonus = true;
-  grantReward({ boosters: 1 });
-  showReward({ kicker: 'Missions du jour', title: '3 missions sur 3 !', reward: { boosters: 1 } });
+  const r = { boosters: 1, jokers: { x2: 1 } };
+  grantReward(r);
+  showReward({ kicker: 'Missions du jour', title: '3 missions sur 3 !', reward: r });
   renderMissionsSheet();
   renderHome();
 }
@@ -396,10 +406,16 @@ function dealOfTheDay() {
   return Object.assign(d, { price: Math.round(d.it.price * .6 / 10) * 10 });
 }
 const PACKS = [
-  { id: 'std', name: 'Booster', short: '3 vinyles', desc: '3 vinyles, dont au moins 1 rare.', price: 150, give: { boosters: 1 } },
-  { id: 'gold', name: 'Booster Or', short: 'Épique garanti', desc: '3 vinyles de qualité : 1 épique garanti et 25 % de chances de légendaire sur le dernier.', price: 450, give: { gold: 1 } },
-  { id: 'bundle', name: 'Lot de 5', short: '5 boosters', desc: '5 boosters vinyle d’un coup, soit 150 jetons d’économie.', price: 600, give: { boosters: 5 }, tag: '−20 %' },
+  { id: 'std', name: 'Booster', short: '3 vinyles', desc: '3 vinyles, dont au moins 1 rare.', price: 250, give: { boosters: 1 } },
+  { id: 'gold', name: 'Booster Or', short: 'Épique garanti', desc: '3 vinyles de qualité : 1 épique garanti et 25 % de chances de légendaire sur le dernier.', price: 700, give: { gold: 1 } },
+  { id: 'bundle', name: 'Lot de 5', short: '5 boosters', desc: '5 boosters vinyle d’un coup, soit 250 jetons d’économie.', price: 1000, give: { boosters: 5 }, tag: '−20 %' },
 ];
+// Jokers : utilisables une fois par partie chacun
+const JOKERS = {
+  x2: { name: 'Joker ×2', desc: 'Double les points de ta prochaine bonne réponse.', price: 120 },
+  steal: { name: 'Voleur', desc: 'Pique des points au premier du classement (ou au DJ en solo).', price: 180 },
+};
+const jokerArt = (k, big) => `<span class="jk-art jk-art-${k}${big ? ' is-big' : ''}">${k === 'x2' ? '<b>×2</b>' : ico('g-bolt')}</span>`;
 const TITLES = [[1, 'Apprenti mélomane'], [3, 'DJ de salon'], [6, 'Oreille affûtée'], [10, 'Maître du blind test'], [15, 'Légende du vinyle']];
 const titleFor = lvl => TITLES.filter(([n]) => lvl >= n).pop()[1];
 const displayName = () => store.name.trim() || 'Joueur';
@@ -921,7 +937,7 @@ function startGame(cfg) {
   Object.assign(G, {
     cfg, token: G.token + 1, phase: 'loading',
     songs: pool.slice(0, rounds), spares: cfg.fixed ? [] : pool.slice(rounds, rounds + 12),
-    i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false,
+    i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false, jkUsed: {}, x2: false,
     dur: cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20,
   });
   if (cfg.daily) { store.daily = { date: dayKey(), won: false, tries: 0, done: false }; save(); }
@@ -930,6 +946,7 @@ function startGame(cfg) {
   $('#game-gauge').hidden = !!cfg.daily;
   $('.game-score').hidden = !!cfg.daily;
   $('#game-combo').hidden = true;
+  $('#game-x2').hidden = true;
   $('#game-prog').style.width = '0';
   updateGameGauge();
   applySkins();
@@ -1002,7 +1019,8 @@ async function startRound() {
   const hintBtn = $('#btn-hint');
   hintBtn.hidden = !!G.cfg.daily || G.cfg.mode === 'stems';
   hintBtn.disabled = true;
-  $('#hint-label').textContent = G.cfg.mode === 'type' ? 'Indice (−30 %)' : '50/50 (−30 %)';
+  renderJokers();
+  $('#hint-label').textContent = G.cfg.mode === 'type' ? 'Indice −30 %' : '50/50 −30 %';
 
   const { song, pv } = await resolveRound(G.i);
   if (token !== G.token) return;
@@ -1057,6 +1075,7 @@ async function startRound() {
   disc.classList.add('is-spinning');
   $$('.choice').forEach(b => { b.disabled = false; });
   hintBtn.disabled = false;
+  renderJokers();
   if (G.cfg.mode === 'type' && matchMedia('(pointer: fine)').matches) $('#type-input').focus();
   loop(token);
 }
@@ -1112,11 +1131,11 @@ function finishRound(ok, reason, sourceEl) {
   if (ok) {
     G.combo++;
     G.bestCombo = Math.max(G.bestCombo, G.combo);
-    pts = points();
+    pts = points() * (G.x2 ? 2 : 1);
     G.score += pts;
     sfx.right(G.combo);
     buzz(35);
-    flyPoints(`+${fmt(pts)}`, sourceEl || $('#disc'));
+    flyPoints(`+${fmt(pts)}${G.x2 ? ' ×2' : ''}`, sourceEl || $('#disc'));
     winFx(sourceEl || $('#disc'));
     store.stats.bestCombo = Math.max(store.stats.bestCombo, G.combo);
     if (elapsed < 3) store.stats.fast++;
@@ -1151,6 +1170,7 @@ function finishRound(ok, reason, sourceEl) {
     reason === 'timeout' ? sfx.timeout() : sfx.wrong();
     buzz([50, 40, 50]);
   }
+  if (G.x2) { G.x2 = false; $('#game-x2').hidden = true; }
   G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || knownArt(song.id) });
   if (G.cfg.multi) mpReport(false);
 
@@ -1159,6 +1179,7 @@ function finishRound(ok, reason, sourceEl) {
   $('#tonearm').classList.remove('is-on');
   stopBeat();
   $('#btn-hint').disabled = true;
+  renderJokers();
   $$('.choice').forEach(b => {
     b.disabled = true;
     if (b.dataset.id === song.id) b.classList.add('is-right');
@@ -1487,6 +1508,81 @@ function useHint() {
   }
 }
 
+/* ----- Jokers ----- */
+function stealTarget() {
+  if (!G.cfg?.multi) return null;
+  return mpRanked().find(p => p.id !== MP.me?.id && !p.done && (p.score || 0) > 0) || null;
+}
+function renderJokers() {
+  const box = $('#jokers');
+  box.hidden = !G.cfg || !!G.cfg.daily;
+  if (box.hidden) return;
+  for (const k of ['x2', 'steal']) {
+    const b = $(`#jk-${k}`), n = store.jokers[k] || 0, used = !!G.jkUsed[k];
+    $(`#jk-${k}-n`).textContent = used ? '✓' : n;
+    b.classList.toggle('is-used', used);
+    b.classList.toggle('is-empty', !n && !used);
+    b.disabled = used || (!!n && (k === 'x2' ? G.phase !== 'playing' || G.x2 : !['playing', 'reveal'].includes(G.phase)));
+  }
+}
+function useJoker(k) {
+  if (!G.cfg || G.cfg.daily || G.jkUsed[k] || !(store.jokers[k] > 0)) {
+    if (!(store.jokers[k] > 0) && !G.jkUsed[k]) toast(`Plus de ${JOKERS[k].name} : il y en a à la boutique`);
+    return;
+  }
+  if (k === 'x2') {
+    if (G.phase !== 'playing') return;
+    G.x2 = true;
+    $('#game-x2').hidden = false;
+    say('Double ou rien ! La prochaine vaut deux fois plus.', 'wink', 2200);
+  } else {
+    if (!['playing', 'reveal'].includes(G.phase)) return;
+    let amount, msg;
+    if (G.cfg.multi) {
+      const t = stealTarget();
+      if (!t) { toast('Personne à voler pour l’instant : attends que quelqu’un marque'); return; }
+      amount = Math.max(100, Math.round((t.score || 0) * .15 / 10) * 10);
+      amount = Math.min(amount, t.score || 0);
+      t.score = (t.score || 0) - amount;
+      MP.tx?.send({ t: 'steal', from: MP.me.id, to: t.id, amount, fromName: displayName() });
+      msg = `Tu as volé ${fmt(amount)} pts à ${t.name} !`;
+    } else {
+      amount = 250;
+      msg = `Tu as piqué ${fmt(amount)} pts dans la caisse de DJ Patator !`;
+      say('Hé ! Rends-moi mes points, petit malin !', 'wow', 2400);
+    }
+    G.score += amount;
+    animateScore();
+    flyPoints(`+${fmt(amount)}`, $('#jk-steal'));
+    toast(msg);
+    if (G.cfg.multi) mpReport(false);
+  }
+  store.jokers[k]--;
+  G.jkUsed[k] = true;
+  save();
+  sfx.booster(); buzz([20, 30, 20]);
+  renderJokers();
+}
+// Un joueur nous a volé des points
+function mpOnSteal(m) {
+  const victim = m.to === MP.me?.id ? null : MP.players.get(m.to), thief = MP.players.get(m.from);
+  if (thief) thief.score = (thief.score || 0) + m.amount;
+  if (m.to === MP.me?.id) {
+    if (G.cfg?.multi && G.phase !== 'done') {
+      G.score = Math.max(0, G.score - m.amount);
+      animateScore();
+      flyPoints(`−${fmt(m.amount)}`, $('#game-score'));
+      mpReport(false);
+    }
+    toast(`${m.fromName} t’a volé ${fmt(m.amount)} pts !`);
+    buzz([60, 40, 60]);
+  } else if (victim) {
+    victim.score = Math.max(0, (victim.score || 0) - m.amount);
+    toast(`${m.fromName} a volé ${fmt(m.amount)} pts à ${victim.name}`);
+  }
+  renderLive();
+}
+
 /* ----- Fin de partie ----- */
 function endGame() {
   G.phase = 'done';
@@ -1517,8 +1613,8 @@ function endGame() {
   if (!G.cfg.daily) store.games++;
   store.found += found;
   store.played += n;
-  const levels = addXP(xp);
-  G.boostersWon += levels;
+  const levels = addXP(xp), lvlBoosters = addXP.boosters;
+  G.boostersWon += lvlBoosters;
   const streakUp = recordPlay();
   store.stats.bestStreak = Math.max(store.stats.bestStreak, store.streak.count);
   save();
@@ -1565,7 +1661,7 @@ function endGame() {
   setTimeout(() => { $('#res-level-fill').style.width = `${Math.round(after.pct * 100)}%`; }, 250);
 
   if (record || (G.cfg.daily && found) || (found === n && n >= 5)) { sfx.fanfare(); confetti(); }
-  if (levels) setTimeout(() => { toast(`Niveau ${after.lvl} atteint ! +${plural(levels, 'booster', 'boosters')} et +${100 * levels} jetons`); confetti(40); }, 900);
+  if (levels) setTimeout(() => { toast(`Niveau ${after.lvl} atteint ! ${lvlBoosters ? `+${plural(lvlBoosters, 'booster', 'boosters')} et ` : ''}+${100 * levels} jetons`); confetti(40); }, 900);
   if (streakUp) setTimeout(showStreak, 1300);
   setTimeout(checkAchievements, 1500);
 }
@@ -2008,7 +2104,14 @@ function renderCollection() {
   };
   const emptyFrame = '<span class="frame frame-empty" aria-hidden="true"><span class="frame-in"><span class="frame-q">?</span></span></span>';
   // Les 6 plus belles pièces au-dessus du canapé, le reste sur les étagères
-  const top = shown.slice(0, 6), rest = shown.slice(6);
+  let top = shown.slice(0, 6), rest = shown.slice(6);
+  if (COLL.filter === 'all') {
+    const pins = roomPins(), auto = list.filter(id => !pins.includes(id));
+    let k = 0;
+    top = pins.map(id => id || auto[k++]).filter(Boolean);
+    rest = auto.slice(k, COLL.shown - top.length + k);
+  }
+  applyRoomStyle();
   $('#coll-top').innerHTML = top.map(frameHTML).join('') + emptyFrame.repeat(Math.max(0, 6 - top.length));
   $('#living-img').innerHTML = `<span class="cs">
       <span class="cs-lamp"><i></i></span>
@@ -2025,7 +2128,7 @@ function renderCollection() {
   $('#shelf-title').hidden = !rest.length;
   grid.hidden = !rest.length;
   $('#coll-more')?.remove();
-  if (list.length > shown.length) grid.insertAdjacentHTML('afterend', `<button class="btn-secondary coll-more" id="coll-more" type="button">Voir plus de vinyles (${list.length - shown.length})</button>`);
+  if (list.length > top.length + rest.length) grid.insertAdjacentHTML('afterend', `<button class="btn-secondary coll-more" id="coll-more" type="button">Voir plus de vinyles (${list.length - top.length - rest.length})</button>`);
 
   tileObserver?.disconnect();
   tileObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
@@ -2143,9 +2246,156 @@ function renderShop() {
       <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
     </button>`).join('');
   for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
+  renderJokerShop();
+  renderVinylShop();
   clearInterval(shopTicker);
   shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
 }
+/* Jokers en boutique */
+function renderJokerShop() {
+  $('#shop-jokers').innerHTML = Object.entries(JOKERS).map(([k, j]) => `
+    <button class="row jk-row${SHOP_CONFIRM === `jk:${k}` ? ' is-confirm' : ''}" type="button" data-joker="${k}">
+      ${jokerArt(k)}<span class="row-txt"><b>${j.name} <em class="jk-own">${store.jokers[k] || 0} en stock</em></b><small>${j.desc}</small></span>
+      <span class="price-btn">${SHOP_CONFIRM === `jk:${k}` ? 'Confirmer' : `<i class="coin"></i>${fmt(j.price)}`}</span>
+    </button>`).join('');
+}
+// Achat en deux temps : un premier appui arme, le second confirme
+let SHOP_CONFIRM = null, shopConfirmTimer = null;
+function armConfirm(key, rerender) {
+  SHOP_CONFIRM = key;
+  clearTimeout(shopConfirmTimer);
+  shopConfirmTimer = setTimeout(() => { SHOP_CONFIRM = null; rerender(); }, 3500);
+  sfx.tap();
+  rerender();
+}
+function buyJoker(k) {
+  const j = JOKERS[k];
+  if (SHOP_CONFIRM !== `jk:${k}`) return armConfirm(`jk:${k}`, renderJokerShop);
+  SHOP_CONFIRM = null;
+  if (!spendCoins(j.price)) { toast('Pas assez de jetons'); renderJokerShop(); return; }
+  store.jokers[k] = (store.jokers[k] || 0) + 1;
+  save();
+  sfx.booster(); buzz([20, 30, 20]);
+  toast(`${j.name} ajouté ! (${store.jokers[k]} en stock)`);
+  renderJokerShop();
+}
+
+/* Vinyles à l'unité, avec recherche */
+const VINYL_PRICE = { common: 80, rare: 200, epic: 500, legendary: 1200 };
+const VS = { q: '', r: 'all', shown: 30 };
+const SEARCH_KEY = new Map(SONGS.map(s => [s.id, normalize(`${s.title} ${s.artist}`)]));
+function searchSongs(q, ids) {
+  const words = normalize(q).split(' ').filter(Boolean);
+  const src = ids ? ids.map(id => SONG.get(id)).filter(Boolean) : SONGS;
+  if (!words.length) return src.slice();
+  return src.filter(s => { const k = SEARCH_KEY.get(s.id); return words.every(w => k.includes(w)); })
+    .sort((a, b) => (normalize(a.title).startsWith(words[0]) ? 0 : 1) - (normalize(b.title).startsWith(words[0]) ? 0 : 1));
+}
+function renderVinylShop() {
+  $('#vs-rar').innerHTML = [['all', 'Toutes'], ...RARITIES.map(r => [r, R_NAMES[r]])]
+    .map(([k, label]) => `<button class="rf ${k === 'all' ? '' : `r-${k}`}" type="button" role="radio" data-r="${k}" aria-checked="${VS.r === k}">${k === 'all' ? '' : '<i></i>'}${label}</button>`).join('');
+  let list = searchSongs(VS.q).filter(s => VS.r === 'all' || RARITY.get(s.id) === VS.r);
+  // Sans recherche : d'abord ce qui manque, les plus rares en tête
+  if (!VS.q) list.sort((a, b) => (!!store.coll[a.id] - !!store.coll[b.id]) || (RANK[RARITY.get(b.id)] - RANK[RARITY.get(a.id)]) || (hashStr(a.id + dayKey()) - hashStr(b.id + dayKey())));
+  const shown = list.slice(0, VS.shown);
+  $('#vs-results').innerHTML = shown.length ? shown.map(s => {
+    const r = RARITY.get(s.id), own = !!store.coll[s.id], arm = SHOP_CONFIRM === `v:${s.id}`;
+    return `<button class="vsi r-${r}${own ? ' is-owned' : ''}${arm ? ' is-confirm' : ''}" type="button" data-vid="${s.id}">
+      <span class="vsi-cover">${coverHTML(s)}</span>
+      <span class="vsi-txt"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
+      <span class="vsi-rar"><i></i>${R_NAME[r]}</span>
+      <span class="vsi-price">${own ? `${ico('g-check')}Possédé` : arm ? 'Confirmer' : `<i class="coin"></i>${fmt(VINYL_PRICE[r])}`}</span>
+    </button>`;
+  }).join('') : `<p class="vs-empty">Aucun vinyle ne correspond à « ${esc(VS.q)} ».</p>`;
+  $('#vs-more').hidden = list.length <= shown.length;
+  $('#vs-more').textContent = `Voir plus (${list.length - shown.length})`;
+  $$('#vs-results .vsi').forEach(t => { const s = SONG.get(t.dataset.vid); if (s && !knownArt(s.id)) queueArt(s, a => fillCover(t, a)); });
+}
+function buyVinyl(id) {
+  const s = SONG.get(id); if (!s) return;
+  if (store.coll[id]) { openVinyl(id); return; }
+  const r = RARITY.get(id), price = VINYL_PRICE[r];
+  if (SHOP_CONFIRM !== `v:${id}`) return armConfirm(`v:${id}`, renderVinylShop);
+  SHOP_CONFIRM = null;
+  if (!spendCoins(price)) { toast('Pas assez de jetons'); renderVinylShop(); return; }
+  store.coll[id] = { n: 1, t: Date.now(), seen: false };
+  save();
+  sfx.booster(); buzz([30, 40, 30]);
+  showReward({ kicker: `Vinyle ${R_NAME[r].toLowerCase()}`, title: s.title, reward: {}, visual: `<span class="rw-sleeve">${coverHTML(s)}</span>`, extra: `${s.artist} rejoint ton mur` });
+  renderVinylShop();
+  checkAchievements();
+}
+
+/* ================= MON MUR (personnalisation du salon) ================= */
+const ROOM_WALLS = [
+  { id: 'peach', name: 'Pêche', bg: '#F6DCC3', alt: '#F1D2B5' },
+  { id: 'mint', name: 'Menthe', bg: '#D5EFE3', alt: '#C6E7D8' },
+  { id: 'lilac', name: 'Lilas', bg: '#E6DDF7', alt: '#DACFF2' },
+  { id: 'sky', name: 'Ciel', bg: '#D6EAF8', alt: '#C7E0F3' },
+  { id: 'rose', name: 'Rose', bg: '#FADCE6', alt: '#F5CCDA' },
+  { id: 'night', name: 'Nuit', bg: '#3B3355', alt: '#352E4D' },
+];
+const ROOM_COUCHES = [
+  { id: 'teal', name: 'Canard', c: ['#45AE9F', '#2F8A7E', '#256F66'] },
+  { id: 'mustard', name: 'Moutarde', c: ['#F2C14E', '#D9A12E', '#B98420'] },
+  { id: 'berry', name: 'Framboise', c: ['#E2588C', '#C23D72', '#9E2C5C'] },
+  { id: 'violet', name: 'Violet', c: ['#9B7BFF', '#7B5CFF', '#5E43D6'] },
+  { id: 'denim', name: 'Denim', c: ['#5C8BD6', '#406FBA', '#2F5797'] },
+  { id: 'cream', name: 'Crème', c: ['#F3E7D3', '#E2D0B3', '#C9B392'] },
+];
+const ROOM_FRAMES = [
+  { id: 'wood', name: 'Bois', c: '#7A4B2A' },
+  { id: 'gold', name: 'Doré', c: '#D4A23A' },
+  { id: 'black', name: 'Noir', c: '#26222E' },
+  { id: 'white', name: 'Blanc', c: '#FFFFFF' },
+  { id: 'pink', name: 'Pop', c: '#FF4FA3' },
+];
+const byIdOr = (arr, id) => arr.find(x => x.id === id) || arr[0];
+function applyRoomStyle() {
+  const R = store.room, w = byIdOr(ROOM_WALLS, R.wall), c = byIdOr(ROOM_COUCHES, R.couch), f = byIdOr(ROOM_FRAMES, R.frame), el = $('#room');
+  el.style.setProperty('--wall', w.bg); el.style.setProperty('--wall-alt', w.alt);
+  el.style.setProperty('--couch-a', c.c[0]); el.style.setProperty('--couch-b', c.c[1]); el.style.setProperty('--couch-c', c.c[2]);
+  el.style.setProperty('--frame', f.c);
+  el.classList.toggle('is-dark', w.id === 'night');
+}
+const roomPins = () => { const p = (store.room.pins || []).slice(0, 6); while (p.length < 6) p.push(null); return p.map(id => id && store.coll[id] && SONG.has(id) ? id : null); };
+const RM = { tab: 'pins', slot: 0, q: '' };
+function openRoom() {
+  if (!ownedIds().length) { toast('Ouvre un booster pour avoir des vinyles à accrocher'); return; }
+  RM.slot = Math.max(0, roomPins().indexOf(null));
+  renderRoomSheet();
+  $('#room-sheet').hidden = false;
+  sfx.pop();
+}
+function closeRoom() { $('#room-sheet').hidden = true; renderCollection(); }
+function renderRoomSheet() {
+  $$('#rm-tabs button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.rt === RM.tab)));
+  ['pins', 'wall', 'couch', 'frame'].forEach(k => { $(`#rm-${k}`).hidden = RM.tab !== k; });
+  if (RM.tab === 'pins') {
+    const pins = roomPins();
+    $('#rm-slots').innerHTML = pins.map((id, k) => `<button class="rm-slot${k === RM.slot ? ' is-on' : ''}" type="button" data-slot="${k}" aria-label="Cadre ${k + 1}">${id ? coverHTML(SONG.get(id)) : `<span class="rm-auto">Auto</span>`}${id ? `<i class="rm-x" data-unpin="${k}" aria-label="Retirer">${ico('g-close')}</i>` : ''}</button>`).join('');
+    const list = searchSongs(RM.q, ownedIds()).sort((a, b) => RANK[RARITY.get(b.id)] - RANK[RARITY.get(a.id)]).slice(0, 60);
+    $('#rm-list').innerHTML = list.length ? list.map(s => `<button class="rm-v r-${RARITY.get(s.id)}${pins.includes(s.id) ? ' is-pinned' : ''}" type="button" data-pin="${s.id}"><span class="rm-v-cover">${coverHTML(s)}</span><span class="rm-v-t"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span></button>`).join('') : '<p class="vs-empty">Aucun vinyle trouvé dans ta collection.</p>';
+    $$('#rm-list .rm-v, #rm-slots .rm-slot').forEach(t => { const id = t.dataset.pin || pins[+t.dataset.slot]; const s = id && SONG.get(id); if (s && !knownArt(s.id)) queueArt(s, a => fillCover(t, a)); });
+  } else {
+    const [arr, key] = RM.tab === 'wall' ? [ROOM_WALLS, 'wall'] : RM.tab === 'couch' ? [ROOM_COUCHES, 'couch'] : [ROOM_FRAMES, 'frame'];
+    $(`#rm-${RM.tab}`).innerHTML = arr.map(x => {
+      const sw = key === 'wall' ? `background:repeating-linear-gradient(90deg, ${x.bg} 0 12px, ${x.alt} 12px 14px)` : key === 'couch' ? `background:linear-gradient(${x.c[0]}, ${x.c[2]})` : `background:#FFFDF8;box-shadow:inset 0 0 0 6px ${x.c}`;
+      return `<button class="rm-sw${store.room[key] === x.id ? ' is-on' : ''}" type="button" data-sw="${key}:${x.id}"><i style="${sw}"></i><span>${x.name}</span></button>`;
+    }).join('');
+  }
+}
+function pinVinyl(id) {
+  const pins = roomPins(), was = pins.indexOf(id);
+  if (was >= 0) pins[was] = pins[RM.slot];
+  pins[RM.slot] = id;
+  store.room.pins = pins;
+  const next = pins.indexOf(null);
+  if (next >= 0) RM.slot = next;
+  save(); sfx.pop(); buzz(15);
+  renderRoomSheet();
+}
+
 function claimGift() {
   if (store.gift === dayKey()) { toast(`Prochain coffre dans ${hms(msToMidnight())}`); return; }
   store.gift = dayKey();
@@ -2256,7 +2506,7 @@ function nextReward() {
   const ov = $('#reward-overlay');
   if (!RW) { ov.hidden = true; return; }
   const r = RW.reward || {};
-  let visual = `<span class="rw-coins"><i class="coin"></i>+${fmt(r.coins || 0)}</span>`, action = null;
+  let visual = r.jokers ? jokerArt(r.jokers.x2 ? 'x2' : 'steal', true) : `<span class="rw-coins"><i class="coin"></i>+${fmt(r.coins || 0)}</span>`, action = null;
   if (r.item) {
     const [k, id] = r.item.split(':');
     visual = itemPreviewHTML(k, itemOf(k, id));
@@ -2443,10 +2693,8 @@ function stepLabel(a, step) {
   return 'Question finale';
 }
 function renderStoryCard() {
-  const art = $('#story-card-art');
-  art.innerHTML = ARTISTS.slice(0, 3).map(a => `<span style="background:${a.color}">${charHTML(artistLook(a), { head: true })}</span>`).join('');
   const d = storyDone();
-  $('#story-card-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes · écoute, anecdotes, quiz`;
+  $('#story-card-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} artistes à découvrir`;
 }
 let POP = null;
 function renderStory() {
@@ -2699,6 +2947,8 @@ function passReward(k, gold) {
     if (k % 10 === 0) return { item: k === 10 ? 'acc:bandana' : 'acc:stars' };
     if (k % 8 === 0 || k === 6) return { song: seasonSong(k, false) };
     if (k % 4 === 0) return { boosters: 1 };
+    if (k === 14 || k === 26) return { jokers: { x2: 1 } };
+    if (k === 22) return { jokers: { steal: 1 } };
     return { coins: 15 + k * 2 };
   }
   if (k === 1) return { item: 'skin:crooner' };
@@ -2707,6 +2957,8 @@ function passReward(k, gold) {
   if (k === 15) return { item: 'acc:ph-gold' };
   if (k % 4 === 3) return { song: seasonSong(k, true) };
   if (k % 4 === 1) return { boosters: 1 };
+  if (k === 6 || k === 18) return { jokers: { x2: 2 } };
+  if (k === 12 || k === 24) return { jokers: { steal: 2 } };
   return { coins: 40 + k * 10 };
 }
 const passClaimable = () => { const P = passState(), t = passTier(); let n = 0; for (let k = 1; k <= t; k++) { if (passReward(k, false) && !P.free.includes(k)) n++; if (P.gold && !P.paid.includes(k)) n++; } return n; };
@@ -2715,10 +2967,11 @@ function addPassPts(n) {
   P.pts = Math.min(PASS_TIERS * PASS_STEP, P.pts + n);
   if (passTier() > before) setTimeout(() => toast(`Pass de saison : palier ${passTier()} atteint !`), 700);
 }
-function rewardKind(r) { if (r.item) { const k = r.item.split(':')[0]; return k === 'skin' ? 'Skin' : k === 'acc' ? 'Accessoire' : 'Objet'; } return r.song ? 'Vinyle' : r.gold ? 'Booster Or' : r.boosters ? 'Booster' : 'Monnaie'; }
+function rewardKind(r) { if (r.item) { const k = r.item.split(':')[0]; return k === 'skin' ? 'Skin' : k === 'acc' ? 'Accessoire' : 'Objet'; } return r.song ? 'Vinyle' : r.gold ? 'Booster Or' : r.boosters ? 'Booster' : r.jokers ? 'Joker' : 'Monnaie'; }
 function rewardArt(r) {
   if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); return k === 'skin' ? `<span class="pr-char">${charHTML(it, { mood: 'happy' })}</span>` : k === 'acc' ? `<span class="pr-char">${charHTML(mySkin(), { head: true, accs: myAccs(it) })}</span>` : `<span class="pr-box">${ico('vinyl')}</span>`; }
   if (r.song) { const s = SONG.get(r.song); return `<span class="pr-sleeve">${coverHTML(s)}</span>`; }
+  if (r.jokers) return `<span class="pr-box">${jokerArt(r.jokers.x2 ? 'x2' : 'steal')}</span>`;
   return `<span class="pr-box">${ico(r.gold ? 'booster-gold' : r.boosters ? 'booster' : 'coin')}</span>`;
 }
 function rewardLabel(r) {
@@ -2726,11 +2979,12 @@ function rewardLabel(r) {
   if (r.song) return SONG.get(r.song)?.title || 'Vinyle';
   if (r.gold) return 'Booster Or';
   if (r.boosters) return 'Booster';
+  if (r.jokers) return r.jokers.x2 ? `Joker ×2${r.jokers.x2 > 1 ? ` (${r.jokers.x2})` : ''}` : `Voleur${r.jokers.steal > 1 ? ` (${r.jokers.steal})` : ''}`;
   return `+${fmt(r.coins)}`;
 }
 function renderPassCard() {
   const P = passState(), t = passTier();
-  $('#pass-card-title').textContent = t >= PASS_TIERS ? 'Pass terminé !' : `Palier ${t + 1} · ${P.pts % PASS_STEP}/${PASS_STEP} notes`;
+  $('#pass-card-title').textContent = t >= PASS_TIERS ? 'Pass terminé !' : `Palier ${t + 1} · ${P.pts % PASS_STEP} %`;
   $('#pass-card-fill').style.width = `${t >= PASS_TIERS ? 100 : P.pts % PASS_STEP}%`;
   const c = passClaimable();
   $('#pass-card-badge').hidden = !c;
@@ -2984,7 +3238,8 @@ async function mpOpen(code) {
 function mpLeave(silent) {
   if (MP.tx) { try { MP.tx.send({ t: 'bye', id: MP.me.id }); } catch (e) {} MP.tx.close(); }
   clearInterval(MP.hb);
-  MP.tx = null; MP.code = null; MP.players.clear(); MP.inGame = false;
+  MP.tx = null; MP.code = null; MP.players.clear(); MP.inGame = false; MP.chat = [];
+  renderChat();
   if (!silent) renderMulti();
 }
 function mpUpsert(p) {
@@ -3005,6 +3260,9 @@ function mpOnMsg(m) {
   else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
   else if (m.t === 'cfg') MP.cfg = m.cfg;
   else if (m.t === 'start') { if (!MP.inGame) mpPlay(m.game); }
+  else if (m.t === 'steal') { mpOnSteal(m); return; }
+  else if (m.t === 'chat') { mpAddChat(m); return; }
+  else if (m.t === 'react') { mpFloat(m.e, m.name); return; }
   else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
   if (currentScreen() === 'multi') renderMulti();
 }
@@ -3036,9 +3294,10 @@ function mpReport(done) {
 const mpRanked = () => [...MP.players.values()].sort((a, b) => (b.score || 0) - (a.score || 0));
 const headHTML = p => charHTML(window.PompeChar.byId(p.skin), { head: true });
 function renderLive() {
-  const box = $('#mp-live');
-  box.hidden = !(G.cfg?.multi && MP.code);
+  const box = $('#mp-live'), rb = $('#mp-react');
+  box.hidden = rb.hidden = !(G.cfg?.multi && MP.code);
   if (box.hidden) return;
+  if (!rb.querySelector('.mp-react-bar')) rb.innerHTML = `<div class="mp-react-bar">${MP_EMOJIS.slice(0, 4).map(e => `<button class="mp-emo" type="button" data-emo="${e}" aria-label="Réagir ${e}">${e}</button>`).join('')}</div>`;
   box.innerHTML = mpRanked().slice(0, 4).map((p, k) => `<span class="mpl${p.id === MP.me.id ? ' is-me' : ''}"><i>${k + 1}</i><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me.id ? 'Toi' : p.name)}</b><em>${fmt(p.score || 0)}</em></span>`).join('');
 }
 function renderRank() {
@@ -3056,6 +3315,7 @@ function renderMulti() {
   }
   const host = iAmHost(), list = [...MP.players.values()].sort((a, b) => a.joined - b.joined);
   $('#mp-room-code').textContent = MP.code;
+  renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
   $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}"><span class="mpp-av">${charHTML(window.PompeChar.byId(p.skin), { mood: 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}</div>`).join('') +
     (list.length < 2 ? '<div class="mpp mpp-empty"><span class="mpp-q">?</span><b>Invite un ami</b></div>' : '');
@@ -3072,6 +3332,56 @@ function renderMulti() {
   $('#mp-go').textContent = list.length < 2 ? 'En attente de joueurs…' : `Lancer la partie (${list.length} joueurs)`;
 }
 
+/* Chat & réactions du salon */
+const MP_EMOJIS = ['😂', '🔥', '👏', '😮', '💜', '🎵', '🏆', '😭'];
+MP.chat = [];
+let chatLast = 0, reactLast = 0;
+function mpAddChat(m) {
+  const text = String(m.text || '').slice(0, 120).trim();
+  if (!text) return;
+  MP.chat.push({ id: m.id, name: String(m.name || 'Joueur').slice(0, 16), skin: m.skin, text, me: m.id === MP.me?.id });
+  if (MP.chat.length > 50) MP.chat.shift();
+  renderChat();
+  if (!m.id || m.id !== MP.me?.id) { sfx.tap(); if (currentScreen() !== 'multi') toast(`${m.name} : ${text}`); }
+}
+function renderChat() {
+  const box = $('#mp-msgs'); if (!box) return;
+  if (!$('#mp-emojis').children.length) $('#mp-emojis').innerHTML = MP_EMOJIS.map(e => `<button class="mp-emo" type="button" data-emo="${e}" aria-label="Réagir ${e}">${e}</button>`).join('');
+  box.innerHTML = MP.chat.length ? MP.chat.map(c => `<div class="mp-msg${c.me ? ' is-me' : ''}">${c.me ? '' : `<span class="mpl-av">${headHTML(c)}</span>`}<p>${c.me ? '' : `<b>${esc(c.name)}</b>`}${esc(c.text)}</p></div>`).join('') : '<p class="mp-msg-empty">Dis bonjour à la salle !</p>';
+  box.scrollTop = box.scrollHeight;
+}
+function mpSendChat(text) {
+  text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (!text || !MP.tx) return;
+  const now = Date.now();
+  if (now - chatLast < 700) { toast('Doucement, une seconde !'); return; }
+  chatLast = now;
+  const m = { t: 'chat', id: MP.me.id, name: displayName(), skin: store.equip.skin, text };
+  MP.tx.send(m);
+  mpAddChat(m);
+}
+function mpReact(e) {
+  if (!MP.tx || !MP_EMOJIS.includes(e)) return;
+  const now = Date.now();
+  if (now - reactLast < 400) return;
+  reactLast = now;
+  MP.tx.send({ t: 'react', id: MP.me.id, name: displayName(), e });
+  mpFloat(e, null);
+  buzz(10);
+}
+// L'emoji s'envole sur l'écran de tout le monde (salon ou partie)
+function mpFloat(e, name) {
+  if (!MP_EMOJIS.includes(e)) return;
+  const host = currentScreen() === 'game' ? $('#mp-react') : $('#screen-multi');
+  if (!host || REDUCED) { if (name && currentScreen() === 'game') toast(`${name} ${e}`); return; }
+  const el = document.createElement('span');
+  el.className = 'mp-float';
+  el.style.left = `${10 + Math.random() * 75}%`;
+  el.innerHTML = `${e}${name ? `<small>${esc(name)}</small>` : ''}`;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
 /* ---------------- Événements ---------------- */
 const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
@@ -3081,6 +3391,7 @@ $('#home-coins').addEventListener('click', () => show('shop'));
 $('#hh-xp').addEventListener('click', () => show('profile'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', playDaily);
+$('#multi-tile').addEventListener('click', () => { unlockAudio(); show('multi'); });
 $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
   toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
@@ -3100,6 +3411,8 @@ $('#suggest').addEventListener('click', e => {
   submitText(b.querySelector('b').textContent, b.dataset.id);
 });
 $('#btn-hint').addEventListener('click', useHint);
+$('#jk-x2').addEventListener('click', () => useJoker('x2'));
+$('#jk-steal').addEventListener('click', () => useJoker('steal'));
 // Réécouter l'extrait depuis la bulle du présentateur
 $('#btn-replay-audio').addEventListener('click', () => {
   if (!G.pv || G.cfg?.mode === 'stems' || (G.phase !== 'playing' && G.phase !== 'reveal')) return;
@@ -3162,6 +3475,17 @@ $('#screen-collection').addEventListener('click', e => {
   const t = e.target.closest('.frame.vt'); if (t) openVinyl(t.dataset.id);
 });
 $('#vs-close').addEventListener('click', closeVinyl);
+$('#room-edit').addEventListener('click', openRoom);
+$('#rm-close').addEventListener('click', closeRoom);
+$('#room-sheet').addEventListener('click', e => {
+  if (e.target.id === 'room-sheet') return closeRoom();
+  const tab = e.target.closest('#rm-tabs button'); if (tab) { RM.tab = tab.dataset.rt; renderRoomSheet(); return; }
+  const un = e.target.closest('[data-unpin]'); if (un) { const p = roomPins(); p[+un.dataset.unpin] = null; store.room.pins = p; RM.slot = +un.dataset.unpin; save(); renderRoomSheet(); return; }
+  const sl = e.target.closest('.rm-slot'); if (sl) { RM.slot = +sl.dataset.slot; sfx.tap(); renderRoomSheet(); return; }
+  const v = e.target.closest('[data-pin]'); if (v) { pinVinyl(v.dataset.pin); return; }
+  const sw = e.target.closest('[data-sw]'); if (sw) { const [k, id] = sw.dataset.sw.split(':'); store.room[k] = id; save(); sfx.pop(); applyRoomStyle(); renderRoomSheet(); }
+});
+$('#rm-q').addEventListener('input', e => { RM.q = e.target.value; renderRoomSheet(); });
 
 $('#bx-open').addEventListener('click', () => { totalBoosters() ? openBooster() : show('home'); });
 $('#screen-boosters').addEventListener('click', e => {
@@ -3193,6 +3517,9 @@ $('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').
 $('#mp-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#mp-join').click(); });
 $('#mp-code').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 $('#mp-leave').addEventListener('click', () => mpLeave());
+$('#mp-send').addEventListener('submit', e => { e.preventDefault(); mpSendChat($('#mp-text').value); $('#mp-text').value = ''; });
+$('#mp-emojis').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
+$('#mp-react').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
 $('#mp-go').addEventListener('click', mpStart);
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
@@ -3223,7 +3550,13 @@ $('#deal-card').addEventListener('click', e => openItem(e.currentTarget.dataset.
 $('#screen-shop').addEventListener('click', e => {
   const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
   const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id);
+  const jk = e.target.closest('[data-joker]'); if (jk) { buyJoker(jk.dataset.joker); return; }
+  const v = e.target.closest('[data-vid]'); if (v) { buyVinyl(v.dataset.vid); return; }
+  const rf = e.target.closest('#vs-rar .rf'); if (rf) { VS.r = rf.dataset.r; VS.shown = 30; renderVinylShop(); }
 });
+let vsTimer = null;
+$('#vs-q').addEventListener('input', e => { clearTimeout(vsTimer); vsTimer = setTimeout(() => { VS.q = e.target.value.trim(); VS.shown = 30; renderVinylShop(); }, 120); });
+$('#vs-more').addEventListener('click', () => { VS.shown += 30; renderVinylShop(); });
 $('#is-close').addEventListener('click', closeItem);
 $('#is-action').addEventListener('click', () => { if (!IS) return; IS.pack ? buyPack() : itemAction(); });
 $('#item-sheet').addEventListener('click', e => { if (e.target.id === 'item-sheet') closeItem(); });
