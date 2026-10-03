@@ -2355,3 +2355,11 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .onb-next { min-height: 56px; font-size: 17px; }
 .onb-hero > span { width: 40%; }
 .onb-hero > span:nth-child(2) { width: 50%; }
+
+/* ===== Barre de navigation collée en bas (barre pleine largeur, sans arrondi flottant) ===== */
+.tabbar { bottom: 0; width: 100%; max-width: 480px; border-radius: 0; border: 0; border-top: 2px solid var(--edge); box-shadow: 0 -6px 18px rgba(42,27,77,.06); padding: 6px 8px calc(6px + var(--safe-b)); }
+@media (min-width: 560px) { .tabbar { bottom: 26px; width: calc(100% - 4px); max-width: 476px; border-radius: 0 0 26px 26px; } }
+.scroll, .path-wrap { padding-bottom: calc(110px + var(--safe-b)); }
+.path-up { bottom: calc(100px + var(--safe-b)); }
+.toast { bottom: calc(100px + var(--safe-b)); }
+.pv-body { padding-bottom: calc(110px + var(--safe-b)); }
