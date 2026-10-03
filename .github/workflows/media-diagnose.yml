@@ -1,0 +1,36 @@
+name: media-diagnose
+# Diagnostic à la demande des chansons sans extrait vérifié ; le rapport part sur la branche media-report.
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 'Identifiants séparés par des virgules (vide = toutes les chansons sans extrait vérifié)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/diagnose-media.mjs
+        env:
+          IDS: ${{ github.event.inputs.ids }}
+      - name: Publier le rapport sur la branche media-report
+        run: |
+          git config user.name "pompelup-bot"
+          git config user.email "pompelup-bot@users.noreply.github.com"
+          cp media-report.json /tmp/media-report.json
+          git checkout --orphan media-report
+          git rm -rf --cached . > /dev/null
+          cp /tmp/media-report.json media-report.json
+          git add media-report.json
+          git commit -m "rapport de diagnostic des extraits"
+          git push -f origin media-report
