@@ -481,13 +481,24 @@ function jsonp(url, ms = 6000) {
     document.head.appendChild(s);
   });
 }
+// Recherche en direct : uniquement le bon titre du bon artiste (jamais une reprise ni un karaoké)
+const BAD_VERSION = /karaoke|tribute|cover|in the style|made famous|originally performed|instrumental|lullaby|8 bit|piano version|workout|re recorded|sing along|backing track/;
+const artistParts = a => normalize(a).replace(/^the /, '').split(/ (?:feat|ft|featuring|and|x|et|with|vs) /).map(x => x.trim()).filter(Boolean);
+function sameArtist(cand, song) {
+  const want = artistParts(song.artist)[0] || normalize(song.artist), got = artistParts(cand), whole = ` ${normalize(cand).replace(/^the /, '')} `;
+  return got.includes(want) || similarity(got[0] || '', want) >= .88 || (want.length >= 4 && whole.includes(` ${want} `));
+}
 function pickTrack(list, song, artistOf) {
-  const ar = normalize(song.artist), ti = cleanTitle(song.title);
-  const score = x => (normalize(artistOf(x)).includes(ar) || similarity(normalize(artistOf(x)), ar) > .6 ? 2 : 0) + (similarity(cleanTitle(x.trackName || x.title || ''), ti) > .7 ? 1 : 0);
-  return list.slice().sort((a, b) => score(b) - score(a))[0];
+  const ti = cleanTitle(song.title);
+  const ok = list.filter(x => {
+    const name = x.trackName || x.title || '', ct = cleanTitle(name);
+    return (ct === ti || similarity(ct, ti) >= .85) && sameArtist(artistOf(x), song) && !BAD_VERSION.test(normalize(`${name} ${artistOf(x)} ${x.collectionName || x.album?.title || ''}`));
+  });
+  const rank = x => (cleanTitle(x.trackName || x.title || '') === ti ? 2 : 0) + (/live|remix|edit|version|acoustic|demo/i.test(`${x.trackName || x.title || ''} ${x.collectionName || ''}`) ? 0 : 1);
+  return ok.sort((a, b) => rank(b) - rank(a))[0] || null;
 }
 async function searchItunes(song) {
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=8`;
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(`${song.title} ${song.artist}`)}&media=music&entity=song&limit=20`;
   let data;
   try {
     const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 5000);
@@ -498,7 +509,7 @@ async function searchItunes(song) {
   return t ? { url: t.previewUrl, art: t.artworkUrl100 ? t.artworkUrl100.replace(/100x100/, '600x600') : null } : null;
 }
 async function searchDeezer(song) {
-  const data = await jsonp(`https://api.deezer.com/search?q=${encodeURIComponent(`artist:"${song.artist}" track:"${song.title}"`)}&limit=8&output=jsonp`);
+  const data = await jsonp(`https://api.deezer.com/search?q=${encodeURIComponent(`artist:"${song.artist}" track:"${song.title}"`)}&limit=15&output=jsonp`);
   const list = (data.data || []).filter(t => t.preview);
   const t = list.length && pickTrack(list, song, x => (x.artist && x.artist.name) || '');
   return t ? { url: t.preview, art: (t.album && (t.album.cover_big || t.album.cover_medium)) || null } : null;
