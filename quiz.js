@@ -413,7 +413,7 @@ const PACKS = [
 // Jokers : utilisables une fois par partie chacun
 const JOKERS = {
   x2: { name: 'Joker ×2', desc: 'Double les points de ta prochaine bonne réponse.', price: 120 },
-  steal: { name: 'Voleur', desc: 'Pique des points au premier du classement (ou au DJ en solo).', price: 180 },
+  steal: { name: 'Voleur', desc: 'En multijoueur : pique 15 % des points du premier du classement.', price: 180 },
 };
 const jokerArt = (k, big) => `<span class="jk-art jk-art-${k}${big ? ' is-big' : ''}">${k === 'x2' ? '<b>×2</b>' : ico('g-bolt')}</span>`;
 const TITLES = [[1, 'Apprenti mélomane'], [3, 'DJ de salon'], [6, 'Oreille affûtée'], [10, 'Maître du blind test'], [15, 'Légende du vinyle']];
@@ -988,10 +988,6 @@ function startGame(cfg) {
   $('#game-prog').style.width = '0';
   updateGameGauge();
   applySkins();
-  host.mood = null;
-  host.render('happy');
-  // Pré-rendu des autres humeurs : pas d'à-coup au moment de la réponse
-  ['wow', 'sad', 'wink'].forEach(mood => charHTML(HOST, { head: true, mood }));
   $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
   $('#screen-game').classList.toggle('is-type', cfg.mode === 'type');
   show('game');
@@ -1281,31 +1277,13 @@ function nextRound() {
 }
 
 /* ================= PRÉSENTATRICE ================= */
-const HOST = { id: 'host', kind: 'human', name: 'DJ Patator', skin: '#F3CDB8', hair: 'short', hairColor: '#6B4A32', face: 'beard', top: '#F5B81C', shirt: '#1F1B2E', pants: '#3F4A63', acc: { head: { type: 'bob', color: '#8B5A3C' }, eyes: { type: 'shades', color: '#111827' }, ears: { type: 'phones', color: '#EC4899' } } };
+// Bandeau de messages de la partie (plus de présentateur à l'écran)
 const host = {
-  mood: null, timer: null,
-  render(mood) {
-    if (mood === this.mood) return;
-    this.mood = mood;
-    $('#host-av').innerHTML = `<span class="hv hv-rest">${charHTML(HOST, { head: true, mood })}</span>`;
-  },
-  // Petite voix musicale : une syllabe = une note douce de la gamme pentatonique
-  voice(text) {
-    if (!soundOn()) return;
-    const syl = Math.min(9, Math.max(2, Math.round(text.replace(/[^a-zà-ÿ]/gi, '').length / 3)));
-    const scale = [74, 76, 79, 81, 84, 86];
-    for (let i = 0; i < syl; i++) mallet(scale[(i * 3 + text.length) % scale.length], i * .075, .035, .12);
-  },
-  say(text, mood = 'talk', ms = 2200) {
-    const av = $('#host-av'), bubble = $('#host-bubble');
+  timer: null,
+  say(text) {
+    const bubble = $('#host-bubble');
     $('#host-text').textContent = text;
     bubble.classList.remove('is-pop'); void bubble.offsetWidth; bubble.classList.add('is-pop');
-    this.render(mood === 'talk' ? 'happy' : mood);
-    av.classList.remove('is-bounce'); void av.offsetWidth; av.classList.add('is-bounce');
-    av.classList.add('is-talking');
-    this.voice(text);
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => av.classList.remove('is-talking'), Math.min(ms, 280 + text.length * 38));
   },
 };
 const say = (...a) => host.say(...a);
@@ -1557,6 +1535,8 @@ function renderJokers() {
   const box = $('#jokers');
   box.hidden = !G.cfg || !!G.cfg.daily;
   if (box.hidden) return;
+  // Le voleur ne sert qu'en multijoueur : il faut quelqu'un à qui voler
+  $('#jk-steal').hidden = !G.cfg.multi;
   for (const k of ['x2', 'steal']) {
     const b = $(`#jk-${k}`), n = store.jokers[k] || 0, used = !!G.jkUsed[k];
     $(`#jk-${k}-n`).textContent = used ? '✓' : n;
@@ -1586,11 +1566,7 @@ function useJoker(k) {
       t.score = (t.score || 0) - amount;
       MP.tx?.send({ t: 'steal', from: MP.me.id, to: t.id, amount, fromName: displayName() });
       msg = `Tu as volé ${fmt(amount)} pts à ${t.name} !`;
-    } else {
-      amount = 250;
-      msg = `Tu as piqué ${fmt(amount)} pts dans la caisse de DJ Patator !`;
-      say('Hé ! Rends-moi mes points, petit malin !', 'wow', 2400);
-    }
+    } else return;
     G.score += amount;
     animateScore();
     flyPoints(`+${fmt(amount)}`, $('#jk-steal'));
@@ -2918,7 +2894,6 @@ function maybeWelcome() {
   wlAvatar = store.equip.skin;
   $('#wl-avatars').innerHTML = COSMETICS.skin.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}" aria-label="${esc(a.name)}">${charHTML(a)}<b>${esc(a.name)}</b></button>`).join('');
   $('#wl-name').value = store.name || window.PompeAuth?.displayName() || '';
-  $('#wl-host').innerHTML = charHTML(HOST, { head: true, mood: 'happy' });
   $('#welcome-sheet').hidden = false;
 }
 function finishWelcome(keep) {
@@ -3326,7 +3301,7 @@ function buyPass() {
 const A = window.PompeAuth;
 let authMode = 'signup', signedInDone = false;
 function showAuth() {
-  $('#auth-host').innerHTML = charHTML(HOST, { mood: 'happy' });
+  $('#auth-host').innerHTML = charHTML(mySkin(), { mood: 'happy' });
   $('#auth-screen').hidden = false;
   $('#auth-home').hidden = false;
   $('#auth-form').hidden = true;

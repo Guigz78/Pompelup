@@ -138,10 +138,9 @@
     <h1 class="game-title" id="game-title">Quelle est cette chanson ?</h1>
 
     <div class="host" id="host">
-      <span class="host-av" id="host-av" aria-hidden="true"></span>
       <div class="host-bubble" id="host-bubble" aria-live="polite">
         <button class="speaker" id="btn-replay-audio" type="button" aria-label="Réécouter l’extrait"><svg class="ico"><use href="#i-g-speaker"/></svg></button>
-        <span class="host-say"><b>DJ Patator</b><span id="host-text">Salut ! Prêt·e pour le blind test ?</span></span>
+        <span class="host-say"><span id="host-text">Prêt·e pour le blind test ?</span></span>
       </div>
     </div>
 
@@ -737,11 +736,8 @@
 
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
-      <div class="wl-host">
-        <span class="wl-host-av" id="wl-host" aria-hidden="true"></span>
-        <div class="wl-bubble"><b>DJ Patator</b>Salut ! Choisis ton perso et ton pseudo, un booster t’attend.</div>
-      </div>
       <div class="sheet-title" id="wl-title">Bienvenue sur Pompelup !</div>
+      <p class="wl-sub">Choisis ton perso et ton pseudo, un booster t’attend.</p>
       <div class="wl-avatars" id="wl-avatars" role="radiogroup" aria-label="Personnage"></div>
       <input class="wl-name" id="wl-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
       <div class="sheet-stack">

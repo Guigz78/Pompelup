@@ -2207,3 +2207,11 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .mm-txt b { font: 800 15px/1.15 var(--display); color: var(--ink); }
 .mm-txt small { font: 700 11.5px/1.25 var(--text); color: var(--ink-2); }
 .mm .mm-dot { top: -8px; right: -6px; }
+
+/* ===== Plus de présentateur : simple bandeau de messages ===== */
+.host { padding: 6px 16px 0; min-height: 0; }
+.host-bubble { flex: 1; }
+.host-bubble::before { display: none; }
+.host-say { font-size: 14.5px; }
+@media (max-height: 760px) { .host { min-height: 0; } }
+.wl-sub { margin: -2px 0 12px !important; }
