@@ -539,6 +539,7 @@
           <label class="set-row"><span><b>Effets sonores</b><small>Bips, jingles et fanfares</small></span><input type="checkbox" id="set-sound" class="switch"></label>
           <label class="set-row"><span><b>Vibrations</b><small>Retour haptique sur mobile</small></span><input type="checkbox" id="set-haptics" class="switch"></label>
           <div class="set-row" id="set-account"><span><b id="acc-title">Compte</b><small id="acc-sub">Non connecté</small></span><button class="btn btn-sm btn-outline" id="acc-btn" type="button">Se connecter</button></div>
+        <button class="set-row" id="set-tuto" type="button"><span><b>Revoir le tutoriel</b><small>Comment marche Pompelup</small></span><svg class="ico" aria-hidden="true"><use href="#i-g-chevron"/></svg></button>
         <button class="set-row set-danger" id="set-reset" type="button"><span><b>Réinitialiser ma progression</b><small>Efface jetons, vinyles, skins et succès</small></span><svg class="ico" aria-hidden="true"><use href="#i-g-chevron"/></svg></button>
         </div>
         <p class="set-foot">Pompelup · ta progression est enregistrée sur cet appareil.<br>Personnages en velours dessinés pour Pompelup.</p>
@@ -744,6 +745,12 @@
       <button class="auth-guest" type="button" id="auth-switch">J’ai déjà un compte</button>
     </form>
     <div class="auth-wait" id="auth-wait" hidden><span class="auth-spin"></span><b id="auth-wait-txt">Connexion…</b></div>
+  </div>
+
+  <div class="onb" id="onboard" hidden role="dialog" aria-modal="true" aria-label="Découvre Pompelup">
+    <div class="onb-top"><div class="onb-dots" id="onb-dots"></div><button class="onb-skip" id="onb-skip" type="button">Passer</button></div>
+    <div class="onb-track" id="onb-track"></div>
+    <div class="onb-foot"><button class="btn btn-green btn-block onb-next" id="onb-next" type="button">Suivant</button></div>
   </div>
 
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>

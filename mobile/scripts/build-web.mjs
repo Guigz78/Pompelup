@@ -7,16 +7,18 @@ import { fileURLToPath } from 'url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(HERE, '../..');
 const OUT = path.resolve(HERE, '../assets/web/index.html');
-const MIME = { '.png': 'image/png', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2', '.jpg': 'image/jpeg' };
+const MIME = { '.png': 'image/png', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
 
 const read = p => fs.readFileSync(path.join(WEB, p), 'utf8');
 const assets = {};
-for (const dir of ['assets', 'fonts']) {
-  for (const f of fs.readdirSync(path.join(WEB, dir))) {
-    const mime = MIME[path.extname(f)];
-    if (mime) assets[`${dir}/${f}`] = `data:${mime};base64,${fs.readFileSync(path.join(WEB, dir, f)).toString('base64')}`;
-  }
-}
+// assets/ et ses sous-dossiers (ex. assets/onboarding/*.webp), fonts/
+const walk = dir => fs.readdirSync(path.join(WEB, dir), { withFileTypes: true }).forEach(e => {
+  const rel = `${dir}/${e.name}`;
+  if (e.isDirectory()) return walk(rel);
+  const mime = MIME[path.extname(e.name)];
+  if (mime) assets[rel] = `data:${mime};base64,${fs.readFileSync(path.join(WEB, rel)).toString('base64')}`;
+});
+['assets', 'fonts'].forEach(walk);
 const inlineAssets = t => Object.keys(assets).sort((a, b) => b.length - a.length).reduce((s, k) => s.split(k).join(assets[k]), t);
 
 let html = read('index.html');

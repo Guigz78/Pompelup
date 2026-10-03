@@ -3394,6 +3394,62 @@ function buyPass() {
 }
 
 
+/* ================= ONBOARDING : la toute première ouverture ================= */
+const ONB = [
+  { id: 'hello', title: 'Bienvenue sur Pompelup', text: 'Le blind test où chaque bonne réponse te fait gagner des vinyles à collectionner.' },
+  { id: 'play', video: 'assets/onboarding/play.webp', kicker: 'Jouer', title: 'Écoute et devine', text: 'Un extrait se lance : trouve la bonne chanson. Réponds vite et enchaîne les bonnes réponses pour faire des combos.' },
+  { id: 'modes', video: 'assets/onboarding/type.webp', kicker: 'Modes de jeu', title: '3 façons de jouer', chips: [['g-headphones', '4 choix', 'le classique'], ['g-keyboard', 'Saisie', 'titre et/ou artiste, bonus ×1,5'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier']] },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Boosters', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster. Ouvre-le : 3 vinyles à chaque fois, du commun au légendaire.' },
+  { id: 'room', video: 'assets/onboarding/room.webp', kicker: 'Ton salon', title: 'Décore ton mur', text: 'Accroche tes plus beaux vinyles et change le papier peint, le canapé et les cadres.' },
+  { id: 'daily', kicker: 'Chaque jour', title: 'Toujours une raison de revenir', grid: [['quest', 'Quêtes du jour', 'des jetons à gagner'], ['mystery', 'Défi du jour', 'une chanson mystère, 3 essais'], ['crown', 'Pass de saison', 'une récompense par palier'], ['headphones', 'Multijoueur', 'défie tes potes en direct']] },
+  { id: 'go', title: 'À toi de jouer !', text: 'Choisis ton perso et ton pseudo : un booster de bienvenue t’attend.' },
+];
+let onbDone = null, onbI = 0;
+function onbSlideHTML(sl, k) {
+  let media;
+  if (sl.video) media = `<span class="onb-phone"><img data-src="${sl.video}" alt="" draggable="false"></span>`;
+  else if (sl.id === 'hello' || sl.id === 'go') media = `<span class="onb-hero${sl.id === 'go' ? ' is-go' : ''}">${(sl.id === 'go' ? ['crate', 'rookie', 'kpop'] : ['disco', 'rookie', 'mc']).map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('')}${sl.id === 'hello' ? `<i class="onb-vinyl">${ico('vinyl')}</i>` : `<i class="onb-pack">${ico('booster')}</i>`}</span>`;
+  else media = `<span class="onb-grid">${sl.grid.map(([i, b, s]) => `<span class="onb-g">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>`;
+  const body = sl.chips ? `<span class="onb-chips">${sl.chips.map(([i, b, s]) => `<span class="onb-chip">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>` : sl.text ? `<p>${sl.text}</p>` : '';
+  return `<section class="onb-slide onb-${sl.id}" data-k="${k}"><div class="onb-media">${media}</div><div class="onb-txt">${sl.kicker ? `<small>${sl.kicker}</small>` : ''}<h2>${sl.title}</h2>${body}</div></section>`;
+}
+function showOnboarding(done) {
+  onbDone = done || null; onbI = 0;
+  $('#onb-track').innerHTML = ONB.map(onbSlideHTML).join('');
+  $('#onb-dots').innerHTML = ONB.map((_, k) => `<i data-k="${k}"></i>`).join('');
+  $('#onboard').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('#onb-track').scrollLeft = 0;
+  onbSync(0);
+}
+// Les vidéos ne se chargent qu'à l'approche de leur écran
+function onbSync(k) {
+  onbI = k;
+  $$('#onb-dots i').forEach((d, j) => d.classList.toggle('is-on', j === k));
+  $$('#onb-track .onb-slide').forEach((sl, j) => {
+    sl.classList.toggle('is-on', j === k);
+    const img = sl.querySelector('img[data-src]');
+    if (img && Math.abs(j - k) <= 1 && !img.src) img.src = img.dataset.src;
+    if (img && j === k && img.src) { const u = img.dataset.src; img.src = ''; img.src = u; }   // repart du début
+  });
+  $('#onb-next').textContent = k === ONB.length - 1 ? 'Créer mon perso' : 'Suivant';
+  $('#onb-skip').hidden = k === ONB.length - 1;
+}
+function onbGo(k) { const t = $('#onb-track'); t.scrollTo({ left: k * t.clientWidth, behavior: REDUCED ? 'auto' : 'smooth' }); }
+function finishOnboarding() {
+  store.tutoSeen = true; save();
+  $('#onboard').hidden = true;
+  document.body.style.overflow = '';
+  $('#onb-track').innerHTML = '';
+  const d = onbDone; onbDone = null;
+  if (d) d();
+}
+$('#onb-next').addEventListener('click', () => { unlockAudio(); sfx.tap(); onbI >= ONB.length - 1 ? finishOnboarding() : onbGo(onbI + 1); });
+$('#onb-skip').addEventListener('click', () => { sfx.tap(); finishOnboarding(); });
+$('#onb-dots').addEventListener('click', e => { const d = e.target.closest('[data-k]'); if (d) onbGo(+d.dataset.k); });
+$('#onb-track').addEventListener('scroll', e => { const t = e.target, k = Math.round(t.scrollLeft / Math.max(1, t.clientWidth)); if (k !== onbI) onbSync(k); }, { passive: true });
+$('#set-tuto').addEventListener('click', () => showOnboarding(null));
+
 /* ================= COMPTE : Google, Apple, email ================= */
 const A = window.PompeAuth;
 let authMode = 'signup', signedInDone = false;
@@ -3998,7 +4054,9 @@ ensureMissions();
 applySkins();
 renderCoins();
 show('home');
-startAccount();
+// Toute première ouverture : le tutoriel passe avant la connexion
+if ((!store.onboarded && !store.tutoSeen && !NO_AUTO) || /[?&]onb\b/.test(location.search)) showOnboarding(startAccount);
+else startAccount();
 const roomParam = (location.search.match(/[?&]room=([A-Za-z0-9]{5})/) || [])[1];
 if (roomParam) setTimeout(() => { show('multi'); mpOpen(roomParam); }, 1200);
 })();
