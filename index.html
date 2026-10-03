@@ -63,11 +63,18 @@
         <span class="hero-badge" id="bcard-badge" aria-hidden="true">1</span>
       </section>
 
+      <div class="top-duo">
       <button class="daily-bar" id="daily-card" type="button">
-        <svg class="ico daily-bar-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
-        <span class="daily-bar-txt"><small>Défi du jour</small><b id="daily-title">Chanson mystère</b><em id="daily-sub">3 essais · +1 booster</em></span>
-        <span class="daily-bar-cta" id="daily-cta">Jouer</span>
-      </button>
+          <svg class="ico daily-bar-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
+          <span class="daily-bar-txt"><small>Défi du jour</small><b id="daily-title">Chanson mystère</b><em id="daily-sub">3 essais · +1 booster</em></span>
+          <span class="daily-bar-cta" id="daily-cta">Jouer</span>
+        </button>
+        <button class="multi-card" id="mode-multi" type="button">
+          <span class="mc-ico"><svg class="ico"><use href="#i-g-user"/></svg></span>
+          <span class="mc-txt"><small>En direct</small><b>Multijoueur</b><em>Défie tes potes</em></span>
+          <span class="daily-bar-cta mc-cta">Jouer</span>
+        </button>
+      </div>
 
       <div class="upsell" id="upsell" hidden>
         <button class="upsell-x" id="upsell-x" type="button" aria-label="Masquer pour aujourd’hui"><svg class="ico"><use href="#i-g-close"/></svg></button>
@@ -114,7 +121,6 @@
       </section>
 
       <div class="more-modes">
-        <button class="mm" id="mode-multi" type="button"><span class="mm-ico mm-multi"><svg class="ico"><use href="#i-g-user"/></svg></span><span class="mm-txt"><b>Multijoueur</b><small>Défie tes potes en direct</small></span></button>
         <button class="mm" id="mode-story" type="button"><span class="mm-ico mm-story"><svg class="ico"><use href="#i-g-book"/></svg></span><span class="mm-txt"><b>Mode histoire</b><small id="pm-story-sub">Les légendes, étape par étape</small></span><i class="dot-badge mm-dot" id="pm-story-dot" hidden>!</i></button>
       </div>
     </div>
