@@ -2402,7 +2402,7 @@ function buyJoker(k) {
 }
 
 /* Vinyles à l'unité, avec recherche */
-const VINYL_PRICE = { common: 80, rare: 200, epic: 500, legendary: 1200 };
+const VINYL_PRICE = { common: 1000, rare: 1000, epic: 5000, legendary: 10000 };
 const VS = { q: '', r: 'all', shown: 30 };
 const SEARCH_KEY = new Map(SONGS.map(s => [s.id, normalize(`${s.title} ${s.artist}`)]));
 function searchSongs(q, ids) {
