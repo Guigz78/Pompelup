@@ -406,9 +406,9 @@ function dealOfTheDay() {
   return Object.assign(d, { price: Math.round(d.it.price * .6 / 10) * 10 });
 }
 const PACKS = [
-  { id: 'std', name: 'Booster', short: '3 vinyles', desc: '3 vinyles, dont au moins 1 rare.', price: 250, give: { boosters: 1 } },
+  { id: 'std', name: 'Booster', short: '3 vinyles', desc: '3 vinyles, dont au moins 1 rare.', price: 500, give: { boosters: 1 } },
   { id: 'gold', name: 'Booster Or', short: 'Épique garanti', desc: '3 vinyles de qualité : 1 épique garanti et 25 % de chances de légendaire sur le dernier.', price: 700, give: { gold: 1 } },
-  { id: 'bundle', name: 'Lot de 5', short: '5 boosters', desc: '5 boosters vinyle d’un coup, soit 250 jetons d’économie.', price: 1000, give: { boosters: 5 }, tag: '−20 %' },
+  { id: 'bundle', name: 'Lot de 5', short: '5 boosters', desc: '5 boosters vinyle d’un coup, soit 500 jetons d’économie.', price: 2000, give: { boosters: 5 }, tag: '−20 %' },
 ];
 // Jokers : utilisables une fois par partie chacun
 const JOKERS = {
