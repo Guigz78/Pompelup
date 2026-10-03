@@ -864,6 +864,7 @@ function renderHome() {
   renderMissionsCard();
   renderHomeHeader();
   renderStoryCard();
+  renderUpsell();
   renderDaily();
   clearInterval(dailyTicker);
   dailyTicker = setInterval(() => { if (currentScreen() === 'home') renderDaily(); else clearInterval(dailyTicker); }, 1000);
@@ -905,6 +906,45 @@ function renderHomeHeader() {
   $('#hh-xp-fill').style.width = `${Math.round(L.pct * 100)}%`;
   $('#hh-xp-txt').textContent = `${fmt(L.rest)}/${fmt(L.need)}`;
 }
+// Carte d'offre de l'accueil : la plus pertinente selon la situation du joueur
+function upsellOffer() {
+  const P = passState(), t = passTier();
+  if (!P.gold) {
+    const waiting = Array.from({ length: t }, (_, k) => k + 1).filter(k => passReward(k, true)).length;
+    return { id: 'pass', kicker: 'Pass Premium', title: waiting ? `${plural(waiting, 'cadeau bloqué', 'cadeaux bloqués')}` : 'Double tes récompenses',
+      sub: 'Skins exclusifs et Boosters Or', cta: `${fmt(PASS_PRICE)}<i class="coin"></i>`, art: charHTML(itemOf('skin', 'crooner'), { head: true, mood: 'happy' }), cls: 'is-pass' };
+  }
+  if (coinShopOn() && store.coins < 700) {
+    return { id: 'coins', kicker: 'Offre populaire', title: '3 000 jetons', sub: 'Boosters et vinyles sans attendre', cta: '4,99 €', art: '<i class="coin"></i><i class="coin"></i><i class="coin"></i>', cls: 'is-coins' };
+  }
+  const d = dealOfTheDay();
+  if (d) return { id: 'deal', kicker: 'Offre du jour · −40 %', title: itemName(d.kind, d.it), sub: `${fmt(d.it.price)} → ${fmt(d.price)} jetons`, cta: 'Voir', art: itemPreviewHTML(d.kind, d.it), cls: 'is-deal', deal: d };
+  return null;
+}
+let UPSELL = null;
+function renderUpsell() {
+  const box = $('#upsell');
+  UPSELL = store.upsellHidden === dayKey() || !store.onboarded ? null : upsellOffer();
+  box.hidden = !UPSELL;
+  if (!UPSELL) return;
+  box.className = `upsell ${UPSELL.cls}`;
+  if (box.dataset.id !== UPSELL.id + UPSELL.title) {
+    box.dataset.id = UPSELL.id + UPSELL.title;
+    $('#upsell-art').innerHTML = UPSELL.art;
+  }
+  $('#upsell-kicker').textContent = UPSELL.kicker;
+  $('#upsell-title').textContent = UPSELL.title;
+  $('#upsell-sub').textContent = UPSELL.sub;
+  $('#upsell-cta').innerHTML = UPSELL.cta;
+}
+function openUpsell() {
+  if (!UPSELL) return;
+  unlockAudio(); sfx.tap();
+  if (UPSELL.id === 'pass') show('pass');
+  else if (UPSELL.id === 'coins') { show('shop'); requestAnimationFrame(() => $('#coin-shop')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' })); }
+  else if (UPSELL.deal) openItem(UPSELL.deal.kind, UPSELL.deal.it.id);
+}
+
 function dailyToday() { return store.daily && store.daily.date === dayKey() ? store.daily : null; }
 function renderDaily() {
   const d = dailyToday(), card = $('#daily-card');
@@ -3466,6 +3506,8 @@ $('#home-coins').addEventListener('click', () => show('shop'));
 $('#hh-xp').addEventListener('click', () => show('profile'));
 $('#mis-card').addEventListener('click', openMissions);
 $('#daily-card').addEventListener('click', playDaily);
+$('#upsell-go').addEventListener('click', openUpsell);
+$('#upsell-x').addEventListener('click', () => { store.upsellHidden = dayKey(); save(); $('#upsell').hidden = true; sfx.tap(); });
 $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
   toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
