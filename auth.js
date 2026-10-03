@@ -111,11 +111,30 @@ function pushSave(obj, now) {
     } catch (e) { console.warn('[Pompelup] Sauvegarde cloud impossible :', e); }
   }, now ? 0 : 3000);
 }
+// Achat de jetons (Stripe Checkout, via la fonction Edge « payments »)
+async function callPayments(body) {
+  const { data, error } = await sb.functions.invoke('payments', { body });
+  if (error) {
+    let code = 'network';
+    try { code = (await error.context?.json())?.error || code; } catch (e) {}
+    throw new Error(code);
+  }
+  return data;
+}
+const buyCoins = (pack, returnUrl) => callPayments({ action: 'checkout', pack, returnUrl });
+const confirmPurchase = sessionId => callPayments({ action: 'confirm', sessionId });
+// Encaisse une seule fois les achats payés (renvoie le nombre de jetons à ajouter)
+async function claimPurchases() {
+  if (!user) return 0;
+  const { data, error } = await sb.rpc('claim_coin_purchases');
+  if (error) throw error;
+  return data || 0;
+}
 // Pseudo affiché pour un compte
 const displayName = () => user?.user_metadata?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || '';
 
 window.PompeAuth = {
-  ready: !!sb, init, oauth, fromRedirect, signUp, signIn, resetPassword, signOut, ensureProfile, loadSave, pushSave, frError,
+  ready: !!sb, init, oauth, fromRedirect, signUp, signIn, resetPassword, signOut, ensureProfile, loadSave, pushSave, frError, buyCoins, confirmPurchase, claimPurchases,
   get user() { return user; }, displayName, client: sb,
   onChange: f => listeners.add(f), onError: f => errListeners.add(f),
 };

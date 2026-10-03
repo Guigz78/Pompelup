@@ -45,3 +45,44 @@ drop policy if exists "saves_insert" on public.saves;
 create policy "saves_insert" on public.saves for insert with check (auth.uid() = user_id);
 drop policy if exists "saves_update" on public.saves;
 create policy "saves_update" on public.saves for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Achats de jetons (Stripe). Les lignes sont écrites uniquement côté serveur
+-- (fonctions Edge payments / stripe-webhook, clé service) ; le client lit les siennes
+-- et les encaisse une seule fois via claim_coin_purchases().
+create table if not exists public.coin_purchases (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  stripe_session_id text not null unique,
+  pack_id text not null,
+  coins int not null check (coins > 0),
+  amount_cents int not null,
+  currency text not null default 'eur',
+  status text not null default 'pending' check (status in ('pending', 'paid')),
+  credited boolean not null default false,
+  created_at timestamptz not null default now(),
+  paid_at timestamptz
+);
+create index if not exists coin_purchases_user_idx on public.coin_purchases (user_id);
+alter table public.coin_purchases enable row level security;
+create policy "coin_purchases_select" on public.coin_purchases for select using ((select auth.uid()) = user_id);
+
+-- Encaisse les achats payés pas encore crédités ; renvoie le total de jetons.
+create or replace function public.claim_coin_purchases()
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare total int;
+begin
+  with claimed as (
+    update public.coin_purchases set credited = true
+    where user_id = (select auth.uid()) and status = 'paid' and not credited
+    returning coins
+  )
+  select coalesce(sum(coins), 0)::int into total from claimed;
+  return total;
+end;
+$$;
+revoke all on function public.claim_coin_purchases() from public, anon;
+grant execute on function public.claim_coin_purchases() to authenticated;

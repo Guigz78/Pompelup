@@ -2246,11 +2246,93 @@ function renderShop() {
       <span class="price-btn"><i class="coin"></i>${fmt(p.price)}</span>
     </button>`).join('');
   for (const kind of KINDS) $(`#shop-${kind}`).innerHTML = COSMETICS[kind].map(it => itemCardHTML(kind, it, d)).join('');
+  renderCoinShop();
   renderJokerShop();
   renderVinylShop();
   clearInterval(shopTicker);
   shopTicker = setInterval(() => { if (currentScreen() === 'shop') renderShopTimers(); else clearInterval(shopTicker); }, 1000);
 }
+/* Jetons en vrai argent (Stripe) — prix fixés côté serveur, affichés ici */
+const COIN_PACKS = [
+  { id: 'p500', coins: 500, price: '0,99 €' },
+  { id: 'p1200', coins: 1200, price: '1,99 €', tag: '+20 %' },
+  { id: 'p3000', coins: 3000, price: '4,99 €', tag: 'Populaire', hot: true },
+  { id: 'p6500', coins: 6500, price: '9,99 €', tag: 'Meilleure offre' },
+];
+let coinBusy = null;
+// Dans l'app native, les achats passent par les stores : la vente se fait sur le site web.
+const coinShopOn = () => !window.PompeNative && !!window.PompeAuth?.ready;
+function renderCoinShop() {
+  $('#coin-shop').hidden = !coinShopOn();
+  if (!coinShopOn()) return;
+  $('#shop-coins').innerHTML = COIN_PACKS.map((c, k) => `
+    <button class="cpk${c.hot ? ' is-hot' : ''}${coinBusy === c.id ? ' is-busy' : ''}" type="button" data-coins="${c.id}"${coinBusy ? ' disabled' : ''}>
+      ${c.tag ? `<span class="cpk-tag">${c.tag}</span>` : ''}
+      <span class="cpk-art cpk-${k + 1}">${'<i class="coin"></i>'.repeat(Math.min(4, k + 1))}</span>
+      <b>${fmt(c.coins)}</b><small>jetons</small>
+      <span class="cpk-price">${coinBusy === c.id ? 'Patiente…' : c.price}</span>
+    </button>`).join('');
+  $('#coin-note').textContent = window.PompeAuth?.user ? 'Paiement par carte, Apple Pay ou Google Pay. Les jetons sont liés à ton compte.' : 'Connecte-toi pour acheter des jetons : ils seront liés à ton compte.';
+}
+const PAY_ERR = { not_configured: 'Le paiement n’est pas encore activé. Reviens bientôt !', auth: 'Reconnecte-toi pour acheter des jetons.', network: 'Pas de connexion internet.' };
+async function buyCoinPack(id) {
+  const A = window.PompeAuth;
+  if (coinBusy || !coinShopOn()) return;
+  if (!A.user) { toast('Connecte-toi pour acheter des jetons'); showAuth(); return; }
+  coinBusy = id; renderCoinShop(); sfx.tap();
+  try {
+    save(); A.pushSave(store, true);
+    const { url } = await A.buyCoins(id, location.href.split(/[?#]/)[0]);
+    if (!url) throw new Error('stripe');
+    location.href = url;
+    setTimeout(() => { coinBusy = null; if (currentScreen() === 'shop') renderCoinShop(); }, 8000);
+  } catch (e) {
+    coinBusy = null; renderCoinShop();
+    toast(PAY_ERR[e.message] || 'Le paiement n’a pas pu démarrer. Réessaie dans un instant.');
+  }
+}
+// Retour de Stripe (?pay=ok&session_id=…) et achats payés pas encore encaissés
+// (gardé en sessionStorage : la synchro cloud peut recharger la page avant l'encaissement)
+const PAY_KEY = 'pompelup_pay';
+const PAY_RETURN = (() => {
+  const q = new URLSearchParams(location.search);
+  if (q.get('pay')) {
+    const r = { st: q.get('pay'), id: q.get('session_id') };
+    history.replaceState(null, '', location.pathname + location.hash);
+    try { if (r.st === 'ok') sessionStorage.setItem(PAY_KEY, JSON.stringify(r)); } catch (e) {}
+    return r;
+  }
+  try { return JSON.parse(sessionStorage.getItem(PAY_KEY) || 'null'); } catch (e) { return null; }
+})();
+let claimingCoins = false;
+async function claimCoinPurchases() {
+  const A = window.PompeAuth;
+  if (!A?.user || claimingCoins) return;
+  claimingCoins = true;
+  try {
+    if (PAY_RETURN?.st === 'ok' && PAY_RETURN.id && !PAY_RETURN.done) {
+      PAY_RETURN.done = true;
+      try { sessionStorage.removeItem(PAY_KEY); } catch (e) {}
+      // Le webhook peut arriver avant ou après : on confirme nous-mêmes, puis on réessaie un peu
+      for (let k = 0; k < 4; k++) {
+        try { if ((await A.confirmPurchase(PAY_RETURN.id))?.paid) break; } catch (e) {}
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+    const coins = await A.claimPurchases();
+    if (coins > 0) {
+      grantReward({ coins });
+      A.pushSave(store, true);
+      sfx.fanfare(); buzz([30, 60, 30]); confetti(60);
+      showReward({ kicker: 'Achat confirmé', title: 'Merci pour ton soutien !', reward: { coins } });
+      refreshScreen();
+    } else if (PAY_RETURN?.st === 'ok') toast('Paiement reçu : tes jetons arrivent dans quelques instants');
+  } catch (e) {
+    if (PAY_RETURN?.st === 'ok') toast('Paiement reçu : tes jetons seront ajoutés à ta prochaine connexion');
+  } finally { claimingCoins = false; }
+}
+if (PAY_RETURN?.st === 'cancel') setTimeout(() => toast('Paiement annulé : aucun montant débité'), 800);
+
 /* Jokers en boutique */
 function renderJokerShop() {
   $('#shop-jokers').innerHTML = Object.entries(JOKERS).map(([k, j]) => `
@@ -3113,6 +3195,7 @@ async function onSignedIn() {
   A.ensureProfile(store.name).catch(() => {});
   if (await syncFromCloud()) return;
   renderAccount();
+  claimCoinPurchases();
   if (!store.onboarded) maybeWelcome();
   else toast(`Connecté${store.name ? ` : salut ${store.name} !` : ' !'}`);
   refreshScreen();
@@ -3551,6 +3634,7 @@ $('#screen-shop').addEventListener('click', e => {
   const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
   const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id);
   const jk = e.target.closest('[data-joker]'); if (jk) { buyJoker(jk.dataset.joker); return; }
+  const cp = e.target.closest('[data-coins]'); if (cp) { buyCoinPack(cp.dataset.coins); return; }
   const v = e.target.closest('[data-vid]'); if (v) { buyVinyl(v.dataset.vid); return; }
   const rf = e.target.closest('#vs-rar .rf'); if (rf) { VS.r = rf.dataset.r; VS.shown = 30; renderVinylShop(); }
 });
