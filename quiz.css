@@ -2174,3 +2174,6 @@ button.counter:active { transform: translateY(3px); box-shadow: none; background
 .b-timer .ico { width: 18px; height: 18px; }
 #is-action { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
 #is-action .coin { width: 20px; height: 20px; }
+
+/* JOUER uniquement sur l'accueil */
+body.no-play .nav-split, body.no-play .play-menu { display: none; }

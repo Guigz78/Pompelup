@@ -742,6 +742,8 @@ function show(id) {
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
   window.PompeNative?.post('theme', 'light');
   $('#tabbar').hidden = !TAB_SCREENS.includes(id);
+  // Le bouton JOUER ne vit que sur l'accueil ; ailleurs la barre ne garde que les onglets
+  document.body.classList.toggle('no-play', id !== 'home');
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
