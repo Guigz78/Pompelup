@@ -1,5 +1,5 @@
 /* Pompelup — vraies pochettes d'album (généré par scripts/fetch-covers.mjs, ne pas éditer) */
-/* « d:<md5> » = pochette Deezer, sinon URL iTunes. 933/934 titres. */
+/* « d:<md5> » = pochette Deezer, sinon URL iTunes. 933/933 titres. */
 window.COVERS = {
 "s1":"d:59f021fcf55435026bd3f1a18eacc94f",
 "s54":"d:4aa68bcb9d7f8e687cf1bbb4c44ac47b",
