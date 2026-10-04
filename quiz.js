@@ -1838,8 +1838,8 @@ function mpMaybeNext() {
   next.querySelector('span').textContent = all ? (G.i >= G.songs.length - 1 ? 'Voir les résultats' : 'Musique suivante…') : `En attente des autres (${done}/${list.length})`;
   if (!all || G.mpNextT) return;
   const showBoard = G.cfg.board && !(G.i >= G.songs.length - 1);
-  if (showBoard) setTimeout(() => { if (G.phase === 'reveal') mpShowBoard(); }, Math.max(0, 1600 - (Date.now() - (G.mpRevealAt || 0))));
-  const token = G.token, wait = showBoard ? Math.max(5200, 6200 - (Date.now() - (G.mpRevealAt || 0))) : Math.max(1200, 2600 - (Date.now() - (G.mpRevealAt || 0)));
+  if (showBoard) setTimeout(() => { if (G.phase === 'reveal') mpShowBoard(); }, Math.max(0, 1800 - (Date.now() - (G.mpRevealAt || 0))));
+  const token = G.token, wait = showBoard ? Math.max(8600, 9000 - (Date.now() - (G.mpRevealAt || 0))) : Math.max(1200, 2600 - (Date.now() - (G.mpRevealAt || 0)));
   const bar = $('#next-progress');
   bar.style.transition = 'none'; bar.style.width = '0'; void bar.offsetWidth;
   bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
@@ -1874,22 +1874,46 @@ function mpBanter(round, list, prev, tone = 'trash') {
   if (last.id !== top.id) out.push((gain(last) <= 0 && round > 0 ? pick(lasts, 2) : gain(last) <= 0 ? pick(zeros, 2) : pick(lasts, 3)).replace('{n}', last.name));
   return out.slice(0, 2);
 }
+// Classement animé : on part de l'ordre et des scores d'avant, puis les joueurs glissent à leur
+// nouvelle place pendant que les points défilent ; les piques arrivent ensuite, une par une.
+function animateBoard(box, list, prev, opts = {}) {
+  const before = list.slice().sort((a, b) => (prev[b.id] ?? 0) - (prev[a.id] ?? 0));
+  const after = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const rowH = opts.rowH || 60;
+  box.style.height = `${list.length * rowH}px`;
+  box.innerHTML = before.map((p, k) => {
+    const g = (p.score || 0) - (prev[p.id] ?? 0);
+    return `<div class="ab-row${p.id === opts.me ? ' is-me' : ''}" data-id="${p.id}" style="transform:translateY(${k * rowH}px)">
+      <i class="ab-pos">${k + 1}</i><span class="ab-av">${headHTML(p)}</span><b>${esc(p.id === opts.me ? `${p.name} (toi)` : p.name)}</b>
+      <span class="ab-gain${g > 0 ? '' : ' is-zero'}">+${fmt(g)}</span><span class="ab-score" data-from="${prev[p.id] ?? 0}" data-to="${p.score || 0}">${fmt(prev[p.id] ?? 0)}</span></div>`;
+  }).join('');
+  const t0 = setTimeout(() => {
+    after.forEach((p, k) => {
+      const el = box.querySelector(`[data-id="${p.id}"]`); if (!el) return;
+      el.style.transform = `translateY(${k * rowH}px)`;
+      el.querySelector('.ab-pos').textContent = k + 1;
+      el.classList.toggle('is-first', k === 0);
+      el.classList.add('is-go');
+      const sc = el.querySelector('.ab-score'), from = +sc.dataset.from, to = +sc.dataset.to, st = performance.now();
+      const step = t => { const q = Math.min(1, (t - st) / 1300); sc.textContent = fmt(from + (to - from) * (1 - (1 - q) ** 3)); if (q < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+    if (!MP.isTv) sfx.coin();
+  }, opts.delay ?? 700);
+  return t0;
+}
 function mpShowBoard() {
   const list = mpPeople().map(p => p.id === MP.me.id ? Object.assign({}, p, mpSelf()) : p);
   const prev = MP.prevScores || {};
-  const ranked = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-  const prevRank = Object.fromEntries(list.slice().sort((a, b) => (prev[b.id] ?? 0) - (prev[a.id] ?? 0)).map((p, k) => [p.id, k]));
   $('#mpb-title').textContent = `Classement après la manche ${G.i + 1}`;
-  $('#mpb-list').innerHTML = ranked.map((p, k) => {
-    const g = (p.score || 0) - (prev[p.id] ?? 0), mv = G.i > 0 ? prevRank[p.id] - k : 0;
-    return `<div class="mpb-row${p.id === MP.me.id ? ' is-me' : ''}" style="animation-delay:${k * .08}s"><i class="mpb-pos p${k + 1}">${k + 1}</i><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b>${mv > 0 ? '<em class="mpb-up">▲</em>' : mv < 0 ? '<em class="mpb-down">▼</em>' : ''}<span class="mpb-pts">${fmt(p.score || 0)}<small>${g > 0 ? `+${fmt(g)}` : '+0'}</small></span></div>`;
-  }).join('');
-  $('#mpb-banter').innerHTML = mpBanter(G.i, list, prev, G.cfg.tone).map(t => `<p>${esc(t)}</p>`).join('');
+  animateBoard($('#mpb-list'), list, prev, { me: MP.me.id, rowH: 58 });
+  const lines = mpBanter(G.i, list, prev, G.cfg.tone);
+  $('#mpb-banter').innerHTML = lines.map((t, k) => `<p style="animation-delay:${2.1 + k * .9}s">${esc(t)}</p>`).join('');
   MP.prevScores = Object.fromEntries(list.map(p => [p.id, p.score || 0]));
   $('#mp-board-ov').hidden = false;
   sfx.pop();
   clearTimeout(MP.boardT);
-  MP.boardT = setTimeout(() => { $('#mp-board-ov').hidden = true; }, 3800);
+  MP.boardT = setTimeout(() => { $('#mp-board-ov').hidden = true; }, 6900);
 }
 
 /* ----- Fin de partie ----- */
@@ -2083,6 +2107,45 @@ function commitBooster(cards, kind) {
   save();
 }
 
+// Ouvrir tous les boosters d'un coup : un seul écran avec tout le butin, du plus rare au plus commun
+function openAllBoosters() {
+  if (totalBoosters() < 1) return;
+  unlockAudio(); stopMusic();
+  const all = [];
+  let packs = 0, coins = 0;
+  while (totalBoosters() > 0 && packs < 60) {
+    const kind = store.goldBoosters > 0 ? 'gold' : 'std';
+    const cards = makeBooster(kind);
+    commitBooster(cards, kind);
+    cards.forEach(c => { all.push(c); coins += c.dupCoins || 0; });
+    packs++;
+  }
+  all.sort((a, b) => (RANK[b.rarity] - RANK[a.rarity]) || (b.isNew - a.isNew));
+  const by = r => all.filter(c => c.rarity === r).length;
+  $('#ao-title').textContent = `${plural(packs, 'booster ouvert', 'boosters ouverts')} !`;
+  $('#ao-stats').innerHTML = RARITIES.slice().reverse().filter(r => by(r)).map(r => `<span class="ao-st r-${r}"><i></i>${by(r)} ${R_NAMES[r].toLowerCase()}</span>`).join('')
+    + `<span class="ao-st">${all.filter(c => c.isNew).length} nouveaux</span>${coins ? `<span class="ao-st"><i class="coin"></i>+${fmt(coins)}</span>` : ''}`;
+  $('#ao-grid').innerHTML = all.map((c, k) => {
+    const name = c.acc ? c.acc.name : c.song.title, sub = c.acc ? 'Accessoire' : c.song.artist;
+    const art = c.acc ? `<span class="ao-acc">${ico('palette')}</span>` : coverHTML(c.song);
+    return `<div class="ao-card r-${c.rarity}" style="animation-delay:${Math.min(k, 30) * .06}s"${c.song ? ` data-id="${c.song.id}"` : ''}>
+      <span class="ao-cover">${art}</span>${crestHTML(c.rarity)}
+      <b>${esc(name)}</b><small>${esc(sub)}</small>
+      ${c.isNew ? '<em class="ao-new">Nouveau</em>' : `<em class="ao-dup">+${c.dupCoins} <i class="coin"></i></em>`}
+    </div>`;
+  }).join('');
+  $$('#ao-grid .ao-card[data-id]').forEach(el => { const s = SONG.get(el.dataset.id); if (s && !knownArt(s.id)) queueArt(s, a => fillCover(el, a)); });
+  $('#all-open').hidden = false;
+  document.body.style.overflow = 'hidden';
+  sfx.fanfare(); buzz([30, 60, 30]);
+  if (by('legendary') || by('epic')) confetti(90, ['#FFC800', '#CE82FF', '#FF4FA3', '#fff']);
+  renderCoins(true); renderBadges(); checkAchievements();
+}
+function closeAllOpen(toColl) {
+  $('#all-open').hidden = true;
+  document.body.style.overflow = '';
+  if (toColl) show('collection'); else if (currentScreen() === 'boosters') renderBoosters();
+}
 function openBooster() {
   if (totalBoosters() <= 0) { toast('Pas de booster… trouve des chansons ou passe à la boutique !'); return; }
   unlockAudio();
@@ -3239,6 +3302,8 @@ function renderBoosters() {
   $('#bx-n').textContent = n;
   $('#bx-label').textContent = n ? `${n > 1 ? 'boosters' : 'booster'} à ouvrir${gold ? ' · dont Or' : ''}` : 'Aucun booster pour l’instant';
   $('#bx-open').textContent = n ? 'Ouvrir' : 'Jouer pour en gagner';
+  $('#bx-open-all').hidden = n < 2;
+  $('#bx-open-all').textContent = `Tout ouvrir d’un coup (${n})`;
   $('#bx-g-txt').textContent = `${store.gauge}/${GAUGE_MAX} bonnes réponses`;
   $('#bx-g-fill').style.width = `${store.gauge / GAUGE_MAX * 100}%`;
   $('#bx-packs').innerHTML = PACKS.map(p => `
@@ -3589,7 +3654,8 @@ const newCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math
 // Joueurs (la télé n'est pas un joueur)
 const mpPeople = () => [...MP.players.values()].filter(p => !p.tv);
 const mpHasTv = () => [...MP.players.values()].some(p => p.tv);
-const mpHost = () => mpPeople().sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
+// L'hôte peut passer la main (MP.cfg.hostId) ; sinon c'est le premier arrivé
+const mpHost = () => (MP.cfg.hostId && mpPeople().find(p => p.id === MP.cfg.hostId)) || mpPeople().sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
 const iAmHost = () => mpHost()?.id === MP.me?.id;
 function mpTransport(code, onMsg) {
   if (MP_LOCAL || !window.PompeAuth?.client) {
@@ -3656,7 +3722,7 @@ function mpOnMsg(m) {
     if (isNew && !MP.isTv) { toast(m.p.tv ? 'La télé est connectée 📺' : `${m.p.name} a rejoint la salle`); sfx.pop(); }
   } else if (m.t === 'here') mpUpsert(m.p);
   else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
-  else if (m.t === 'cfg') MP.cfg = m.cfg;
+  else if (m.t === 'cfg') { const was = iAmHost(); MP.cfg = m.cfg; if (!was && iAmHost()) toast('Tu es maintenant l’hôte : c’est toi qui règles la partie 👑'); }
   else if (m.t === 'start') { if (MP.isTv) tvStart(m.game); else if (!MP.inGame) mpPlay(m.game); }
   else if (m.t === 'steal' || m.t === 'stolen') { mpOnSteal(m); return; }
   else if (m.t === 'chat') { mpAddChat(m); return; }
@@ -3721,7 +3787,7 @@ function renderMulti() {
   $('#mp-room-code').textContent = MP.code;
   renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
-  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
+  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${p.id === mpHost()?.id ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : host ? `<span class="mpp-give" data-give="${p.id}" role="button" tabindex="0">${ico('crown')}Donner l’hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
     (list.length < 2 ? '<button class="mpp mpp-empty" type="button"><span class="mpp-q">+</span><b>Invite un ami</b></button>' : '');
   $('#mp-settings').hidden = !host;
   if (host) {
@@ -3872,10 +3938,11 @@ function tvCheck() {
   tvRender();
   clearTimeout(TVM.t);
   const boardOn = TVM.game.board !== false && TVM.round < TVM.game.songs.length - 1;
+  if (boardOn) TVM.tb = setTimeout(() => { if (TVM.phase === 'reveal') { TVM.phase = 'board'; tvRender(); } }, 3000);
   TVM.t = setTimeout(() => {
     if (TVM.round >= TVM.game.songs.length - 1) { TVM.phase = 'end'; MP.inGame = false; try { TVM.audio.pause(); } catch (e) {} tvRender(); return; }
     TVM.round++; tvPlayRound();
-  }, boardOn ? 6000 : 2600);
+  }, boardOn ? 9000 : 2600);
 }
 function tvRender() {
   if (!MP.isTv) return;
@@ -3902,11 +3969,19 @@ function tvRender() {
   }
   const s = SONG.get(g.songs[TVM.round]);
   const answered = ps.filter(p => (p.i || 0) > TVM.round).length;
+  if (TVM.phase === 'board') {
+    if (TVM.boardDone === TVM.round) return;   // pas de redessin pendant l'animation
+    TVM.boardDone = TVM.round;
+    body.innerHTML = `<div class="tv-boardscr"><h1>Classement après la manche ${TVM.round + 1}</h1><div class="ab-list tv-ab" id="tv-ab"></div>
+      <div class="tv-banter">${mpBanter(TVM.round, ps, TVM.prevScore || {}, g.tone).map((t, k) => `<p style="animation-delay:${2.1 + k * .9}s">${esc(t)}</p>`).join('')}</div></div>`;
+    animateBoard($('#tv-ab'), ps, TVM.prevScore || {}, { rowH: Math.round(innerHeight * .1) });
+    return;
+  }
   if (TVM.phase === 'reveal' && s) {
     const found = ps.filter(p => (p.found || 0) > (TVM.base[p.id] || 0));
     body.innerHTML = `<div class="tv-reveal"><div class="tv-cover">${coverHTML(s)}</div><div class="tv-rv-txt"><small>C’était…</small><h1>${esc(s.title)}</h1><h2>${esc(s.artist)} · ${s.year}</h2>
       <div class="tv-found">${found.length ? found.map(p => `<span>${av(p)}${esc(p.name)}</span>`).join('') : '<span class="tv-none">Personne n’a trouvé !</span>'}</div>
-      ${g.board !== false ? `<div class="tv-banter">${mpBanter(TVM.round, ps, TVM.prevScore || {}, g.tone).map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}</div></div>`;
+</div></div>`;
     return;
   }
   body.innerHTML = `<div class="tv-play"><div class="tv-disc"><div class="tv-disc-in">?</div></div><h1>Quelle est cette chanson ?</h1>
@@ -4095,6 +4170,9 @@ $('#room-sheet').addEventListener('click', e => {
 });
 $('#rm-q').addEventListener('input', e => { RM.q = e.target.value; renderRoomSheet(); });
 
+$('#bx-open-all').addEventListener('click', openAllBoosters);
+$('#ao-ok').addEventListener('click', () => closeAllOpen(false));
+$('#ao-coll').addEventListener('click', () => closeAllOpen(true));
 $('#bx-open').addEventListener('click', () => { totalBoosters() ? openBooster() : show('home'); });
 $('#screen-boosters').addEventListener('click', e => {
   const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
@@ -4124,6 +4202,15 @@ $('#tv-sound').addEventListener('click', () => { TVM.unlocked = true; unlockAudi
 $('#steal-list').addEventListener('click', e => { const b = e.target.closest('.steal-p'); if (b && !b.disabled) chooseSteal(b.dataset.id); });
 $('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = true; });
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
+function giveHost(id) {
+  const p = MP.players.get(id);
+  if (!p || !iAmHost()) return;
+  MP.cfg.hostId = id;
+  MP.tx?.send({ t: 'cfg', cfg: MP.cfg });
+  MP.tx?.send({ t: 'chat', id: MP.me.id, name: displayName(), skin: store.equip.skin, text: `👑 ${p.name} est maintenant l’hôte` });
+  toast(`${p.name} est maintenant l’hôte`);
+  sfx.pop(); renderMulti();
+}
 const mpSetCfg = (k, v) => { if (!iAmHost()) return; MP.cfg[k] = v; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); sfx.tap(); renderMulti(); };
 $('#mp-mode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('mode', b.dataset.v); });
 $('#mp-dur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('dur', +b.dataset.v); });
@@ -4144,7 +4231,10 @@ function openInvite() {
   sfx.tap();
 }
 $('#mp-share').addEventListener('click', openInvite);
-$('#mp-players').addEventListener('click', e => { if (e.target.closest('.mpp-empty')) openInvite(); });
+$('#mp-players').addEventListener('click', e => {
+  if (e.target.closest('.mpp-empty')) return openInvite();
+  const g = e.target.closest('[data-give]'); if (g) giveHost(g.dataset.give);
+});
 $('#inv-copy').addEventListener('click', () => { const { text } = inviteMsg(); navigator.clipboard?.writeText(text).then(() => toast('Lien copié : colle-le dans un message'), () => toast(`Code : ${MP.code}`)); });
 $('#inv-more').addEventListener('click', () => { const { url, text } = inviteMsg(); navigator.share?.({ title: 'Pompelup', text, url }).catch(() => {}); });
 $('#inv-close').addEventListener('click', () => { $('#invite-sheet').hidden = true; });

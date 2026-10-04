@@ -307,6 +307,7 @@
         </div>
         <div class="bx-count"><b id="bx-n">0</b><span id="bx-label">booster à ouvrir</span></div>
         <button class="btn btn-white btn-block bx-open" id="bx-open" type="button">Ouvrir</button>
+        <button class="btn btn-block bx-open-all" id="bx-open-all" type="button" hidden>Tout ouvrir d’un coup</button>
       </section>
       <section class="panel bx-gauge">
         <div class="bx-g-top"><b>Prochain booster gratuit</b><small id="bx-g-txt">0/10 bonnes réponses</small></div>
@@ -799,9 +800,15 @@
   <div class="mp-board" id="mp-board-ov" hidden>
     <div class="mpb-card">
       <div class="mpb-title" id="mpb-title">Classement</div>
-      <div class="mpb-list" id="mpb-list"></div>
+      <div class="mpb-list ab-list" id="mpb-list"></div>
       <div class="mpb-banter" id="mpb-banter"></div>
     </div>
+  </div>
+
+  <div class="all-open" id="all-open" hidden>
+    <div class="ao-head"><div class="ao-title" id="ao-title">Tes vinyles</div><div class="ao-stats" id="ao-stats"></div></div>
+    <div class="ao-grid" id="ao-grid"></div>
+    <div class="ao-foot"><button class="btn btn-green btn-block" id="ao-ok" type="button">Super !</button><button class="btn btn-outline btn-block" id="ao-coll" type="button">Voir mon salon</button></div>
   </div>
 
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
