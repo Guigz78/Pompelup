@@ -2535,3 +2535,25 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .mpl-av .avatar-photo { border-radius: 50%; }
 .mpp-photo { width: 62px; height: 62px; margin: 10px auto 6px; }
 .game-head { padding-left: 14px; padding-right: 8px; }
+
+/* ===== Titres débloqués par les succès ===== */
+button.pf-title { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 14px; border-radius: 14px; border: 2px solid var(--edge); background: #fff; box-shadow: 0 3px 0 var(--edge); }
+button.pf-title small { font: 700 12px var(--text); color: var(--violet); letter-spacing: 0; text-transform: none; }
+.titles-sheet { max-height: 88vh; overflow-y: auto; }
+.tt-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.tt-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 16px; border: 2px solid var(--edge); background: #F6F2FA; text-align: left; }
+.tt-row.is-ok { background: #fff; box-shadow: 0 3px 0 var(--edge); }
+.tt-row.is-on { border-color: #F2C94C; background: #FFF8E0; box-shadow: 0 3px 0 #E5B400; }
+.tt-row:disabled { cursor: default; }
+.tt-badge { flex: 0 0 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: #E6DDF0; color: var(--ink-3); }
+.tt-badge .ico { width: 24px; height: 24px; }
+.tt-row.is-ok .tt-badge { background: linear-gradient(160deg, #FFD54A, #FF9600); }
+.tt-badge.is-big { width: 110px; height: 110px; margin: 0 auto; border-radius: 30px; background: linear-gradient(160deg, #FFD54A, #FF9600); }
+.tt-badge.is-big .ico { width: 64px; height: 64px; }
+.tt-txt { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tt-txt b { font: 800 17px var(--display); color: var(--ink); }
+.tt-row:not(.is-ok) .tt-txt b { color: var(--ink-2); }
+.tt-txt small { font: 700 13px var(--text); color: var(--ink-2); }
+.tt-txt .bar { height: 8px; }
+.tt-state { flex: 0 0 auto; font: 800 13px var(--text); color: var(--violet); }
+.tt-row.is-on .tt-state { color: #8A5A00; }

@@ -337,8 +337,11 @@ function claimAch(id) {
   if (!st.claimable) return;
   let [n, r] = a.tiers[st.claimed];
   if (r.item) { const [k, id] = r.item.split(':'); if (isOwned(k, id)) r = Object.assign({}, r, { item: undefined, coins: (r.coins || 0) + 300 }); }
+  const before = bestTitle();
   store.ach[a.id] = st.claimed + 1;
   grantReward(r);
+  const after = bestTitle();
+  if (after !== before) setTimeout(() => { sfx.fanfare(); confetti(70); showReward({ kicker: 'Nouveau titre débloqué', title: after, reward: {}, visual: `<span class="tt-badge is-big">${ico('crown')}</span>`, extra: 'Choisis-le dans ton profil en touchant ton titre.' }); }, 400);
   sfx.fanfare(); buzz([30, 40, 60]);
   showReward({ kicker: `Succès · ${a.name} niveau ${st.claimed + 1}`, title: a.label(n), reward: r });
   renderBadges();
@@ -438,8 +441,13 @@ const JOKERS = {
   steal: { name: 'Voleur', desc: 'En multijoueur : choisis un joueur. S’il trouve la bonne réponse, ses points sont pour toi.', price: 180 },
 };
 const jokerArt = (k, big) => `<span class="jk-art jk-art-${k}${big ? ' is-big' : ''}">${k === 'x2' ? '<b>×2</b>' : ico('g-bolt')}</span>`;
-const TITLES = [[1, 'Apprenti mélomane'], [3, 'DJ de salon'], [6, 'Oreille affûtée'], [10, 'Maître du blind test'], [15, 'Légende du vinyle']];
-const titleFor = lvl => TITLES.filter(([n]) => lvl >= n).pop()[1];
+// Titres : débloqués par le nombre de succès récupérés (39 paliers au total) — volontairement durs
+const TITLES = [[0, 'Apprenti mélomane'], [4, 'Oreille curieuse'], [8, 'DJ de salon'], [13, 'Oreille affûtée'], [19, 'Fin connaisseur'], [25, 'Maître du blind test'], [31, 'Légende du vinyle'], [36, 'Monument de la musique'], [39, 'Dieu de la platine']];
+const achDone = () => Object.values(store.ach || {}).reduce((a, n) => a + (+n || 0), 0);
+const titleUnlocked = name => { const t = TITLES.find(x => x[1] === name); return !!t && achDone() >= t[0]; };
+const bestTitle = () => TITLES.filter(([n]) => achDone() >= n).pop()[1];
+const myTitle = () => store.title && titleUnlocked(store.title) ? store.title : bestTitle();
+const titleFor = () => myTitle();
 const displayName = () => store.name.trim() || 'Joueur';
 
 /* ---------------- Réponses ---------------- */
@@ -3057,12 +3065,25 @@ function openMissions() {
 
 /* ================= PROFIL ================= */
 let PF_TAB = 'ach';
+function renderTitles() {
+  const done = achDone(), cur = myTitle(), total = ACHS.reduce((a, x) => a + x.tiers.length, 0);
+  $('#tt-sub').textContent = `${done}/${total} succès récupérés. Chaque titre demande plus de succès.`;
+  $('#tt-list').innerHTML = TITLES.map(([n, name]) => {
+    const ok = done >= n, on = name === cur;
+    return `<button class="tt-row${ok ? ' is-ok' : ''}${on ? ' is-on' : ''}" type="button" data-title="${esc(name)}"${ok ? '' : ' disabled'}>
+      <span class="tt-badge">${ok ? ico('crown') : ico('g-lock')}</span>
+      <span class="tt-txt"><b>${esc(name)}</b><small>${n ? `${n} succès` : 'Dès le début'}${ok ? '' : ` · encore ${n - done}`}</small>${ok ? '' : `<span class="bar bar-sm"><span style="width:${Math.round(done / n * 100)}%"></span></span>`}</span>
+      <span class="tt-state">${on ? 'Porté' : ok ? 'Choisir' : ''}</span>
+    </button>`;
+  }).join('');
+}
 function renderProfile() {
   const L = levelOf(store.xp);
   applySkins();
   const nameInput = $('#pf-name');
   if (document.activeElement !== nameInput) nameInput.value = store.name;
-  $('#pf-title').textContent = titleFor(L.lvl);
+  $('#pf-title').textContent = myTitle();
+  { const nx = TITLES.find(([n]) => achDone() < n); $('#pf-title-next').textContent = nx ? `Prochain titre : ${nx[0] - achDone()} succès` : 'Tous les titres débloqués !'; }
   $('#pf-level').textContent = L.lvl;
   $('#pf-level-fill').style.width = `${Math.round(L.pct * 100)}%`;
   $('#pf-level-txt').textContent = `${fmt(L.rest)} / ${fmt(L.need)} XP`;
@@ -3937,6 +3958,11 @@ $('#photo-input').addEventListener('change', async e => {
     if (MP.code) MP.tx?.send({ t: 'here', p: mpSelf() });
   } catch (err) { toast('Impossible de lire cette photo'); }
 });
+$('#pf-title-btn').addEventListener('click', () => { renderTitles(); $('#titles-sheet').hidden = false; sfx.tap(); });
+$('#tt-close').addEventListener('click', () => { $('#titles-sheet').hidden = true; });
+$('#titles-sheet').addEventListener('click', e => { if (e.target.id === 'titles-sheet') $('#titles-sheet').hidden = true; });
+$('#tt-list').addEventListener('click', e => { const b = e.target.closest('.tt-row'); if (!b || b.disabled) return; store.title = b.dataset.title; save(); sfx.pop(); renderTitles(); renderProfile(); renderHomeHeader(); toast(`Titre choisi : ${store.title}`); });
+$('#tt-ach').addEventListener('click', () => { $('#titles-sheet').hidden = true; PF_TAB = 'ach'; renderProfile(); $('#pf-tabs').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); });
 $('#pf-ach').addEventListener('click', e => { const b = e.target.closest('.ach-claim'); if (b) claimAch(b.dataset.ach); });
 $('#pf-gear').addEventListener('click', () => { PF_TAB = 'settings'; renderProfile(); $('#pf-tabs').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); });
 $('#pf-skins').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) openItem(it.dataset.kind, it.dataset.id); });

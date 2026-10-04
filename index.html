@@ -503,7 +503,7 @@
     <div class="scroll pf-scroll">
       <div class="pf-id">
         <input class="pf-name" id="pf-name" type="text" maxlength="16" placeholder="Ton pseudo" aria-label="Ton pseudo" autocomplete="nickname">
-        <span class="pf-title" id="pf-title">Apprenti mélomane</span>
+        <button class="pf-title" id="pf-title-btn" type="button"><span id="pf-title">Apprenti mélomane</span><small id="pf-title-next">Voir les titres</small></button>
       </div>
       <div class="pf-level">
         <span class="lvl-badge" id="pf-level">1</span>
@@ -749,6 +749,15 @@
         <button class="btn btn-outline btn-block" id="ph-char" type="button">Garder mon personnage</button>
         <button class="btn btn-ghost btn-block" id="ph-skin" type="button">Changer de personnage</button>
       </div>
+    </div>
+  </div>
+
+  <div class="overlay overlay-sheet" id="titles-sheet" hidden>
+    <div class="sheet titles-sheet" role="dialog" aria-modal="true" aria-labelledby="tt-title">
+      <div class="rm-head"><div class="sheet-title" id="tt-title">Tes titres</div><button class="icon-btn" id="tt-close" type="button" aria-label="Fermer"><svg class="ico"><use href="#i-g-close"/></svg></button></div>
+      <p id="tt-sub">Débloque des titres en récupérant tes succès.</p>
+      <div class="tt-list" id="tt-list"></div>
+      <button class="btn btn-blue btn-block" id="tt-ach" type="button">Voir mes succès</button>
     </div>
   </div>
 
