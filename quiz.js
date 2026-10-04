@@ -413,7 +413,7 @@ const PACKS = [
 // Jokers : utilisables une fois par partie chacun
 const JOKERS = {
   x2: { name: 'Joker ×2', desc: 'Double les points de ta prochaine bonne réponse.', price: 120 },
-  steal: { name: 'Voleur', desc: 'En multijoueur : pique 15 % des points du premier du classement.', price: 180 },
+  steal: { name: 'Voleur', desc: 'En multijoueur : choisis un joueur. S’il trouve la bonne réponse, ses points sont pour toi.', price: 180 },
 };
 const jokerArt = (k, big) => `<span class="jk-art jk-art-${k}${big ? ' is-big' : ''}">${k === 'x2' ? '<b>×2</b>' : ico('g-bolt')}</span>`;
 const TITLES = [[1, 'Apprenti mélomane'], [3, 'DJ de salon'], [6, 'Oreille affûtée'], [10, 'Maître du blind test'], [15, 'Légende du vinyle']];
@@ -1234,6 +1234,12 @@ function finishRound(ok, reason, sourceEl) {
   }
   if (G.x2) { G.x2 = false; $('#game-x2').hidden = true; }
   G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || knownArt(song.id) });
+  if (G.cfg.multi && MP.stolenBy && MP.stolenBy.round === G.i) {
+    // Un voleur nous visait : s'il y a des points, ils partent chez lui
+    const th = MP.stolenBy; MP.stolenBy = null;
+    if (pts > 0) { G.score -= pts; animateScore(); setTimeout(() => toast(`${th.name} t’a volé ${fmt(pts)} pts !`), 900); }
+    MP.tx?.send({ t: 'stolen', from: MP.me.id, to: th.from, amount: pts > 0 ? pts : 0, round: G.i, name: displayName() });
+  }
   if (G.cfg.multi) mpReport(false);
 
   $('#disc').classList.remove('is-spinning');
@@ -1285,6 +1291,7 @@ function finishRound(ok, reason, sourceEl) {
   void bar.offsetWidth;
   bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
   const token = G.token;
+  if (G.cfg.multi) { next.disabled = true; bar.style.transition = 'none'; bar.style.width = '0'; G.mpRevealAt = Date.now(); G.mpNextT = null; mpMaybeNext(); return; }
   if (!NO_AUTO) G.autoNext = setTimeout(() => { if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
 }
 
@@ -1297,6 +1304,7 @@ function animateScore() {
 
 function nextRound() {
   if (G.phase !== 'reveal') return;
+  if (G.cfg.multi && $('#btn-next').disabled) return;
   clearTimeout(G.autoNext);
   if (G.i >= G.songs.length - 1) return endGame();
   G.i++;
@@ -1610,10 +1618,6 @@ function useHint() {
 }
 
 /* ----- Jokers ----- */
-function stealTarget() {
-  if (!G.cfg?.multi) return null;
-  return mpRanked().find(p => p.id !== MP.me?.id && !p.done && (p.score || 0) > 0) || null;
-}
 function renderJokers() {
   const box = $('#jokers');
   box.hidden = !G.cfg || !!G.cfg.daily;
@@ -1625,7 +1629,7 @@ function renderJokers() {
     $(`#jk-${k}-n`).textContent = used ? '✓' : n;
     b.classList.toggle('is-used', used);
     b.classList.toggle('is-empty', !n && !used);
-    b.disabled = used || (!!n && (k === 'x2' ? G.phase !== 'playing' || G.x2 : !['playing', 'reveal'].includes(G.phase)));
+    b.disabled = used || (!!n && (G.phase !== 'playing' || (k === 'x2' && G.x2)));
   }
 }
 function useJoker(k) {
@@ -1639,22 +1643,10 @@ function useJoker(k) {
     $('#game-x2').hidden = false;
     say('Double ou rien ! La prochaine vaut deux fois plus.', 'wink', 2200);
   } else {
-    if (!['playing', 'reveal'].includes(G.phase)) return;
-    let amount, msg;
-    if (G.cfg.multi) {
-      const t = stealTarget();
-      if (!t) { toast('Personne à voler pour l’instant : attends que quelqu’un marque'); return; }
-      amount = Math.max(100, Math.round((t.score || 0) * .15 / 10) * 10);
-      amount = Math.min(amount, t.score || 0);
-      t.score = (t.score || 0) - amount;
-      MP.tx?.send({ t: 'steal', from: MP.me.id, to: t.id, amount, fromName: displayName() });
-      msg = `Tu as volé ${fmt(amount)} pts à ${t.name} !`;
-    } else return;
-    G.score += amount;
-    animateScore();
-    flyPoints(`+${fmt(amount)}`, $('#jk-steal'));
-    toast(msg);
-    if (G.cfg.multi) mpReport(false);
+    // Voleur : on choisit un joueur ; s'il trouve, ses points de la manche sont pour nous
+    if (!G.cfg.multi || G.phase !== 'playing') return;
+    openStealPicker();
+    return;
   }
   store.jokers[k]--;
   G.jkUsed[k] = true;
@@ -1662,24 +1654,64 @@ function useJoker(k) {
   sfx.booster(); buzz([20, 30, 20]);
   renderJokers();
 }
-// Un joueur nous a volé des points
+function openStealPicker() {
+  const others = [...MP.players.values()].filter(p => p.id !== MP.me?.id);
+  $('#steal-list').innerHTML = others.map(p => {
+    const answered = (p.i || 0) > G.i;
+    return `<button class="steal-p" type="button" data-id="${p.id}"${answered ? ' disabled' : ''}><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.name)}</b><small>${answered ? 'a déjà répondu' : `${fmt(p.score || 0)} pts`}</small></button>`;
+  }).join('') || '<p>Personne d’autre dans la partie.</p>';
+  $('#steal-sheet').hidden = false;
+}
+function chooseSteal(id) {
+  const p = MP.players.get(id);
+  $('#steal-sheet').hidden = true;
+  if (!p || G.phase !== 'playing' || G.jkUsed.steal || !(store.jokers.steal > 0)) return;
+  MP.tx?.send({ t: 'steal', from: MP.me.id, to: id, round: G.i, fromName: displayName() });
+  store.jokers.steal--;
+  G.jkUsed.steal = true;
+  save();
+  sfx.booster(); buzz([20, 30, 20]);
+  toast(`Voleur lancé sur ${p.name} : s’il trouve, ses points sont pour toi !`);
+  renderJokers();
+}
+// Messages du voleur : on est visé, ou on récupère le butin
 function mpOnSteal(m) {
-  const victim = m.to === MP.me?.id ? null : MP.players.get(m.to), thief = MP.players.get(m.from);
-  if (thief) thief.score = (thief.score || 0) + m.amount;
+  if (m.t === 'steal') {
+    if (m.to === MP.me?.id) { MP.stolenBy = { from: m.from, name: m.fromName, round: m.round }; toast(`${m.fromName} te vise avec le Voleur : si tu trouves, il prend tes points !`); buzz([40, 30, 40]); }
+    return;
+  }
+  // m.t === 'stolen' : la victime a répondu
+  const thief = MP.players.get(m.to), victim = MP.players.get(m.from);
   if (m.to === MP.me?.id) {
-    if (G.cfg?.multi && G.phase !== 'done') {
-      G.score = Math.max(0, G.score - m.amount);
+    if (m.amount > 0) {
+      G.score += m.amount;
       animateScore();
-      flyPoints(`−${fmt(m.amount)}`, $('#game-score'));
-      mpReport(false);
-    }
-    toast(`${m.fromName} t’a volé ${fmt(m.amount)} pts !`);
-    buzz([60, 40, 60]);
-  } else if (victim) {
-    victim.score = Math.max(0, (victim.score || 0) - m.amount);
-    toast(`${m.fromName} a volé ${fmt(m.amount)} pts à ${victim.name}`);
+      flyPoints(`+${fmt(m.amount)}`, $('#game-score'));
+      toast(`Bien joué : tu as volé ${fmt(m.amount)} pts à ${m.name} !`);
+      sfx.booster();
+      mpReport(G.phase === 'done');
+    } else toast(`Raté : ${m.name} n’a pas trouvé, rien à voler`);
+  } else if (m.amount > 0 && thief && victim) {
+    thief.score = (thief.score || 0) + m.amount; victim.score = Math.max(0, (victim.score || 0) - m.amount);
+    toast(`${thief.name} a volé ${fmt(m.amount)} pts à ${victim.name}`);
   }
   renderLive();
+}
+// Manches synchronisées : on passe à la musique suivante quand tout le monde a répondu
+function mpMaybeNext() {
+  if (!G.cfg?.multi || G.phase !== 'reveal' || !MP.code) return;
+  const need = G.i + 1, list = [...MP.players.values()];
+  const done = list.filter(p => (p.id === MP.me.id ? G.results.length : (p.i || 0)) >= need).length;
+  const next = $('#btn-next');
+  const all = done >= list.length;
+  next.disabled = !all;
+  next.querySelector('span').textContent = all ? (G.i >= G.songs.length - 1 ? 'Voir les résultats' : 'Musique suivante…') : `En attente des autres (${done}/${list.length})`;
+  if (!all || G.mpNextT) return;
+  const token = G.token, wait = Math.max(1200, 2600 - (Date.now() - (G.mpRevealAt || 0)));
+  const bar = $('#next-progress');
+  bar.style.transition = 'none'; bar.style.width = '0'; void bar.offsetWidth;
+  bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
+  G.mpNextT = setTimeout(() => { G.mpNextT = null; if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
 }
 
 /* ----- Fin de partie ----- */
@@ -3372,7 +3404,7 @@ function mpTransport(code, onMsg) {
   });
   return { ready, send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => { try { window.PompeAuth.client.removeChannel(ch); } catch (e) {} } };
 }
-function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done }; }
+function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready }; }
 function mpErr(msg) { $('#mp-err').textContent = msg || ''; }
 async function mpOpen(code) {
   mpLeave(true);
@@ -3393,7 +3425,7 @@ async function mpOpen(code) {
     const now = Date.now();
     let changed = false;
     MP.players.forEach((p, id) => { if (id !== MP.me.id && now - p.seen > 13000) { MP.players.delete(id); changed = true; } });
-    if (changed) renderMulti();
+    if (changed) { renderMulti(); mpMaybeNext(); }
   }, 4000);
   sfx.pop();
 }
@@ -3422,10 +3454,10 @@ function mpOnMsg(m) {
   else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
   else if (m.t === 'cfg') MP.cfg = m.cfg;
   else if (m.t === 'start') { if (!MP.inGame) mpPlay(m.game); }
-  else if (m.t === 'steal') { mpOnSteal(m); return; }
+  else if (m.t === 'steal' || m.t === 'stolen') { mpOnSteal(m); return; }
   else if (m.t === 'chat') { mpAddChat(m); return; }
   else if (m.t === 'react') { mpFloat(m.e, m.name); return; }
-  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
+  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); mpMaybeNext(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
   if (currentScreen() === 'multi') renderMulti();
 }
 // L'hôte prépare la partie : extraits disponibles en priorité, mêmes 4 réponses pour tous
@@ -3440,9 +3472,10 @@ function mpStart() {
   mpPlay(game);
 }
 function mpPlay(game) {
-  MP.inGame = true; MP.game = game;
-  Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false });
-  MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false }));
+  MP.inGame = true; MP.game = game; MP.stolenBy = null;
+  clearTimeout(MP.countdown); MP.countdown = null;
+  Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false, ready: false });
+  MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false, ready: false }));
   startGame({ cat: game.cat, mode: 'choice', rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
   renderLive();
 }
@@ -3479,7 +3512,7 @@ function renderMulti() {
   $('#mp-room-code').textContent = MP.code;
   renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
-  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}"><span class="mpp-av">${charHTML(window.PompeChar.byId(p.skin), { mood: 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}</div>`).join('') +
+  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
     (list.length < 2 ? '<div class="mpp mpp-empty"><span class="mpp-q">?</span><b>Invite un ami</b></div>' : '');
   $('#mp-settings').hidden = !host;
   if (host) {
@@ -3487,11 +3520,24 @@ function renderMulti() {
     $$('#mp-cats .rf').forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === MP.cfg.cat)));
     $$('#mp-rounds button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.r === MP.cfg.rounds)));
   }
-  $('#mp-wait').hidden = host;
-  $('#mp-wait').textContent = `En attente de l’hôte… (${catById(MP.cfg.cat).name} · ${MP.cfg.rounds} manches)`;
-  $('#mp-go').hidden = !host;
-  $('#mp-go').disabled = list.length < 2;
-  $('#mp-go').textContent = list.length < 2 ? 'En attente de joueurs…' : `Lancer la partie (${list.length} joueurs)`;
+  const ready = list.filter(p => p.ready).length, allReady = list.length >= 2 && ready === list.length;
+  $('#mp-wait').textContent = list.length < 2 ? 'Invite au moins un ami avec le bouton « Inviter ».'
+    : allReady ? 'Tout le monde est prêt : la partie commence !'
+    : `${ready}/${list.length} prêts · ${catById(MP.cfg.cat).name} · ${MP.cfg.rounds} manches`;
+  const rb = $('#mp-ready');
+  rb.textContent = MP.me.ready ? 'Je ne suis plus prêt' : 'Je suis prêt !';
+  rb.classList.toggle('is-on', !!MP.me.ready);
+  // L'hôte lance tout seul 3 secondes après que tout le monde est prêt
+  if (host && allReady && !MP.inGame && !MP.countdown) MP.countdown = setTimeout(() => { MP.countdown = null; const l = [...MP.players.values()]; if (l.length >= 2 && l.every(p => p.ready) && !MP.inGame) mpStart(); }, 3000);
+  if ((!allReady || !host) && MP.countdown) { clearTimeout(MP.countdown); MP.countdown = null; }
+}
+function toggleReady() {
+  if (!MP.code || MP.inGame) return;
+  MP.me.ready = !MP.me.ready;
+  const me = MP.players.get(MP.me.id); if (me) Object.assign(me, mpSelf());
+  MP.tx?.send({ t: 'here', p: mpSelf() });
+  sfx.tap(); buzz(15);
+  renderMulti();
 }
 
 /* Chat & réactions du salon */
@@ -3690,7 +3736,9 @@ $('#mp-leave').addEventListener('click', () => mpLeave());
 $('#mp-send').addEventListener('submit', e => { e.preventDefault(); mpSendChat($('#mp-text').value); $('#mp-text').value = ''; });
 $('#mp-emojis').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
 $('#mp-react').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
-$('#mp-go').addEventListener('click', mpStart);
+$('#mp-ready').addEventListener('click', toggleReady);
+$('#steal-list').addEventListener('click', e => { const b = e.target.closest('.steal-p'); if (b && !b.disabled) chooseSteal(b.dataset.id); });
+$('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = true; });
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 $('#mp-share').addEventListener('click', () => {

@@ -387,8 +387,8 @@
           <div class="mp-emojis" id="mp-emojis"></div>
           <form class="mp-send" id="mp-send" autocomplete="off"><input id="mp-text" type="text" maxlength="120" placeholder="Écris un message…" aria-label="Message"><button class="btn btn-blue" type="submit" aria-label="Envoyer"><svg class="ico"><use href="#i-g-arrow-right"/></svg></button></form>
         </section>
-        <p class="mp-wait" id="mp-wait">En attente de l’hôte…</p>
-        <button class="btn btn-fun btn-block" id="mp-go" type="button">Lancer la partie</button>
+        <p class="mp-wait" id="mp-wait">Appuie sur « Je suis prêt » : la partie démarre quand tout le monde l’est.</p>
+        <button class="btn btn-green btn-block mp-ready" id="mp-ready" type="button">Je suis prêt !</button>
         <button class="btn btn-ghost-red btn-block" id="mp-leave" type="button">Quitter la salle</button>
       </div>
     </div>
@@ -726,6 +726,15 @@
     <div class="onb-top"><div class="onb-dots" id="onb-dots"></div><button class="onb-skip" id="onb-skip" type="button">Passer</button></div>
     <div class="onb-track" id="onb-track"></div>
     <div class="onb-foot"><button class="btn btn-green btn-block onb-next" id="onb-next" type="button">Suivant</button></div>
+  </div>
+
+  <div class="overlay overlay-sheet" id="steal-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="steal-title">
+      <div class="sheet-title" id="steal-title">Qui veux-tu voler ?</div>
+      <p>S’il trouve la bonne réponse, c’est toi qui gagnes ses points.</p>
+      <div class="steal-list" id="steal-list"></div>
+      <button class="btn btn-outline btn-block" id="steal-cancel" type="button">Annuler</button>
+    </div>
   </div>
 
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>

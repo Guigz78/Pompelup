@@ -2381,3 +2381,21 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .mc-txt em { font: 700 12.5px var(--text); font-style: normal; opacity: .9; }
 .multi-card .mc-cta { color: var(--violet); }
 .more-modes { grid-template-columns: 1fr; }
+
+/* ===== Multi : prêts + voleur ciblé ===== */
+.mpp { position: relative; }
+.mpp-ready { display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; padding: 2px 8px; border-radius: 99px; background: #F3EEF9; color: var(--ink-3); font: 800 11px var(--text); }
+.mpp-ready .ico { width: 12px; height: 12px; }
+.mpp.is-ready .mpp-ready { background: var(--green); color: #fff; }
+.mpp.is-ready { border-color: var(--green) !important; }
+.mp-ready { min-height: 60px; font-size: 18px; }
+.mp-ready.is-on { --bg: #fff; --fg: var(--ink-2); background: #fff; color: var(--ink-2); border: 2px solid var(--edge); box-shadow: 0 4px 0 var(--edge); }
+.mp-wait { text-align: center; font: 800 14px/1.35 var(--text); color: var(--ink-2); }
+.steal-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.steal-p { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 16px; border: 2px solid var(--edge); box-shadow: 0 3px 0 var(--edge); background: #fff; text-align: left; }
+.steal-p .mpl-av { flex-basis: 44px; width: 44px; height: 44px; }
+.steal-p b { flex: 1; font: 800 17px var(--text); color: var(--ink); }
+.steal-p small { font: 700 13px var(--text); color: var(--ink-2); }
+.steal-p:disabled { opacity: .45; }
+.steal-p:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+#btn-next:disabled { opacity: 1; filter: grayscale(.4); }
