@@ -758,7 +758,7 @@ function playPreview(url) {
 
 /* ---------------- Navigation ---------------- */
 function currentScreen() { return $('.screen.is-active')?.id.replace('screen-', ''); }
-const TAB_SCREENS = ['home', 'boosters', 'story', 'pass', 'collection', 'shop', 'profile', 'multi'];
+const TAB_SCREENS = ['home', 'boosters', 'pass', 'collection', 'shop', 'profile', 'multi'];
 function show(id) {
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === `screen-${id}`));
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
@@ -774,7 +774,6 @@ function show(id) {
   if (id === 'boosters') renderBoosters();
   if (id === 'multi') renderMulti();
   if (id === 'profile') renderProfile();
-  if (id === 'story') { renderStory(); requestAnimationFrame(() => scrollToCurrent(false)); }
   renderBadges();
 }
 function renderBadges() {
@@ -884,7 +883,6 @@ function renderHome() {
   renderBoosterCard();
   renderMissionsCard();
   renderHomeHeader();
-  renderStoryCard();
   renderUpsell();
   renderDaily();
   clearInterval(dailyTicker);
@@ -1178,7 +1176,7 @@ function points() {
   const left = Math.max(0, G.dur - (performance.now() - G.t0) / 1000);
   const base = 100 + 900 * (left / G.dur);
   const comboMult = 1 + Math.min(.5, .1 * (G.combo - 1));
-  const modeMult = G.cfg.mode === 'type' ? 1.5 : 1;
+  const modeMult = 1;
   const hintMult = G.hint ? .7 : 1;
   // Saisie : titre seul ×1, artiste seul ×0,6, les deux ×1,5
   const partMult = G.typePart === 'both' ? 1.5 : G.typePart === 'artist' ? .6 : 1;
@@ -1341,8 +1339,8 @@ const stemAudio = new Audio();
 stemAudio.crossOrigin = 'anonymous';
 stemAudio.preload = 'auto';
 let stemGraph = null;
-// Séparation approximative d'un mix stéréo : centre filtré = voix, côtés = guitares/mélodies,
-// aigus = batterie (cymbales), graves du centre = basse.
+// Séparation approximative d'un mix stéréo. La voix est toujours au centre : avant l'étape « Voix »,
+// on ne fait entendre que les côtés (L − R, où la voix s'annule) et des graves très filtrés.
 function buildStemGraph() {
   if (stemGraph || !actx) return stemGraph;
   try {
@@ -1350,23 +1348,24 @@ function buildStemGraph() {
     const split = actx.createChannelSplitter(2);
     src.connect(split);
     const mid = actx.createGain(), side = actx.createGain(), inv = actx.createGain();
-    mid.gain.value = .5; side.gain.value = .5; inv.gain.value = -.5;
+    // côtés = (L − R) / 2 : l'inverseur vaut −1, le gain .5 s'applique ensuite aux deux canaux
+    mid.gain.value = .5; side.gain.value = .5; inv.gain.value = -1;
     split.connect(mid, 0); split.connect(mid, 1);
     split.connect(side, 0); split.connect(inv, 1); inv.connect(side);
     const filt = (input, type, freq, q = .7, gain) => { const f = actx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; if (gain != null) f.gain.value = gain; input.connect(f); return f; };
+    const steep = (input, type, freq) => filt(filt(filt(input, type, freq), type, freq), type, freq);   // pente raide
     const outG = actx.createGain();
     outG.connect(actx.destination);
     const stemGain = node => { const g = actx.createGain(); g.gain.value = 0; node.connect(g); g.connect(outG); return g; };
-    const voice = filt(filt(filt(mid, 'highpass', 220), 'lowpass', 4200), 'peaking', 1800, 1, 5);
-    const guitar = filt(filt(side, 'highpass', 180), 'lowpass', 7000);
-    const drums = filt(src, 'highpass', 4500);
-    const kick = filt(mid, 'bandpass', 65, 1.4);
-    const bass = filt(mid, 'lowpass', 190);
+    const kick = steep(mid, 'lowpass', 95);                       // grosse caisse, sous la voix
+    const cymbals = steep(side, 'highpass', 5500);                 // cymbales / charley (côtés)
+    const bass = steep(steep(mid, 'lowpass', 160), 'highpass', 40); // basse, sans les fréquences de la voix
+    const guitar = steep(steep(side, 'highpass', 150), 'lowpass', 7000); // guitares, claviers (côtés)
+    const voice = filt(steep(steep(mid, 'highpass', 220), 'lowpass', 4200), 'peaking', 1800, 1, 5);
     const full = actx.createGain(); src.connect(full);
     stemGraph = {
-      voice: stemGain(voice), guitar: stemGain(guitar), drums: stemGain(drums), kick: stemGain(kick), bass: stemGain(bass), full: stemGain(full),
+      voice: stemGain(voice), guitar: stemGain(guitar), drums: stemGain(cymbals), kick: stemGain(kick), bass: stemGain(bass), full: stemGain(full),
     };
-    stemGraph.guitar.connect(outG);
   } catch (e) { stemGraph = null; }
   return stemGraph;
 }
@@ -1374,11 +1373,11 @@ function setStemLevel(stage) {
   if (!stemGraph) return;
   const t = actx.currentTime, set = (g, v) => { g.gain.cancelScheduledValues(t); g.gain.linearRampToValueAtTime(v, t + .25); };
   const on = new Set(STEMS.slice(0, stage + 1).map(s => s.id)), fullOn = on.has('full');
-  set(stemGraph.voice, !fullOn && on.has('voice') ? 1.2 : 0);
-  set(stemGraph.guitar, !fullOn && on.has('guitar') ? 1.4 : 0);
-  set(stemGraph.drums, !fullOn && on.has('drums') ? 1.3 : 0);
-  set(stemGraph.kick, !fullOn && on.has('drums') ? .8 : 0);
-  set(stemGraph.bass, !fullOn && on.has('bass') ? 1.1 : 0);
+  set(stemGraph.voice, !fullOn && on.has('voice') ? 1.3 : 0);
+  set(stemGraph.guitar, !fullOn && on.has('guitar') ? 1.6 : 0);
+  set(stemGraph.drums, !fullOn && on.has('drums') ? 1.8 : 0);
+  set(stemGraph.kick, !fullOn && on.has('drums') ? 1.2 : 0);
+  set(stemGraph.bass, !fullOn && on.has('bass') ? 1.3 : 0);
   set(stemGraph.full, fullOn ? 1 : 0);
 }
 // Charge l'extrait pour les stems ; si le serveur refuse le CORS, on retombe sur l'écoute complète.
@@ -1542,7 +1541,7 @@ function submitBoth() {
   if (titleOk || artistOk) {
     G.typePart = titleOk && artistOk ? 'both' : titleOk ? 'title' : 'artist';
     finishRound(true, 'right', titleOk ? ti : ai);
-    if (G.typePart === 'both') toast('Titre + artiste : bonus ×1,5 !');
+    if (G.typePart === 'both') toast('Titre + artiste : bonus !');
     else if (G.typePart === 'title') toast(a ? 'Bon titre, mais pas le bon artiste' : 'Bon titre ! L’artiste en plus = bonus');
     else toast(t ? 'Bon artiste, mais pas le bon titre' : 'Bon artiste ! Le titre rapporte plus');
     return;
@@ -2994,242 +2993,6 @@ function finishWelcome(keep) {
   if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue` : 'Ouvre ton booster de bienvenue');
 }
 
-/* ================= MODE HISTOIRE : le parcours ================= */
-const ARTISTS = window.STORY_ARTISTS || [];
-const CHAPTERS = (window.STORY_CHAPTERS || []).map((c, i) => Object.assign(c, { minLevel: i + 1 }));
-const artistById = id => ARTISTS.find(a => a.id === id);
-const artistLook = a => Object.assign({ id: 'artist-' + a.id, name: a.name }, (window.STORY_LOOKS || {})[a.id] || { kind: 'human', top: a.color });
-// L'intro (bio) est la première étape de chaque parcours ; un coffre clôt chaque artiste.
-const stepsOf = a => [{ type: 'intro' }, ...a.steps];
-const storySt = a => store.story[a.id] || (store.story[a.id] = { step: 0 });
-const storyDone = () => ARTISTS.filter(a => store.story[a.id]?.done).length;
-const UNIT_COLORS = [['#58CC02', '#58A700'], ['#CE82FF', '#A568CC'], ['#00CD9C', '#00A47D'], ['#1CB0F6', '#1899D6'], ['#FF9600', '#CD7900'], ['#FF4B4B', '#EA2B2B'], ['#2B70C9', '#1453A3'], ['#FF86D0', '#E05FAF']];
-const NODE_X = [0, -46, -72, -46, 0, 46, 72, 46];
-const STEP_ICON = { intro: 'g-star', listen: 'g-headphones', fact: 'g-book', mcq: 'g-trophy' };
-// Ordre du parcours : chapitres puis artistes ; un artiste s'ouvre quand le précédent est terminé.
-const pathOrder = () => CHAPTERS.flatMap(c => c.artists.map(id => ({ a: artistById(id), c })).filter(x => x.a));
-function artistAccess() {
-  const lvl = levelOf(store.xp).lvl, out = new Map();
-  let prevDone = true;
-  for (const { a, c } of pathOrder()) {
-    const st = store.story[a.id] || {}, levelOk = lvl >= c.minLevel;
-    out.set(a.id, levelOk && (st.done || (st.step || 0) > 0 || prevDone));
-    prevDone = !!st.done;
-  }
-  return out;
-}
-const chestReady = () => ARTISTS.some(a => { const st = store.story[a.id]; return st && !st.done && st.step >= stepsOf(a).length; });
-function stepLabel(a, step) {
-  if (step.type === 'intro') return `Rencontre ${a.name}`;
-  if (step.type === 'listen') return `Écoute : ${SONG.get(step.songId)?.title || 'un tube'}`;
-  if (step.type === 'fact') return 'Le savais-tu ?';
-  return 'Question finale';
-}
-function renderStoryCard() {
-  const d = storyDone();
-  $('#pm-story-sub').textContent = chestReady() ? 'Un coffre t’attend !' : d ? `${d}/${ARTISTS.length} artistes découverts` : `${ARTISTS.length} légendes à découvrir`;
-  $('#pm-story-dot').hidden = !chestReady();
-}
-let POP = null;
-function renderStory() {
-  const lvl = levelOf(store.xp).lvl, access = artistAccess();
-  $('#story-prog').textContent = `${storyDone()}/${ARTISTS.length}`;
-  renderCoins();
-  let unitIdx = 0, current = null;
-  $('#story-list').innerHTML = CHAPTERS.map(c => {
-    const locked = lvl < c.minLevel;
-    const units = c.artists.map(id => {
-      const a = artistById(id); if (!a) return '';
-      const u = unitIdx++, [col, lip] = UNIT_COLORS[u % UNIT_COLORS.length];
-      const st = store.story[a.id] || {}, steps = stepsOf(a), N = steps.length, done = st.done ? N : Math.min(N, st.step || 0);
-      const open = access.get(a.id);
-      const nodes = steps.map((stp, k) => {
-        const state = k < done ? 'is-done' : open && k === done ? 'is-current' : 'is-locked';
-        if (state === 'is-current' && !current) current = `${a.id}:${k}`;
-        const isCur = state === 'is-current' && current === `${a.id}:${k}`;
-        return `<div class="node-row" style="--x:${NODE_X[k % NODE_X.length] * (u % 2 ? -1 : 1)}px">
-          ${isCur ? `<span class="node-ring" style="--p:${(done / N).toFixed(3)}"></span><span class="node-start">${done ? 'Continuer' : 'Commencer'}</span>` : ''}
-          <button class="node ${state}" type="button" data-artist="${a.id}" data-k="${k}" aria-label="${esc(stepLabel(a, stp))}">${ico(state === 'is-locked' ? 'g-lock' : state === 'is-done' ? 'g-check' : STEP_ICON[stp.type])}</button>
-        </div>`;
-      }).join('');
-      const chestState = st.done ? 'is-open' : open && done >= N ? 'is-ready' : 'is-locked';
-      if (chestState === 'is-ready' && !current) current = `${a.id}:${N}`;
-      const chest = `<div class="node-row" style="--x:${NODE_X[N % NODE_X.length] * (u % 2 ? -1 : 1)}px">
-          <button class="node node-chest ${chestState}" type="button" data-artist="${a.id}" data-k="${N}" aria-label="Coffre de ${esc(a.name)}">${ico(st.done ? 'chest-open' : 'chest')}</button>
-        </div>`;
-      const side = u % 2 ? -1 : 1;
-      return `<section class="unit${open ? '' : ' is-locked'}" style="--u:${open ? col : '#E5E5E5'};--u-lip:${open ? lip : '#B7B7B7'}" data-unit="${a.id}">
-        <header class="unit-banner">
-          <div><small>Chapitre ${c.num} · ${esc(a.genre)}</small><b>${esc(a.name)}</b><span class="unit-meta">${esc(a.origin)} · ${esc(a.active)}</span></div>
-          <span class="unit-av">${charHTML(artistLook(a), { head: true })}</span>
-        </header>
-        <div class="path">
-          ${nodes}${chest}
-          <span class="path-mascot" style="top:${2 * 86 + 56}px;left:calc(50% + ${side * 96}px - 59px)">${charHTML(artistLook(a), { mood: st.done ? 'grin' : 'happy' })}</span>
-        </div>
-      </section>`;
-    }).join('');
-    return `<div class="chapter-sep${locked ? ' is-locked' : ''}">${locked ? ico('lock') : ''}<span>Chapitre ${c.num} · ${esc(c.title)}${locked ? ` · niveau ${c.minLevel}` : ''}</span></div>${units}`;
-  }).join('');
-  POP = null;
-  $('#story-back').hidden = !current;
-  STORY_CURRENT = current;
-}
-let STORY_CURRENT = null;
-function scrollToCurrent(smooth) {
-  if (!STORY_CURRENT) return;
-  const [id, k] = STORY_CURRENT.split(':');
-  const el = $(`#story-list .node[data-artist="${id}"][data-k="${k}"]`);
-  el?.scrollIntoView({ behavior: smooth && !REDUCED ? 'smooth' : 'auto', block: 'center' });
-}
-function closePopover() { $('#story-list .popover')?.remove(); POP = null; }
-function openPopover(node) {
-  const id = node.dataset.artist, k = +node.dataset.k;
-  if (POP && POP.id === id && POP.k === k) { closePopover(); return; }
-  closePopover();
-  const a = artistById(id), steps = stepsOf(a), N = steps.length, st = store.story[id] || {};
-  const locked = node.classList.contains('is-locked'), isChest = k === N;
-  let cls = '', title, sub, btn;
-  if (isChest) {
-    title = `Coffre de ${a.name}`;
-    if (st.done) { cls = 'is-done'; sub = 'Déjà ouvert : ton vinyle est au mur.'; btn = '<button class="btn btn-white" type="button" disabled>Ouvert</button>'; }
-    else if (locked) { cls = 'is-locked'; sub = `Termine le parcours de ${a.name} pour l’ouvrir.`; btn = '<button class="btn btn-outline" type="button" disabled>Verrouillé</button>'; }
-    else { sub = 'Jetons, XP et un vinyle de l’artiste.'; btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Ouvrir</button>`; }
-  } else {
-    title = stepLabel(a, steps[k]);
-    sub = `Étape ${k + 1} sur ${N}`;
-    if (locked) { cls = 'is-locked'; sub += ' · termine les étapes précédentes'; btn = '<button class="btn btn-outline" type="button" disabled>Verrouillé</button>'; }
-    else if (node.classList.contains('is-done')) { cls = 'is-done'; btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Revoir</button>`; }
-    else btn = `<button class="btn btn-white pop-go" type="button" data-artist="${id}" data-k="${k}">Commencer +10 XP</button>`;
-  }
-  node.insertAdjacentHTML('afterend', `<div class="popover ${cls}" role="dialog"><b>${esc(title)}</b><small>${esc(sub)}</small>${btn}</div>`);
-  POP = { id, k };
-  sfx.tap();
-}
-
-let ST = null;
-function openStep(id, k) {
-  const a = artistById(id); if (!a) return;
-  const steps = stepsOf(a);
-  if (k >= steps.length) return openChest(a);
-  closePopover();
-  unlockAudio();
-  ST = { a, i: k, answered: false, firstTry: true };
-  $('#ss-portrait').innerHTML = `<span>${charHTML(artistLook(a), { mood: 'happy' })}</span>`;
-  $('#story-step').hidden = false;
-  renderStep();
-}
-function closeArtist() {
-  try { listen.pause(); } catch (e) {}
-  $('#story-step').hidden = true;
-  ST = null;
-  if (currentScreen() === 'story') renderStory();
-  if (currentScreen() === 'home') renderHome();
-}
-function renderStep() {
-  const { a } = ST, steps = stepsOf(a), step = steps[ST.i];
-  try { listen.pause(); } catch (e) {}
-  ST.answered = false;
-  $('#ss-fill').style.width = `${ST.i / steps.length * 100}%`;
-  $('#ss-count').textContent = `${ST.i + 1}/${steps.length}`;
-  const body = $('#ss-body'), actions = $('#ss-actions');
-  const nextBtn = (label = 'Continuer') => `<button class="btn btn-green ss-next" id="ss-next" type="button">${label}</button>`;
-  $('#ss-portrait').hidden = step.type === 'fact';
-  if (step.type === 'intro') {
-    $('#ss-kicker').textContent = `${a.origin} · ${a.active}`;
-    $('#ss-title').textContent = a.name;
-    body.innerHTML = `<p>${esc(a.bio)}</p>`;
-    actions.innerHTML = nextBtn('C’est parti !');
-  } else if (step.type === 'listen') {
-    const s = SONG.get(step.songId);
-    $('#ss-kicker').textContent = 'Écoute';
-    $('#ss-title').textContent = s.title;
-    body.innerHTML = `<div class="ss-listen"><span class="ss-sleeve">${coverHTML(s)}</span><span class="ss-disc" id="ss-disc"></span></div><p>${esc(step.label)} · ${s.year}</p>`;
-    getArt(s).then(art => { if (art && ST) fillCover(body, art); });
-    actions.innerHTML = `<button class="btn btn-blue" id="ss-play" type="button">${ico('g-play')}<span>Écouter</span></button>${nextBtn()}`;
-  } else if (step.type === 'fact') {
-    $('#ss-kicker').textContent = 'Le savais-tu ?';
-    $('#ss-title').innerHTML = ico('bulb');
-    body.innerHTML = `<p class="ss-fact">${esc(step.text)}</p>`;
-    actions.innerHTML = nextBtn();
-  } else if (step.type === 'mcq') {
-    $('#ss-kicker').textContent = 'Question finale';
-    $('#ss-title').textContent = step.question;
-    body.innerHTML = `<div class="ss-opts">${step.opts.map((o, k) => `<button class="choice ss-opt" type="button" data-k="${k}"><span class="choice-key">${k + 1}</span><span class="choice-txt"><span class="choice-title">${esc(o)}</span></span></button>`).join('')}</div>`;
-    actions.innerHTML = '';
-  }
-}
-function setListenBtn(playing) {
-  const b = $('#ss-play'); if (!b) return;
-  b.innerHTML = `${ico(playing ? 'g-pause' : 'g-play')}<span>${playing ? 'Pause' : 'Écouter'}</span>`;
-}
-async function storyListen() {
-  const step = stepsOf(ST.a)[ST.i], s = SONG.get(step.songId), btn = $('#ss-play');
-  if (!listen.paused) { listen.pause(); setListenBtn(false); $('#ss-disc')?.classList.remove('is-playing'); return; }
-  btn.innerHTML = '<span>Chargement…</span>';
-  const pv = await fetchPreview(s);
-  if (!ST || !$('#ss-play')) return;
-  if (!pv) { setListenBtn(false); toast('Extrait indisponible pour le moment'); return; }
-  listen.src = pv.url;
-  listen.play().then(() => { setListenBtn(true); $('#ss-disc')?.classList.add('is-playing'); }, () => setListenBtn(false));
-}
-function storyAnswer(k) {
-  if (ST.answered) return;
-  const step = stepsOf(ST.a)[ST.i], ok = k === step.correct;
-  const opts = $$('.ss-opt');
-  if (!ok) {
-    ST.firstTry = false;
-    opts[k].classList.remove('is-wrong'); void opts[k].offsetWidth;
-    opts[k].classList.add('is-wrong');
-    sfx.wrong(); buzz(40);
-    return;
-  }
-  ST.answered = true;
-  opts[k].classList.add('is-right');
-  opts.forEach(o => { o.disabled = true; });
-  sfx.right(3); buzz(30);
-  winFx(opts[k]);
-  $('#ss-actions').innerHTML = `<div class="ss-good"><b>${ico('check-circle')}${pickOne(['Excellent !', 'Bravo !', 'Parfait !'])}</b><button class="btn btn-green ss-next" id="ss-next" type="button">Continuer</button></div>`;
-}
-// Étape terminée : on avance dans le parcours et on revient au chemin
-function storyNext() {
-  const a = ST.a, steps = stepsOf(a), st = storySt(a);
-  const fresh = !st.done && ST.i === (st.step || 0);
-  if (fresh) {
-    st.step = ST.i + 1;
-    if (!ST.firstTry) st.miss = true;
-    addXP(10);
-    save();
-  }
-  $('#ss-fill').style.width = `${(ST.i + 1) / steps.length * 100}%`;
-  sfx.tap();
-  setTimeout(() => {
-    closeArtist();
-    if (fresh && st.step >= steps.length) { toast(`Coffre de ${a.name} débloqué !`); sfx.booster(); }
-    requestAnimationFrame(() => scrollToCurrent(true));
-  }, 220);
-}
-function openChest(a) {
-  const st = storySt(a);
-  if (st.done || st.step < stepsOf(a).length) return;
-  closePopover();
-  st.done = true;
-  const vinyl = a.steps.find(s => s.songId)?.songId;
-  const coins = st.miss ? 100 : 150;
-  if (vinyl && !store.coll[vinyl]) store.coll[vinyl] = { n: 1, t: Date.now(), seen: false };
-  store.coins += coins;
-  addXP(30);
-  save();
-  renderCoins(true);
-  const s = SONG.get(vinyl);
-  sfx.fanfare(); buzz([30, 60, 30]);
-  showReward({ kicker: 'Artiste découvert', title: a.name, reward: { coins }, extra: s ? `+ le vinyle « ${s.title} » sur ton mur` : '' });
-  renderStory();
-  checkAchievements();
-}
-
-
-
 /* ================= ÉCRAN BOOSTERS ================= */
 function renderBoosters() {
   renderCoins();
@@ -3409,7 +3172,7 @@ function buyPass() {
 const ONB = [
   { id: 'hello', title: 'Bienvenue sur Pompelup', text: 'Le blind test où chaque bonne réponse te fait gagner des vinyles à collectionner.' },
   { id: 'play', video: 'assets/onboarding/play.webp', kicker: 'Jouer', title: 'Écoute et devine', text: 'Un extrait se lance : trouve la bonne chanson. Réponds vite et enchaîne les bonnes réponses pour faire des combos.' },
-  { id: 'modes', video: 'assets/onboarding/type.webp', kicker: 'Modes de jeu', title: '3 façons de jouer', chips: [['g-headphones', '4 choix', 'le classique'], ['g-keyboard', 'Saisie', 'titre et/ou artiste, bonus ×1,5'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier']] },
+  { id: 'modes', video: 'assets/onboarding/type.webp', kicker: 'Modes de jeu', title: '3 façons de jouer', chips: [['g-headphones', '4 choix', 'le classique'], ['g-keyboard', 'Saisie', 'écris le titre ou l’artiste'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier']] },
   { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Boosters', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster. Ouvre-le : 3 vinyles à chaque fois, du commun au légendaire.' },
   { id: 'room', video: 'assets/onboarding/room.webp', kicker: 'Ton salon', title: 'Décore ton mur', text: 'Accroche tes plus beaux vinyles et change le papier peint, le canapé et les cadres.' },
   { id: 'daily', kicker: 'Chaque jour', title: 'Toujours une raison de revenir', grid: [['quest', 'Quêtes du jour', 'des jetons à gagner'], ['mystery', 'Défi du jour', 'une chanson mystère, 3 essais'], ['crown', 'Pass de saison', 'une récompense par palier'], ['headphones', 'Multijoueur', 'défie tes potes en direct']] },
@@ -3911,7 +3674,6 @@ $('#screen-boosters').addEventListener('click', e => {
   const pk = e.target.closest('.pk'); if (pk) { openPack(pk.dataset.pack); return; }
   const v = e.target.closest('.bx-v'); if (v) openVinyl(v.dataset.id);
 });
-$('#story-home').addEventListener('click', () => show('home'));
 $('#me-btn').addEventListener('click', () => show('profile'));
 $('#pf-back').addEventListener('click', () => show('home'));
 $('#pass-buy').addEventListener('click', buyPass);
@@ -3919,7 +3681,6 @@ $('#pass-claim-all').addEventListener('click', claimAllPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pvc.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
 $('#mode-multi').addEventListener('click', () => { unlockAudio(); show('multi'); });
-$('#mode-story').addEventListener('click', () => { unlockAudio(); show('story'); });
 $('#mp-back').addEventListener('click', () => { if (MP.code) mpLeave(); show('home'); });
 $('#mp-create').addEventListener('click', () => { mpErr(''); mpOpen(newCode()); });
 $('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').value); });
@@ -3939,18 +3700,6 @@ $('#mp-share').addEventListener('click', () => {
 });
 window.addEventListener('pagehide', () => { if (MP.code) mpLeave(true); });
 // Histoire
-$('#story-back').addEventListener('click', () => scrollToCurrent(true));
-$('#story-list').addEventListener('click', e => {
-  const go = e.target.closest('.pop-go'); if (go) { openStep(go.dataset.artist, +go.dataset.k); return; }
-  const n = e.target.closest('.node'); if (n) { openPopover(n); return; }
-  if (!e.target.closest('.popover')) closePopover();
-});
-$('#ss-close').addEventListener('click', closeArtist);
-$('#story-step').addEventListener('click', e => {
-  if (e.target.closest('#ss-next')) storyNext();
-  else if (e.target.closest('#ss-play')) storyListen();
-  else { const o = e.target.closest('.ss-opt'); if (o) storyAnswer(+o.dataset.k); }
-});
 
 // Boutique
 $('#gift-card').addEventListener('click', claimGift);
@@ -4042,7 +3791,6 @@ document.addEventListener('keydown', e => {
     if (!$('#missions-sheet').hidden) { $('#missions-sheet').hidden = true; return; }
     if (!$('#reset-sheet').hidden) { $('#reset-sheet').hidden = true; return; }
     if (!$('#reward-overlay').hidden) { closeReward(false); return; }
-    if (!$('#story-step').hidden) { closeArtist(); return; }
   }
   if (currentScreen() !== 'game') return;
   if (e.key === 'Escape') { $('#quit-sheet').hidden ? $('#btn-quit').click() : ($('#quit-sheet').hidden = true); return; }

@@ -99,7 +99,7 @@
           </button>
           <button class="mode" type="button" role="radio" data-mode="type" aria-checked="false">
             <span class="mode-ico m-type"><svg class="ico"><use href="#i-g-keyboard"/></svg></span>
-            <span class="mode-txt"><b>Saisie <em>×1,5</em></b><small>Titre et/ou artiste, plus de points</small></span>
+            <span class="mode-txt"><b>Saisie</b><small>Titre et/ou artiste, plus de points</small></span>
             <span class="mode-radio" aria-hidden="true"></span>
           </button>
           <button class="mode" type="button" role="radio" data-mode="stems" aria-checked="false">
@@ -120,9 +120,6 @@
         <button class="home-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="home-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
       </section>
 
-      <div class="more-modes">
-        <button class="mm" id="mode-story" type="button"><span class="mm-ico mm-story"><svg class="ico"><use href="#i-g-book"/></svg></span><span class="mm-txt"><b>Mode histoire</b><small id="pm-story-sub">Les légendes, étape par étape</small></span><i class="dot-badge mm-dot" id="pm-story-dot" hidden>!</i></button>
-      </div>
     </div>
   </section>
 
@@ -184,7 +181,7 @@
           <input id="type-artist" type="text" inputmode="text" enterkeyhint="send" autocapitalize="off"
                  autocorrect="off" spellcheck="false" placeholder="Artiste…" aria-label="Artiste">
         </div>
-        <p class="type-scale" id="type-scale">Titre <b>ou</b> artiste : des points · les <b>deux</b> : bonus ×1,5</p>
+        <p class="type-scale" id="type-scale">Titre <b>ou</b> artiste : des points · Les <b>deux</b> : bonus</p>
         <button class="btn btn-green btn-block btn-send" type="submit">Vérifier</button>
       </form>
 
@@ -288,17 +285,6 @@
   </section>
 
   <!-- ================= HISTOIRE (parcours) ================= -->
-  <section class="screen" id="screen-story" aria-label="Mode Histoire">
-    <header class="topbar">
-      <div class="page-head-l"><button class="icon-btn" id="story-home" type="button" aria-label="Retour à l’accueil"><svg class="ico"><use href="#i-g-back"/></svg></button><div class="page-title">Histoire</div></div>
-      <div class="counters">
-        <span class="counter c-story"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><b id="story-prog">0/8</b></span>
-        <span class="counter c-coins"><svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg><b class="coins-n">0</b></span>
-      </div>
-    </header>
-    <div class="path-wrap" id="story-list"></div>
-    <button class="icon-btn path-up" id="story-back" type="button" aria-label="Revenir à l’étape en cours"><svg class="ico"><use href="#i-g-arrow-up"/></svg></button>
-  </section>
 
   <!-- ================= BOOSTERS ================= -->
   <section class="screen" id="screen-boosters" aria-label="Boosters">
@@ -691,23 +677,6 @@
     </div>
   </div>
 
-  <div class="overlay overlay-story" id="story-step" hidden>
-    <div class="sstep" role="dialog" aria-modal="true" aria-labelledby="ss-title">
-      <header class="ss-head">
-        <button class="icon-btn" id="ss-close" type="button" aria-label="Fermer"><svg class="ico"><use href="#i-g-close"/></svg></button>
-        <span class="bar bar-lesson"><span id="ss-fill"></span></span>
-        <div class="ss-dots" id="ss-dots" hidden></div>
-        <span class="ss-count" id="ss-count">1/4</span>
-      </header>
-      <div class="ss-content">
-        <div class="ss-portrait" id="ss-portrait"></div>
-        <div class="ss-kicker" id="ss-kicker"></div>
-        <div class="ss-title" id="ss-title"></div>
-        <div class="ss-body" id="ss-body"></div>
-      </div>
-      <div class="ss-actions" id="ss-actions"></div>
-    </div>
-  </div>
 
   <div class="overlay overlay-full" id="reward-overlay" hidden>
     <div class="reward-pop" role="dialog" aria-modal="true" aria-labelledby="rw-title">
@@ -792,7 +761,6 @@
 <script src="songs.js"></script>
 <script src="covers.js"></script>
 <script src="previews.js"></script>
-<script src="story-data.js"></script>
 <script src="vendor/supabase.min.js"></script>
 <script src="auth.js"></script>
 <script src="vendor/three.min.js"></script>
