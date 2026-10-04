@@ -884,7 +884,7 @@ const MODES = {
 const modeOf = () => MODES[store.prefs.mode] ? store.prefs.mode : 'choice';
 function renderModeBanner() {
   const m = MODES[modeOf()];
-  const b = $('#mode-banner');
+  const b = $('#mode-card');
   b.style.setProperty('--mc', m.color); b.style.setProperty('--ml', m.lip);
   $('#mb-ico').innerHTML = ico(m.icon);
   $('#mb-name').textContent = m.name;
@@ -3301,13 +3301,9 @@ function buyPass() {
 
 /* ================= ONBOARDING : la toute première ouverture ================= */
 const ONB = [
-  { id: 'hello', title: 'Bienvenue sur Pompelup', text: 'Le blind test où chaque bonne réponse te fait gagner des vinyles à collectionner.' },
-  { id: 'launch', video: 'assets/onboarding/launch.webp', kicker: 'Pour commencer', title: 'Choisis, puis JOUER', text: 'Touche la carte « Ton jeu » pour choisir la musique et le jeu. Ensuite, appuie sur le gros bouton jaune JOUER.' },
-  { id: 'play', video: 'assets/onboarding/play.webp', kicker: 'Jouer', title: 'Écoute et devine', text: 'Une musique se lance : touche la bonne chanson. Plus tu réponds vite, plus tu gagnes de points.' },
-  { id: 'modes', video: 'assets/onboarding/lyrics.webp', kicker: 'Les jeux', title: '4 façons de jouer', chips: [['g-headphones', '4 choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
-  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Boosters', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster. Ouvre-le : 3 vinyles, du commun au légendaire (la couronne dorée).' },
-  { id: 'room', video: 'assets/onboarding/room.webp', kicker: 'Ton salon', title: 'Décore ton mur', text: 'Accroche tes plus beaux vinyles et change le papier peint, le canapé et les cadres.' },
-  { id: 'daily', kicker: 'Chaque jour', title: 'Toujours une raison de revenir', grid: [['quest', 'Missions du jour', 'des jetons à gagner'], ['mystery', 'Défi du jour', 'une chanson mystère, 3 essais'], ['crown', 'Pass de saison', 'une récompense par palier'], ['headphones', 'Multijoueur', 'joue avec ta famille']] },
+  { id: 'launch', video: 'assets/onboarding/launch.webp', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche « Changer » pour choisir la musique et le jeu, puis appuie sur le gros bouton jaune JOUER.' },
+  { id: 'modes', kicker: 'Les jeux', title: '4 façons de jouer', chips: [['g-headphones', '4 choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster de 3 vinyles. Accroche les plus beaux sur ton mur !' },
   { id: 'go', title: 'À toi de jouer !', text: 'Choisis ton perso et ton pseudo : un booster de bienvenue t’attend.' },
 ];
 let onbDone = null, onbI = 0;
@@ -3315,7 +3311,8 @@ function onbSlideHTML(sl, k) {
   let media;
   if (sl.video) media = `<span class="onb-phone"><img data-src="${sl.video}" alt="" draggable="false"></span>`;
   else if (sl.id === 'hello' || sl.id === 'go') media = `<span class="onb-hero${sl.id === 'go' ? ' is-go' : ''}">${(sl.id === 'go' ? ['crate', 'rookie', 'kpop'] : ['disco', 'rookie', 'mc']).map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('')}${sl.id === 'hello' ? `<i class="onb-vinyl">${ico('vinyl')}</i>` : `<i class="onb-pack">${ico('booster')}</i>`}</span>`;
-  else media = `<span class="onb-grid">${sl.grid.map(([i, b, s]) => `<span class="onb-g">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>`;
+  else if (sl.grid) media = `<span class="onb-grid">${sl.grid.map(([i, b, s]) => `<span class="onb-g">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>`;
+  else media = '';
   const body = sl.chips ? `<span class="onb-chips">${sl.chips.map(([i, b, s]) => `<span class="onb-chip">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>` : sl.text ? `<p>${sl.text}</p>` : '';
   return `<section class="onb-slide onb-${sl.id}" data-k="${k}"><div class="onb-media">${media}</div><div class="onb-txt">${sl.kicker ? `<small>${sl.kicker}</small>` : ''}<h2>${sl.title}</h2>${body}</div></section>`;
 }
