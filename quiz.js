@@ -1082,6 +1082,10 @@ function startGame(cfg) {
   $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
   $('#screen-game').classList.toggle('is-type', cfg.mode === 'type');
   $('#screen-game').classList.toggle('is-lyrics', cfg.mode === 'lyrics');
+  // Une télé est branchée : le téléphone devient une manette (pas de son, grosses réponses)
+  const tvCtl = !!(cfg.multi && mpHasTv());
+  $('#screen-game').classList.toggle('is-tv', tvCtl);
+  player.muted = tvCtl;
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
   startRound();
@@ -1780,7 +1784,7 @@ function useJoker(k) {
   renderJokers();
 }
 function openStealPicker() {
-  const others = [...MP.players.values()].filter(p => p.id !== MP.me?.id);
+  const others = mpPeople().filter(p => p.id !== MP.me?.id);
   $('#steal-list').innerHTML = others.map(p => {
     const answered = (p.i || 0) > G.i;
     return `<button class="steal-p" type="button" data-id="${p.id}"${answered ? ' disabled' : ''}><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.name)}</b><small>${answered ? 'a déjà répondu' : `${fmt(p.score || 0)} pts`}</small></button>`;
@@ -1825,7 +1829,7 @@ function mpOnSteal(m) {
 // Manches synchronisées : on passe à la musique suivante quand tout le monde a répondu
 function mpMaybeNext() {
   if (!G.cfg?.multi || G.phase !== 'reveal' || !MP.code) return;
-  const need = G.i + 1, list = [...MP.players.values()];
+  const need = G.i + 1, list = mpPeople();
   const done = list.filter(p => (p.id === MP.me.id ? G.results.length : (p.i || 0)) >= need).length;
   const next = $('#btn-next');
   const all = done >= list.length;
@@ -3533,7 +3537,10 @@ const MP_MAX = 8;
 const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10 }, inGame: false, game: null };
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
-const mpHost = () => [...MP.players.values()].sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
+// Joueurs (la télé n'est pas un joueur)
+const mpPeople = () => [...MP.players.values()].filter(p => !p.tv);
+const mpHasTv = () => [...MP.players.values()].some(p => p.tv);
+const mpHost = () => mpPeople().sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
 const iAmHost = () => mpHost()?.id === MP.me?.id;
 function mpTransport(code, onMsg) {
   if (MP_LOCAL || !window.PompeAuth?.client) {
@@ -3550,8 +3557,8 @@ function mpTransport(code, onMsg) {
   });
   return { ready, send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => { try { window.PompeAuth.client.removeChannel(ch); } catch (e) {} } };
 }
-function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready, photo: store.photoSmall || null }; }
-function mpErr(msg) { $('#mp-err').textContent = msg || ''; }
+function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready, photo: MP.isTv ? null : store.photoSmall || null, tv: !!MP.isTv }; }
+function mpErr(msg) { $('#mp-err').textContent = msg || ''; if (MP.isTv && msg) { $('#tv-join').hidden = false; $('#tv-main').hidden = true; $('#tv-join p').textContent = msg; } }
 async function mpOpen(code) {
   mpLeave(true);
   code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -3585,7 +3592,7 @@ function mpLeave(silent) {
 function mpUpsert(p) {
   if (!p || p.id === MP.me?.id) return;
   const was = MP.players.get(p.id);
-  if (!was && MP.players.size >= MP_MAX) return;
+  if (!was && !p.tv && mpPeople().length >= MP_MAX) return;
   MP.players.set(p.id, Object.assign(was || {}, p, { seen: Date.now() }));
 }
 function mpOnMsg(m) {
@@ -3595,16 +3602,17 @@ function mpOnMsg(m) {
     mpUpsert(m.p);
     MP.tx.send({ t: 'here', p: mpSelf() });
     if (iAmHost()) MP.tx.send({ t: 'cfg', cfg: MP.cfg });
-    if (isNew) { toast(`${m.p.name} a rejoint la salle`); sfx.pop(); }
+    if (isNew && !MP.isTv) { toast(m.p.tv ? 'La télé est connectée 📺' : `${m.p.name} a rejoint la salle`); sfx.pop(); }
   } else if (m.t === 'here') mpUpsert(m.p);
   else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
   else if (m.t === 'cfg') MP.cfg = m.cfg;
-  else if (m.t === 'start') { if (!MP.inGame) mpPlay(m.game); }
+  else if (m.t === 'start') { if (MP.isTv) tvStart(m.game); else if (!MP.inGame) mpPlay(m.game); }
   else if (m.t === 'steal' || m.t === 'stolen') { mpOnSteal(m); return; }
   else if (m.t === 'chat') { mpAddChat(m); return; }
   else if (m.t === 'react') { mpFloat(m.e, m.name); return; }
-  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); mpMaybeNext(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
-  if (currentScreen() === 'multi') renderMulti();
+  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); mpMaybeNext(); if (MP.isTv) tvCheck(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
+  if (MP.isTv) tvRender();
+  else if (currentScreen() === 'multi') renderMulti();
 }
 // L'hôte prépare la partie : extraits disponibles en priorité, mêmes 4 réponses pour tous
 function mpStart() {
@@ -3632,7 +3640,7 @@ function mpReport(done) {
   MP.tx.send(Object.assign({ t: 'score' }, { id: MP.me.id, score: MP.me.score, found: MP.me.found, i: MP.me.i, done }));
   renderLive();
 }
-const mpRanked = () => [...MP.players.values()].sort((a, b) => (b.score || 0) - (a.score || 0));
+const mpRanked = () => mpPeople().sort((a, b) => (b.score || 0) - (a.score || 0));
 const safePhoto = u => typeof u === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 40000 ? u : null;
 const headHTML = p => safePhoto(p.photo) ? `<img class="avatar-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { head: true });
 function renderLive() {
@@ -3648,14 +3656,16 @@ function renderRank() {
     list.map((p, k) => `<div class="mpr${p.id === MP.me?.id ? ' is-me' : ''}"><span class="mpr-pos p${k + 1}">${k + 1}</span><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me?.id ? `${p.name} (toi)` : p.name)}</b><span class="mpr-sc">${fmt(p.score || 0)}<small>${p.done ? `${p.found} trouvées` : `manche ${p.i}…`}</small></span></div>`).join('');
 }
 function renderMulti() {
+  if (MP.isTv) return tvRender();
   const inRoom = !!MP.code;
+  $('#mp-tv-on').hidden = !(inRoom && mpHasTv());
   $('#mp-start').hidden = inRoom;
   $('#mp-room').hidden = !inRoom;
   if (!inRoom) {
     $('#mp-hero-chars').innerHTML = ['rookie', 'disco', 'mc'].map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('');
     return;
   }
-  const host = iAmHost(), list = [...MP.players.values()].sort((a, b) => a.joined - b.joined);
+  const host = iAmHost(), list = mpPeople().sort((a, b) => a.joined - b.joined);
   $('#mp-room-code').textContent = MP.code;
   renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
@@ -3675,7 +3685,7 @@ function renderMulti() {
   rb.textContent = MP.me.ready ? 'Je ne suis plus prêt' : 'Je suis prêt !';
   rb.classList.toggle('is-on', !!MP.me.ready);
   // L'hôte lance tout seul 3 secondes après que tout le monde est prêt
-  if (host && allReady && !MP.inGame && !MP.countdown) MP.countdown = setTimeout(() => { MP.countdown = null; const l = [...MP.players.values()]; if (l.length >= 2 && l.every(p => p.ready) && !MP.inGame) mpStart(); }, 3000);
+  if (host && allReady && !MP.inGame && !MP.countdown) MP.countdown = setTimeout(() => { MP.countdown = null; const l = mpPeople(); if (l.length >= 2 && l.every(p => p.ready) && !MP.inGame) mpStart(); }, 3000);
   if ((!allReady || !host) && MP.countdown) { clearTimeout(MP.countdown); MP.countdown = null; }
 }
 function toggleReady() {
@@ -3685,6 +3695,96 @@ function toggleReady() {
   MP.tx?.send({ t: 'here', p: mpSelf() });
   sfx.tap(); buzz(15);
   renderMulti();
+}
+
+/* ================= MODE TÉLÉ ================= */
+// La télé rejoint la salle comme écran (pas comme joueur) : elle joue la musique et affiche la partie.
+const TVM = { game: null, round: -1, shown: -1, phase: 'lobby', audio: new Audio(), unlocked: false, base: {}, t: null };
+const tvUrl = code => `${location.origin}${location.pathname}?tv${code ? `=${code}` : ''}`;
+async function castToTv() {
+  if (!MP.code) return;
+  const url = tvUrl(MP.code);
+  if ('PresentationRequest' in window) {
+    try { await new PresentationRequest([url]).start(); toast('Envoi vers la télé…'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  $('#cast-url').textContent = tvUrl('').replace(/^https?:\/\//, '');
+  $('#cast-code').textContent = MP.code;
+  $('#cast-sheet').hidden = false;
+}
+function tvBoot(code) {
+  MP.isTv = true;
+  document.body.classList.add('is-tv-mode');
+  $('#app').hidden = true;
+  $('#tv-screen').hidden = false;
+  if (code) tvJoin(code); else { $('#tv-join').hidden = false; setTimeout(() => $('#tv-code').focus(), 200); }
+}
+async function tvJoin(code) {
+  $('#tv-join').hidden = true; $('#tv-main').hidden = false;
+  await mpOpen(code);
+  if (MP.code) tvRender();
+}
+function tvStart(game) {
+  MP.inGame = true; TVM.game = game; TVM.round = 0; TVM.shown = -1; TVM.phase = 'play';
+  mpPeople().forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false, ready: false }));
+  tvPlayRound();
+}
+async function tvPlayRound() {
+  const g = TVM.game, s = SONG.get(g.songs[TVM.round]);
+  TVM.phase = 'play';
+  TVM.base = Object.fromEntries(mpPeople().map(p => [p.id, p.found || 0]));
+  tvRender();
+  try { TVM.audio.pause(); } catch (e) {}
+  const pv = s && await fetchPreview(s);
+  if (pv && TVM.game === g && TVM.phase === 'play') { TVM.audio.src = pv.url; TVM.audio.currentTime = 0; TVM.audio.play().catch(() => {}); }
+}
+// Tout le monde a répondu à la manche en cours : on révèle, puis manche suivante (même rythme que les téléphones)
+function tvCheck() {
+  if (!TVM.game || TVM.phase !== 'play') return;
+  const ps = mpPeople();
+  if (!ps.length || !ps.every(p => (p.i || 0) > TVM.round)) { tvRender(); return; }
+  TVM.phase = 'reveal'; TVM.shown = TVM.round;
+  tvRender();
+  clearTimeout(TVM.t);
+  TVM.t = setTimeout(() => {
+    if (TVM.round >= TVM.game.songs.length - 1) { TVM.phase = 'end'; MP.inGame = false; try { TVM.audio.pause(); } catch (e) {} tvRender(); return; }
+    TVM.round++; tvPlayRound();
+  }, 2600);
+}
+function tvRender() {
+  if (!MP.isTv) return;
+  const ps = mpPeople().sort((a, b) => a.joined - b.joined), ranked = mpPeople().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const av = p => `<span class="tv-av">${headHTML(p)}</span>`;
+  $('#tv-hint').innerHTML = MP.code ? `Rejoins sur ton téléphone : Multijoueur → code <b>${MP.code}</b>` : '';
+  $('#tv-sound').hidden = TVM.unlocked;
+  const g = TVM.game;
+  $('#tv-round').textContent = g && TVM.phase !== 'end' ? `Manche ${TVM.round + 1}/${g.songs.length}` : '';
+  $('#tv-board').innerHTML = `<h2>Classement</h2>${ranked.map((p, k) => `<div class="tv-rk"><i>${k + 1}</i>${av(p)}<b>${esc(p.name)}</b><em>${fmt(p.score || 0)}</em></div>`).join('') || '<p>En attente des joueurs…</p>'}`;
+  const body = $('#tv-body');
+  if (!g || TVM.phase === 'lobby') {
+    const ready = ps.filter(p => p.ready).length;
+    body.innerHTML = `<div class="tv-lobby"><small>Code de la salle</small><div class="tv-code">${MP.code || '-----'}</div>
+      <p>Sur ton téléphone : <b>Multijoueur</b> → tape ce code → <b>Je suis prêt</b></p>
+      <div class="tv-players">${ps.map(p => `<div class="tv-p${p.ready ? ' is-ready' : ''}">${av(p)}<b>${esc(p.name)}</b><span>${p.ready ? '✓ Prêt' : 'Pas prêt'}</span></div>`).join('') || '<p class="tv-wait">En attente des joueurs…</p>'}</div>
+      ${ps.length ? `<p class="tv-status">${ready}/${ps.length} prêts</p>` : ''}</div>`;
+    return;
+  }
+  if (TVM.phase === 'end') {
+    const top = ranked.slice(0, 3);
+    body.innerHTML = `<div class="tv-end"><h1>Partie terminée !</h1><div class="tv-podium">${[1, 0, 2].map(k => top[k] ? `<div class="tv-pod p${k + 1}">${av(top[k])}<b>${esc(top[k].name)}</b><em>${fmt(top[k].score || 0)} pts</em><span>${k + 1}</span></div>` : '').join('')}</div><p>Rejouez : appuyez sur « Je suis prêt » sur vos téléphones (${ps.filter(p => p.ready).length}/${ps.length} prêts).</p></div>`;
+    return;
+  }
+  const s = SONG.get(g.songs[TVM.round]);
+  const answered = ps.filter(p => (p.i || 0) > TVM.round).length;
+  if (TVM.phase === 'reveal' && s) {
+    const found = ps.filter(p => (p.found || 0) > (TVM.base[p.id] || 0));
+    body.innerHTML = `<div class="tv-reveal"><div class="tv-cover">${coverHTML(s)}</div><div class="tv-rv-txt"><small>C’était…</small><h1>${esc(s.title)}</h1><h2>${esc(s.artist)} · ${s.year}</h2>
+      <div class="tv-found">${found.length ? found.map(p => `<span>${av(p)}${esc(p.name)}</span>`).join('') : '<span class="tv-none">Personne n’a trouvé !</span>'}</div></div></div>`;
+    return;
+  }
+  body.innerHTML = `<div class="tv-play"><div class="tv-disc"><div class="tv-disc-in">?</div></div><h1>Quelle est cette chanson ?</h1>
+    <div class="tv-answered">${ps.map(p => `<span class="${(p.i || 0) > TVM.round ? 'is-done' : ''}">${av(p)}${(p.i || 0) > TVM.round ? '✓' : '…'}</span>`).join('')}</div>
+    <p class="tv-status">${answered}/${ps.length} ont répondu</p></div>`;
 }
 
 /* Chat & réactions du salon */
@@ -3727,7 +3827,7 @@ function mpReact(e) {
 // L'emoji s'envole sur l'écran de tout le monde (salon ou partie)
 function mpFloat(e, name) {
   if (!MP_EMOJIS.includes(e)) return;
-  const host = currentScreen() === 'game' ? $('#mp-react') : $('#screen-multi');
+  const host = MP.isTv ? $('#tv-screen') : currentScreen() === 'game' ? $('#mp-react') : $('#screen-multi');
   if (!host || REDUCED) { if (name && currentScreen() === 'game') toast(`${name} ${e}`); return; }
   const el = document.createElement('span');
   el.className = 'mp-float';
@@ -3890,6 +3990,10 @@ $('#mp-send').addEventListener('submit', e => { e.preventDefault(); mpSendChat($
 $('#mp-emojis').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
 $('#mp-react').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (b) mpReact(b.dataset.emo); });
 $('#mp-ready').addEventListener('click', toggleReady);
+$('#mp-cast').addEventListener('click', castToTv);
+$('#cast-ok').addEventListener('click', () => { $('#cast-sheet').hidden = true; });
+$('#tv-form').addEventListener('submit', e => { e.preventDefault(); const c = $('#tv-code').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length === 5) tvJoin(c); });
+$('#tv-sound').addEventListener('click', () => { TVM.unlocked = true; unlockAudio(); TVM.audio.play().catch(() => {}); tvRender(); });
 $('#steal-list').addEventListener('click', e => { const b = e.target.closest('.steal-p'); if (b && !b.disabled) chooseSteal(b.dataset.id); });
 $('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = true; });
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
@@ -4029,10 +4133,14 @@ if (/[?&]debug\b/.test(location.search)) window.__PQ = { audio: () => ({ ctx: ac
 ensureMissions();
 applySkins();
 renderCoins();
-show('home');
-// Toute première ouverture : le tutoriel passe avant la connexion
-if ((!store.onboarded && !store.tutoSeen && !NO_AUTO) || /[?&]onb\b/.test(location.search)) showOnboarding(startAccount);
-else startAccount();
+const tvParam = location.search.match(/[?&]tv(?:=([A-Za-z0-9]{5}))?(?:&|$)/);
+if (tvParam) tvBoot((tvParam[1] || '').toUpperCase());   // cet écran est la télé de la salle
+else {
+  show('home');
+  // Toute première ouverture : le tutoriel passe avant la connexion
+  if ((!store.onboarded && !store.tutoSeen && !NO_AUTO) || /[?&]onb\b/.test(location.search)) showOnboarding(startAccount);
+  else startAccount();
+}
 const roomParam = (location.search.match(/[?&]room=([A-Za-z0-9]{5})/) || [])[1];
 if (roomParam) setTimeout(() => { show('multi'); mpOpen(roomParam); }, 1200);
 })();

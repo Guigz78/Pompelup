@@ -375,8 +375,9 @@
         <section class="mp-code-card">
           <small>Code de la salle</small>
           <b id="mp-room-code">-----</b>
-          <button class="btn btn-sm btn-white" id="mp-share" type="button"><svg class="ico"><use href="#i-g-share"/></svg>Inviter</button>
+          <div class="mp-code-btns"><button class="btn btn-sm btn-white" id="mp-share" type="button"><svg class="ico"><use href="#i-g-share"/></svg>Inviter</button><button class="btn btn-sm btn-white" id="mp-cast" type="button"><svg class="ico" viewBox="0 0 32 32"><path d="M4 9a3 3 0 0 1 3-3h18a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M4 16a10 10 0 0 1 10 10M4 21a5 5 0 0 1 5 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="5" cy="26" r="2" fill="currentColor"/></svg>Sur la télé</button></div>
         </section>
+        <p class="mp-tv-on" id="mp-tv-on" hidden>📺 La télé est connectée : la musique et les réponses s’afficheront sur la télé, ton téléphone sert de manette.</p>
         <h2 class="sec-title">Joueurs <small id="mp-count">1/8</small></h2>
         <div class="mp-players" id="mp-players"></div>
         <div class="mp-settings" id="mp-settings">
@@ -762,6 +763,18 @@
     </div>
   </div>
 
+  <div class="overlay overlay-sheet" id="cast-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cast-title">
+      <div class="sheet-title" id="cast-title">Jouer sur la télé</div>
+      <ol class="cast-steps">
+        <li>Sur la télé (son navigateur internet) ou un ordinateur branché dessus, ouvre&nbsp;: <b id="cast-url">pompelup.vercel.app/?tv</b></li>
+        <li>Tape le code de la salle&nbsp;: <b class="cast-code" id="cast-code">-----</b></li>
+        <li>La musique passe sur la télé, chacun répond sur son téléphone.</li>
+      </ol>
+      <button class="btn btn-green btn-block" id="cast-ok" type="button">Compris</button>
+    </div>
+  </div>
+
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
       <div class="sheet-title" id="wl-title">Comment tu t’appelles ?</div>
@@ -789,6 +802,22 @@
 </div>
 
 <audio id="player" preload="auto"></audio>
+<!-- ================= ÉCRAN TÉLÉ (multijoueur) ================= -->
+<div class="tv" id="tv-screen" hidden>
+  <div class="tv-join" id="tv-join" hidden>
+    <div class="tv-logo">Pompelup</div>
+    <h1>Code de la salle</h1>
+    <form id="tv-form" autocomplete="off"><input id="tv-code" maxlength="5" placeholder="ABCDE" aria-label="Code de la salle"><button class="btn btn-green" type="submit">Afficher</button></form>
+    <p>Crée une salle « Multijoueur » sur ton téléphone, puis tape son code ici.</p>
+  </div>
+  <div class="tv-main" id="tv-main" hidden>
+    <header class="tv-head"><span class="tv-logo">Pompelup</span><span class="tv-round" id="tv-round"></span><span class="tv-join-hint" id="tv-hint"></span></header>
+    <div class="tv-body" id="tv-body"></div>
+    <aside class="tv-board" id="tv-board"></aside>
+  </div>
+  <button class="tv-sound" id="tv-sound" type="button">🔊 Appuie pour activer le son</button>
+</div>
+
 <script src="icons.js"></script>
 <script src="songs.js"></script>
 <script src="covers.js"></script>

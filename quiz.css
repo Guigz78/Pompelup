@@ -2571,3 +2571,91 @@ button.pf-title small { font: 700 12px var(--text); color: var(--violet); letter
 .house.is-dark .wall-dots i { background: rgba(255,255,255,.3); } .house.is-dark .wall-dots i.is-on { background: #fff; }
 /* personnage assis sur le canapé */
 .c-char.c-sit { width: 132px; height: 146px; bottom: 30px; }
+
+/* ================= MODE TÉLÉ ================= */
+.mp-code-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.mp-code-btns .ico { width: 18px; height: 18px; }
+.mp-tv-on { margin: 0; padding: 12px 14px; border-radius: 16px; background: #E8F7FF; border: 2px solid #9ED8FF; font: 800 14px/1.35 var(--text); color: #135A85; }
+.cast-steps { margin: 0 0 16px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font: 700 15px/1.4 var(--text); color: var(--ink-2); }
+.cast-steps b { color: var(--ink); word-break: break-all; }
+.cast-code { display: inline-block; padding: 2px 10px; border-radius: 10px; background: var(--violet); color: #fff !important; letter-spacing: 3px; font: 800 18px var(--display); }
+/* téléphone = manette quand la télé est branchée */
+.screen-game.is-tv .stage, .screen-game.is-tv .host { display: none; }
+.screen-game.is-tv .game-title::after { content: '📺 Écoute sur la télé, réponds ici'; display: block; margin-top: 6px; font: 800 15px var(--text); color: var(--violet); }
+.screen-game.is-tv .choice { min-height: 82px; }
+.screen-game.is-tv .choice-title { font-size: 20px; }
+
+/* écran télé : plein écran, lisible de loin */
+body.is-tv-mode { background: #1A1238; overflow: hidden; }
+.tv { position: fixed; inset: 0; z-index: 500; color: #fff; font-family: var(--text); background: radial-gradient(90% 70% at 70% 0%, #5A3DE0 0%, #2A1B66 45%, #150E33 100%); overflow: hidden; }
+.tv[hidden] { display: none; }
+.tv-join { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.4vh; text-align: center; }
+.tv-join[hidden], .tv-main[hidden] { display: none; }
+.tv-join h1 { font: 800 6vh var(--display); }
+.tv-join form { display: flex; gap: 1.5vw; }
+.tv-join input { width: 34vw; height: 11vh; border-radius: 2.4vh; border: 0; text-align: center; font: 800 7vh var(--display); letter-spacing: 1.2vw; text-transform: uppercase; color: var(--ink); }
+.tv-join .btn { height: 11vh; padding: 0 3vw; font-size: 3.4vh; border-radius: 2.4vh; }
+.tv-join p { font: 700 2.6vh var(--text); opacity: .8; }
+.tv-logo { font: 800 4vh var(--display); color: var(--yellow); letter-spacing: .1vw; }
+.tv-main { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 28vw; grid-template-rows: auto 1fr; gap: 2vh 2vw; padding: 3vh 3vw; }
+.tv-head { grid-column: 1 / 3; display: flex; align-items: center; gap: 3vw; }
+.tv-round { font: 800 3.4vh var(--display); padding: .6vh 1.6vw; border-radius: 99px; background: rgba(255,255,255,.14); }
+.tv-round:empty { display: none; }
+.tv-join-hint { margin-left: auto; font: 700 2.4vh var(--text); opacity: .85; }
+.tv-join-hint b { color: var(--yellow); letter-spacing: .3vw; }
+.tv-body { position: relative; min-height: 0; display: grid; place-items: center; }
+.tv-board { align-self: start; padding: 2.6vh 1.6vw; border-radius: 3vh; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); }
+.tv-board h2 { font: 800 3.2vh var(--display); margin-bottom: 1.6vh; }
+.tv-board p { font: 700 2.2vh var(--text); opacity: .7; }
+.tv-rk { display: flex; align-items: center; gap: 1vw; padding: 1vh .6vw; border-radius: 1.6vh; }
+.tv-rk:nth-child(2) { background: rgba(255,200,0,.18); }
+.tv-rk i { width: 2.4vw; font: 800 2.8vh var(--display); font-style: normal; opacity: .8; }
+.tv-rk b { flex: 1; font: 800 2.8vh var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tv-rk em { font: 800 2.8vh var(--display); font-style: normal; color: var(--yellow); }
+.tv-av { flex: 0 0 auto; display: inline-block; width: 6vh; height: 6vh; border-radius: 50%; overflow: hidden; background: #FFE7D6; vertical-align: middle; }
+.tv-av .char, .tv-av img { width: 100%; height: 100%; object-fit: cover; }
+.tv-lobby { text-align: center; }
+.tv-lobby small { font: 800 2.6vh var(--text); letter-spacing: .3vw; text-transform: uppercase; opacity: .8; }
+.tv-code { font: 800 18vh/1 var(--display); letter-spacing: 2vw; color: var(--yellow); text-shadow: 0 1vh 0 rgba(0,0,0,.25); margin: 1vh 0 2vh; }
+.tv-lobby p { font: 700 3vh var(--text); }
+.tv-players { display: flex; flex-wrap: wrap; justify-content: center; gap: 2vw; margin-top: 4vh; }
+.tv-p { display: flex; flex-direction: column; align-items: center; gap: 1vh; padding: 2vh 1.6vw; border-radius: 3vh; background: rgba(255,255,255,.1); min-width: 12vw; }
+.tv-p .tv-av { width: 12vh; height: 12vh; }
+.tv-p b { font: 800 3vh var(--text); }
+.tv-p span { font: 800 2.2vh var(--text); padding: .4vh 1vw; border-radius: 99px; background: rgba(255,255,255,.15); }
+.tv-p.is-ready span { background: var(--green); }
+.tv-status { margin-top: 3vh; font: 800 3vh var(--text); opacity: .9; }
+.tv-wait { font: 700 3vh var(--text); opacity: .7; }
+.tv-play { text-align: center; }
+.tv-disc { width: 42vh; height: 42vh; margin: 0 auto 3vh; border-radius: 50%; background: repeating-radial-gradient(circle, #151515 0 .5vh, #2A2A2A .5vh 1.1vh); box-shadow: 0 0 0 1.2vh rgba(255,255,255,.08), 0 3vh 6vh rgba(0,0,0,.5); display: grid; place-items: center; animation: tv-spin 3.5s linear infinite; }
+.tv-disc-in { width: 15vh; height: 15vh; border-radius: 50%; background: var(--pink); display: grid; place-items: center; font: 800 7vh var(--display); color: #fff; }
+@keyframes tv-spin { to { transform: rotate(360deg); } }
+.tv-play h1 { font: 800 5.4vh var(--display); }
+.tv-answered { display: flex; justify-content: center; gap: 2vw; margin-top: 3vh; }
+.tv-answered span { display: flex; flex-direction: column; align-items: center; gap: .6vh; font: 800 3vh var(--display); opacity: .45; transition: opacity .3s; }
+.tv-answered span.is-done { opacity: 1; color: #7FE07A; }
+.tv-reveal { display: flex; align-items: center; gap: 4vw; }
+.tv-cover { width: 48vh; height: 48vh; border-radius: 3vh; overflow: hidden; box-shadow: 0 3vh 7vh rgba(0,0,0,.5); animation: pop-in .5s var(--ease-back); }
+.tv-cover .cover { width: 100%; height: 100%; }
+.tv-rv-txt small { font: 800 2.8vh var(--text); letter-spacing: .3vw; text-transform: uppercase; opacity: .8; }
+.tv-rv-txt h1 { font: 800 8vh/1.05 var(--display); max-width: 50vw; }
+.tv-rv-txt h2 { font: 700 4vh var(--text); opacity: .85; margin-top: 1vh; }
+.tv-found { display: flex; flex-wrap: wrap; gap: 1.4vw; margin-top: 4vh; }
+.tv-found span { display: inline-flex; align-items: center; gap: .8vw; padding: 1vh 1.4vw 1vh 1vh; border-radius: 99px; background: var(--green); font: 800 2.8vh var(--text); }
+.tv-found .tv-none { background: rgba(255,255,255,.15); padding: 1vh 2vw; }
+.tv-end { text-align: center; }
+.tv-end h1 { font: 800 7vh var(--display); margin-bottom: 4vh; }
+.tv-end p { font: 700 2.8vh var(--text); opacity: .85; margin-top: 4vh; }
+.tv-podium { display: flex; align-items: flex-end; justify-content: center; gap: 2vw; }
+.tv-pod { display: flex; flex-direction: column; align-items: center; gap: 1vh; width: 16vw; }
+.tv-pod .tv-av { width: 14vh; height: 14vh; }
+.tv-pod b { font: 800 3.2vh var(--text); }
+.tv-pod em { font: 800 2.6vh var(--display); font-style: normal; color: var(--yellow); }
+.tv-pod span { width: 100%; display: grid; place-items: center; border-radius: 2vh 2vh 0 0; font: 800 7vh var(--display); background: rgba(255,255,255,.15); }
+.tv-pod.p1 span { height: 26vh; background: linear-gradient(#FFD54A, #FF9600); color: #4A2E00; }
+.tv-pod.p2 span { height: 18vh; background: linear-gradient(#E5E7EB, #A0A7B4); color: #333; }
+.tv-pod.p3 span { height: 13vh; background: linear-gradient(#F2B987, #C0763E); color: #3a1d08; }
+.tv-sound { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); padding: 2vh 3vw; border-radius: 99px; background: var(--yellow); color: #3A2400; font: 800 3vh var(--text); box-shadow: 0 1vh 0 #C98A00; z-index: 3; }
+.tv-sound[hidden] { display: none; }
+.tv .mp-float { position: absolute; bottom: 10vh; font-size: 10vh; }
+.tv .mp-float small { font-size: 2.2vh; }
