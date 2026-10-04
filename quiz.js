@@ -2375,20 +2375,29 @@ function renderCollection() {
   };
   const emptyFrame = '<span class="frame frame-empty" aria-hidden="true"><span class="frame-in"><span class="frame-q">?</span></span></span>';
   // Les 6 plus belles pièces au-dessus du canapé, le reste sur les étagères
-  let top = shown.slice(0, 6), rest = shown.slice(6);
+  // Murs à faire glisser : 6 cadres par mur, jusqu'à 6 murs, toujours un mur avec de la place
+  let order = list.slice();
   if (COLL.filter === 'all') {
     const pins = roomPins(), auto = list.filter(id => !pins.includes(id));
     let k = 0;
-    top = pins.map(id => id || auto[k++]).filter(Boolean);
-    rest = auto.slice(k, COLL.shown - top.length + k);
+    const first = pins.map(id => id || auto[k++]).filter(Boolean);
+    order = [...first, ...auto.slice(k)];
   }
+  const pages = Math.min(6, Math.floor(order.length / 6) + 1);
+  const top = order.slice(0, pages * 6);
+  const rest = order.slice(top.length, top.length + Math.max(0, COLL.shown - top.length));
   applyRoomStyle();
-  $('#coll-top').innerHTML = top.map(frameHTML).join('') + emptyFrame.repeat(Math.max(0, 6 - top.length));
+  $('#coll-top').innerHTML = Array.from({ length: pages }, (_, p) => {
+    const part = top.slice(p * 6, p * 6 + 6);
+    return `<div class="house-frames wall-page" data-p="${p}">${part.map((id, i) => frameHTML(id, i)).join('')}${emptyFrame.repeat(6 - part.length)}</div>`;
+  }).join('');
+  $('#wall-dots').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, p) => `<i class="${p === (COLL.wall || 0) ? 'is-on' : ''}" data-p="${p}"></i>`).join('') + '<small>Glisse pour voir tes autres murs</small>' : '';
+  requestAnimationFrame(() => { const t = $('#coll-top'); if (t) t.scrollLeft = Math.min(COLL.wall || 0, pages - 1) * t.clientWidth; });
   $('#living-img').innerHTML = `<span class="cs">
       <span class="cs-lamp"><i></i></span>
       <span class="couch">
         <i class="c-back"></i><i class="c-pillow c-pl"></i><i class="c-pillow c-pr"></i>
-        <span class="c-char">${meHTML({ lying: true, mood: 'grin' })}</span>
+        <span class="c-char c-sit">${meHTML({ sit: true, mood: 'happy' })}</span>
         <i class="c-seat"></i><i class="c-arm c-al"></i><i class="c-arm c-ar"></i><i class="c-foot c-fl"></i><i class="c-foot c-fr"></i>
       </span>
       <span class="cs-table"><i class="cs-player"></i></span>
@@ -3838,7 +3847,9 @@ $('#coll-empty-play').addEventListener('click', () => {
   if (totalBoosters()) openBooster();
   else { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); }
 });
-$('#rar-filter').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b) return; COLL.filter = b.dataset.r; COLL.shown = 60; renderCollection(); });
+$('#rar-filter').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b) return; COLL.filter = b.dataset.r; COLL.shown = 60; COLL.wall = 0; renderCollection(); });
+$('#coll-top').addEventListener('scroll', e => { const t = e.target, p = Math.round(t.scrollLeft / Math.max(1, t.clientWidth)); if (p !== COLL.wall) { COLL.wall = p; $$('#wall-dots i').forEach((d, k) => d.classList.toggle('is-on', k === p)); } }, { passive: true });
+$('#wall-dots').addEventListener('click', e => { const d = e.target.closest('i[data-p]'); if (d) { const t = $('#coll-top'); t.scrollTo({ left: +d.dataset.p * t.clientWidth, behavior: 'smooth' }); } });
 $('#screen-collection').addEventListener('click', e => {
   if (e.target.closest('#coll-more')) { COLL.shown += 60; renderCollection(); return; }
   if (e.target.closest('#nook-char')) { charChat(); return; }

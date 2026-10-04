@@ -344,10 +344,17 @@ function humanHat(g, a) {
 function buildHuman(sk, opts) {
   const g = new T.Group(), skin = skinMat(sk.skin || '#F5D2BE');
   const top = sk.fit?.finish ? finishMat(sk.top || '#E07A3A', sk.fit.finish) : clay(sk.top || '#E07A3A'), shirt = clay(sk.shirt || '#F4F1EA'), pants = clay(sk.pants || '#3F4A63'), shoes = clay(sk.shoes || '#2B2B33', .6);
-  // jambes et chaussures
+  // jambes et chaussures (assis : cuisses vers l'avant, mollets qui tombent)
+  const sit = !!opts.sit;
   [-1, 1].forEach(s => {
-    g.add(mesh(sph(.19, 20, 14), shoes, [.21 * s, .09, .08], null, [1, .55, 1.45]));
-    g.add(capsule(.15, pants, [.21 * s, .16, 0], [.21 * s, .52, 0]));
+    if (sit) {
+      g.add(capsule(.155, pants, [.21 * s, .52, 0], [.23 * s, .5, .5]));
+      g.add(capsule(.145, pants, [.23 * s, .5, .5], [.23 * s, .14, .58]));
+      g.add(mesh(sph(.19, 20, 14), shoes, [.23 * s, .09, .68], null, [1, .55, 1.45]));
+    } else {
+      g.add(mesh(sph(.19, 20, 14), shoes, [.21 * s, .09, .08], null, [1, .55, 1.45]));
+      g.add(capsule(.15, pants, [.21 * s, .16, 0], [.21 * s, .52, 0]));
+    }
   });
   g.add(mesh(sph(.5, 32, 20), pants, [0, .6, 0], null, [1.02, .44, .8]));
   // torse trapu (veste + chemise au milieu)
@@ -357,8 +364,13 @@ function buildHuman(sk, opts) {
   if ((sk.shirt || '#F4F1EA') !== (sk.top || '#E07A3A')) { shirtMesh = mesh(sph(.57, 32, 24), shirt, [0, 1.0, .05], null, [.34, .95, .8]); g.add(shirtMesh); }
   // bras et mains en moufle
   [-1, 1].forEach(s => {
-    g.add(capsule(.14, top, [.5 * s, 1.34, 0], [.7 * s, .86, .06]));
-    g.add(mesh(sph(.16, 20, 14), skin, [.72 * s, .72, .1], null, [1, 1.12, .9]));
+    if (sit) {   // mains posées sur les genoux
+      g.add(capsule(.14, top, [.5 * s, 1.34, 0], [.56 * s, .88, .3]));
+      g.add(mesh(sph(.16, 20, 14), skin, [.5 * s, .72, .42], null, [1, .9, 1.1]));
+    } else {
+      g.add(capsule(.14, top, [.5 * s, 1.34, 0], [.7 * s, .86, .06]));
+      g.add(mesh(sph(.16, 20, 14), skin, [.72 * s, .72, .1], null, [1, 1.12, .9]));
+    }
   });
   // grosse tête large
   const head = mesh(headGeo(), skin, HC, null, [.95, .78, .8]);
@@ -488,7 +500,7 @@ function renderHuman(r, sk, opts, W, H) {
     box.min.y += .15;
   }
   else box = new T.Box3().setFromObject(pivot);
-  if (!head && !lying) {
+  if (!head && !lying && !opts.sit) {
     const c = document.createElement('canvas'); c.width = c.height = 128;
     const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(40,30,60,.35)'); gr.addColorStop(1, 'rgba(40,30,60,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
     scene.add(mesh(new T.PlaneGeometry(2.6, 1.3), keep(new T.MeshBasicMaterial({ map: keep(new T.CanvasTexture(c)), transparent: true, depthWrite: false })), [0, .005, 0], [-Math.PI / 2, 0, 0]));
@@ -654,7 +666,7 @@ function pump() {
 }
 function html(sk, opts, rawKey) {
   const k = hashKey(rawKey), alt = String(sk.name || '').replace(/"/g, '&quot;');
-  const cls = `char char3d${opts.head ? ' char-head' : ''}${opts.lying ? ' char-lying' : ''}`;
+  const cls = `char char3d${opts.head ? ' char-head' : ''}${opts.lying ? ' char-lying' : ''}${opts.sit ? ' char-sit' : ''}`;
   if (cache.has(k)) { const v = cache.get(k); cache.delete(k); cache.set(k, v); return `<img class="${cls} is-ready" src="${v.url}" alt="${alt}" draggable="false">`; }
   if (!queue.has(k)) queue.set(k, { sk, opts });
   if (!pumping) { pumping = true; requestAnimationFrame(pump); }

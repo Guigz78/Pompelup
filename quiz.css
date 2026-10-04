@@ -2557,3 +2557,17 @@ button.pf-title small { font: 700 12px var(--text); color: var(--violet); letter
 .tt-txt .bar { height: 8px; }
 .tt-state { flex: 0 0 auto; font: 800 13px var(--text); color: var(--violet); }
 .tt-row.is-on .tt-state { color: #8A5A00; }
+
+/* ===== Salon : murs à faire glisser ===== */
+.wall-track { position: relative; z-index: 1; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -18px; }
+.wall-track::-webkit-scrollbar { display: none; }
+.wall-page { flex: 0 0 100%; scroll-snap-align: center; padding: 16px 30px 8px !important; }
+.wall-dots { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 0; padding: 2px 0 4px; }
+.wall-dots:empty { display: none; }
+.wall-dots i { width: 9px; height: 9px; border-radius: 99px; background: rgba(122,75,42,.3); cursor: pointer; transition: width .2s, background .2s; }
+.wall-dots i.is-on { width: 22px; background: #7A4B2A; }
+.wall-dots small { margin-left: 8px; font: 800 11.5px var(--text); color: rgba(90,55,30,.75); }
+.house.is-dark .wall-dots small { color: rgba(255,255,255,.7); }
+.house.is-dark .wall-dots i { background: rgba(255,255,255,.3); } .house.is-dark .wall-dots i.is-on { background: #fff; }
+/* personnage assis sur le canapé */
+.c-char.c-sit { width: 132px; height: 146px; bottom: 30px; }

@@ -79,7 +79,7 @@ const flatURL = sk => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(f
 
 function keyOf(sk, opts) {
   const a = mergeAccs(sk, opts.accs);
-  return JSON.stringify([sk.id || '', sk.kind || sk.shape, sk.color || sk.top, opts.mood || 'happy', opts.head ? 1 : opts.lying ? 2 : 0, Object.keys(a).sort().map(k => a[k] && (a[k].id || a[k].type + a[k].color))]);
+  return JSON.stringify([sk.id || '', sk.kind || sk.shape, sk.color || sk.top, opts.mood || 'happy', opts.head ? 1 : opts.lying ? 2 : opts.sit ? 3 : 0, Object.keys(a).sort().map(k => a[k] && (a[k].id || a[k].type + a[k].color))]);
 }
 function html(sk, opts = {}) {
   const o = Object.assign({}, opts, { accs: mergeAccs(sk, opts.accs) });
