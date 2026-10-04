@@ -294,6 +294,26 @@ function rewardParts(r) {
   if (r.item) { const [k, id] = r.item.split(':'); const it = itemOf(k, id); parts.push(`${KIND_NAME[k]} « ${itemName(k, it).replace('Avatar ', '')} »`); }
   return parts;
 }
+// Tête de carte selon la rareté, façon Hearthstone : gemme centrale + ornements de plus en plus riches
+const GEM = { common: ['#FFFFFF', '#C9CED6'], rare: ['#7FD3FF', '#1CB0F6'], epic: ['#D9A8FF', '#9B4DFF'], legendary: ['#FFD27A', '#FF7A00'] };
+function crestSVG(r) {
+  const [g1, g2] = GEM[r] || GEM.common, id = `gm-${r}`;
+  const gem = `<defs><radialGradient id="${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="${g1}"/><stop offset="1" stop-color="${g2}"/></radialGradient></defs>`;
+  const bezel = c => `<circle cx="80" cy="40" r="15" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="2"/>`;
+  const stone = `<path d="M80 28 L90 40 L80 52 L70 40 Z" fill="url(#${id})" stroke="rgba(0,0,0,.3)" stroke-width="1.5"/><path d="M80 28 L84 40 L80 52" fill="rgba(255,255,255,.25)"/>`;
+  if (r === 'legendary') return `<svg viewBox="0 0 160 64">${gem}
+    <path d="M66 38 C50 20 30 14 8 18 C22 24 26 30 26 34 C16 32 10 36 6 42 C20 40 30 44 36 48 C46 46 56 46 66 44 Z" fill="#F5B81C" stroke="#8A5A00" stroke-width="2"/>
+    <path d="M94 38 C110 20 130 14 152 18 C138 24 134 30 134 34 C144 32 150 36 154 42 C140 40 130 44 124 48 C114 46 104 46 94 44 Z" fill="#F5B81C" stroke="#8A5A00" stroke-width="2"/>
+    <path d="M62 34 L66 8 L74 22 L80 2 L86 22 L94 8 L98 34 Z" fill="#FFC800" stroke="#8A5A00" stroke-width="2"/>
+    <circle cx="80" cy="40" r="20" fill="rgba(255,150,0,.35)"/>${bezel('#E9B949')}${stone}</svg>`;
+  if (r === 'epic') return `<svg viewBox="0 0 160 64">${gem}
+    <path d="M66 40 C54 28 40 24 22 26 C34 32 38 38 40 46 C48 44 58 44 66 44 Z" fill="#B57CFF" stroke="#5A2A9E" stroke-width="2"/>
+    <path d="M94 40 C106 28 120 24 138 26 C126 32 122 38 120 46 C112 44 102 44 94 44 Z" fill="#B57CFF" stroke="#5A2A9E" stroke-width="2"/>${bezel('#D9C3FF')}${stone}</svg>`;
+  if (r === 'rare') return `<svg viewBox="0 0 160 64">${gem}
+    <rect x="44" y="36" width="72" height="8" rx="4" fill="#D7DEE8" stroke="#6B7686" stroke-width="2"/>${bezel('#E4E9F0')}${stone}</svg>`;
+  return `<svg viewBox="0 0 160 64">${gem}${bezel('#D8D2C8')}${stone}</svg>`;
+}
+const crestHTML = r => `<span class="crest crest-${r}" aria-hidden="true">${crestSVG(r)}</span>`;
 function rewardInline(r) {
   if (r.item) { const [k, id] = r.item.split(':'); return k === 'skin' ? `<span class="rw-mini">${charHTML(itemOf(k, id), { head: true })}</span>` : ico('palette'); }
   if (r.gold) return '<i class="mini-booster mp-gold"></i>';
@@ -2135,7 +2155,7 @@ function cardHTML(c, i) {
       <div class="vc-back"><span class="vc-back-logo">pompelup</span><span class="vc-back-q">?</span><span class="vc-back-tap">Tape pour révéler</span></div>
       <div class="vc-front">
         <div class="vc-disc"><div class="vc-disc-spin"><div class="vc-label">${c.art ? `<img src="${esc(c.art)}" alt="">` : ''}</div></div></div>
-        <div class="vc-sleeve">${coverHTML(s, c.art)}</div>
+        <div class="vc-sleeve">${coverHTML(s, c.art)}</div>${crestHTML(c.rarity)}
       </div>
     </div>
     <div class="vc-info">
@@ -2323,7 +2343,7 @@ function renderCollection() {
   const frameHTML = (id, i) => {
     const s = SONG.get(id), r = RARITY.get(id), e = store.coll[id];
     return `<button class="frame vt r-${r}" type="button" data-id="${id}" style="animation-delay:${Math.min(i, 18) * .025}s" aria-label="${esc(s.title)} — ${esc(s.artist)}, ${R_NAME[r].toLowerCase()}">
-      <span class="frame-in"><span class="frame-disc"></span><span class="frame-cover">${coverHTML(s)}</span></span>
+      <span class="frame-in"><span class="frame-disc"></span><span class="frame-cover">${coverHTML(s)}</span></span>${crestHTML(r)}
       ${e.seen === false ? '<span class="vt-new">NEW</span>' : e.n > 1 ? `<span class="vt-n">×${e.n}</span>` : ''}
     </button>`;
   };
@@ -2396,7 +2416,7 @@ function openVinyl(id) {
   const r = RARITY.get(id), art = knownArt(id);
   const vis = $('#vs-visual');
   vis.className = `vs-visual r-${r}`;
-  vis.innerHTML = `<div class="vs-disc"><div class="vs-label">${art ? `<img src="${esc(art)}" alt="">` : ''}</div></div><div class="vs-sleeve">${coverHTML(s, art)}</div>`;
+  vis.innerHTML = `<div class="vs-disc"><div class="vs-label">${art ? `<img src="${esc(art)}" alt="">` : ''}</div></div><div class="vs-sleeve">${coverHTML(s, art)}${crestHTML(r)}</div>`;
   const pill = $('#vs-rarity');
   pill.className = `rar-pill r-${r}`;
   pill.textContent = R_NAME[r];
@@ -2745,7 +2765,7 @@ function renderVinylShop() {
   $('#vs-results').innerHTML = shown.length ? shown.map(s => {
     const r = RARITY.get(s.id), own = !!store.coll[s.id], arm = SHOP_CONFIRM === `v:${s.id}`;
     return `<button class="vsi r-${r}${own ? ' is-owned' : ''}${arm ? ' is-confirm' : ''}" type="button" data-vid="${s.id}">
-      <span class="vsi-cover">${coverHTML(s)}</span>
+      <span class="vsi-cover">${coverHTML(s)}</span>${crestHTML(r)}
       <span class="vsi-txt"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
       <span class="vsi-rar"><i></i>${R_NAME[r]}</span>
       <span class="vsi-price">${own ? `${ico('g-check')}Possédé` : arm ? 'Confirmer' : `<i class="coin"></i>${fmt(VINYL_PRICE[r])}`}</span>

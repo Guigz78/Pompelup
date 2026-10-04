@@ -747,7 +747,6 @@ window.SONGS = [
   { id: 's776', title: 'Petite Fille', artist: 'Booba', year: 2020, genre: 'Rap Français', emoji: '👧', bpm: 88, color: '#374151' },
   { id: 's789', title: 'Mosaïque Solitaire', artist: 'Damso', year: 2017, genre: 'Rap Français', emoji: '🧩', bpm: 86, color: '#374151' },
   { id: 's790', title: 'Macarena', artist: 'Damso', year: 2018, genre: 'Rap Français', emoji: '💃', bpm: 96, color: '#374151' },
-  { id: 's791', title: 'Batterie Faible', artist: 'Damso', year: 2018, genre: 'Rap Français', emoji: '🔋', bpm: 88, color: '#374151' },
   { id: 's793', title: 'Trop beau', artist: 'Lomepal', year: 2018, genre: 'Rap Français', emoji: '🌹', bpm: 82, color: '#374151' },
   { id: 's794', title: 'Yeux disent', artist: 'Lomepal', year: 2019, genre: 'Rap Français', emoji: '👁️', bpm: 84, color: '#374151' },
   { id: 's797', title: 'Caravane', artist: 'Raphaël', year: 2004, genre: 'Rap Français', emoji: '🐪', bpm: 96, color: '#F97316' },

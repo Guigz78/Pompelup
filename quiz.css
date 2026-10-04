@@ -2454,3 +2454,32 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .screen-game.is-lyrics .stage { min-height: 0; padding-top: 10px; padding-bottom: 10px; }
 .screen-game.is-lyrics .host { display: none; }
 .ly-gap { min-width: 110px; }
+
+/* ===== Têtes de cartes par rareté (façon Hearthstone) ===== */
+.crest { position: absolute; left: 50%; z-index: 4; transform: translateX(-50%); pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.crest svg { display: block; width: 100%; height: auto; overflow: visible; }
+.crest-legendary { animation: crest-glow 2.4s ease-in-out infinite; }
+@keyframes crest-glow { 50% { filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)) drop-shadow(0 0 8px rgba(255,170,0,.85)); } }
+/* collection (cadres du salon et étagères) */
+.frame .crest { top: -12px; width: 78%; }
+.frame.r-common .crest { width: 44%; top: -6px; }
+.frame.r-rare .crest { width: 62%; top: -8px; }
+.frame.r-rare .frame-in { box-shadow: 0 0 0 3px var(--frame, #7A4B2A), 0 0 0 6px #8FD6FF, 0 8px 14px rgba(70,40,18,.35); }
+.frame.r-epic .frame-in { box-shadow: 0 0 0 3px var(--frame, #7A4B2A), 0 0 0 6px #B57CFF, 0 0 14px rgba(155,77,255,.45); }
+.frame.r-legendary .frame-in { box-shadow: 0 0 0 3px var(--frame, #7A4B2A), 0 0 0 6px #F5B81C, 0 0 20px rgba(255,170,0,.65); }
+.wall .frame { margin-top: 10px; }
+/* booster : la tête apparaît quand la carte se retourne */
+.vc-front .crest { top: -30px; width: 74%; }
+.vc.r-common .vc-front .crest { width: 40%; top: -18px; }
+.vc.r-rare .vc-front .crest { width: 58%; top: -22px; }
+/* boutique */
+.vsi .crest { top: -2px; width: 64%; }
+.vsi.r-common .crest { width: 36%; top: 0; }
+.vsi.r-rare .crest { width: 50%; }
+.vsi.r-legendary { box-shadow: 0 4px 0 #D9A400, 0 0 16px rgba(255,180,0,.35); border-color: #F2C94C; }
+.vsi.r-epic { border-color: #D9C3FF; }
+/* fiche du vinyle */
+.vs-sleeve { overflow: visible !important; }
+.vs-sleeve .crest { top: -26px; width: 80%; }
+.vs-visual.r-common .vs-sleeve .crest { width: 46%; top: -16px; }
+.vs-sleeve .cover { border-radius: 12px; overflow: hidden; }
