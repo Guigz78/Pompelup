@@ -15,7 +15,11 @@ async function probe(url) {
   } catch (e) { return { ok: false, status: 0, error: String(e) }; }
 }
 const out = { checkedAt: new Date().toISOString(), previews: {}, covers: {} };
-for (const id of pick(P, 40)) out.previews[id] = await probe(pUrl(P[id]));
+for (const id of pick(P, 40)) {
+  // Extraits Deezer : on vérifie que le morceau fournit bien un lien d'écoute
+  if (P[id].startsWith('dz:')) { const r = await fetch(`https://api.deezer.com/track/${P[id].slice(3)}`).then(x => x.json()).catch(() => null); out.previews[id] = r?.preview ? await probe(r.preview) : { ok: false, status: 0, error: 'deezer sans extrait' }; }
+  else out.previews[id] = await probe(pUrl(P[id]));
+}
 for (const id of pick(C, 20)) out.covers[id] = await probe(cUrl(C[id]));
 const sum = o => `${Object.values(o).filter(x => x.ok).length}/${Object.keys(o).length}`;
 out.summary = { previews: sum(out.previews), covers: sum(out.covers) };

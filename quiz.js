@@ -516,9 +516,20 @@ async function searchDeezer(song) {
 }
 // Extraits pré-catalogués (previews.js) : lecture immédiate, sans recherche réseau
 const PREVIEWS = window.PREVIEWS || {};
-const catalogPreview = id => { const p = PREVIEWS[id]; return !p ? null : /^https?:/.test(p) ? p : `https://audio-ssl.itunes.apple.com/itunes-assets/${p}`; };
+const catalogPreview = id => { const p = PREVIEWS[id]; return !p || p.startsWith('dz:') ? null : /^https?:/.test(p) ? p : `https://audio-ssl.itunes.apple.com/itunes-assets/${p}`; };
+const hasCatalogPreview = id => !!PREVIEWS[id];
+// Morceau Deezer vérifié : on demande un lien d'écoute frais (les liens Deezer expirent)
+async function deezerPreview(song) {
+  const d = await jsonp(`https://api.deezer.com/track/${PREVIEWS[song.id].slice(3)}?output=jsonp`);
+  return d?.preview ? { url: d.preview, art: knownArt(song.id) || d.album?.cover_big || null, catalog: true } : null;
+}
 function fetchPreview(song) {
   if (previewCache.has(song.id)) return previewCache.get(song.id);
+  if (PREVIEWS[song.id]?.startsWith('dz:')) {
+    const p = deezerPreview(song).catch(() => null).then(r => r || livePreview(song));
+    previewCache.set(song.id, p);
+    return p;
+  }
   if (catalogPreview(song.id)) { const r = Promise.resolve({ url: catalogPreview(song.id), art: knownArt(song.id), catalog: true }); previewCache.set(song.id, r); return r; }
   return livePreview(song);
 }
@@ -3658,7 +3669,7 @@ function mpOnMsg(m) {
 function mpStart() {
   if (!iAmHost()) return;
   const all = shuffle(poolFor(MP.cfg.cat).slice());
-  const pool = [...all.filter(s => catalogPreview(s.id)), ...all.filter(s => !catalogPreview(s.id))];
+  const pool = [...all.filter(s => hasCatalogPreview(s.id)), ...all.filter(s => !hasCatalogPreview(s.id))];
   const songs = pool.slice(0, Math.min(MP.cfg.rounds, pool.length));
   const src = poolFor(MP.cfg.cat);
   const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };

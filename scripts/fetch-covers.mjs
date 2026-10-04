@@ -52,7 +52,13 @@ function artistOk(cand, song) {
   return got.includes(want) || similarity(got[0] || '', want) >= .88 || (want.length >= 4 && whole.includes(` ${want} `));
 }
 const ttl = s => norm(s).replace(/^the /, '');
-function titleOk(cand, song) { const a = ttl(cand), b = ttl(song.title); return a === b || similarity(a, b) >= .85; }
+// Même titre, ou variante officielle : « …, Pt. 2 », titre alternatif entre parenthèses
+function titleOk(cand, song) {
+  const a = ttl(cand), b = ttl(song.title);
+  if (a === b || similarity(a, b) >= .85) return true;
+  if (b.length >= 6 && a.startsWith(`${b} `) && a.length - b.length <= 8) return true;
+  return [...String(cand).matchAll(/\(([^)]+)\)/g)].some(m => { const x = ttl(m[1]); return x === b || similarity(x, b) >= .9; });
+}
 function best(list, song, title, artist, extra = () => '') {
   const ok = list.filter(x => titleOk(title(x), song) && artistOk(artist(x), song) && !BAD.test(norm(`${title(x)} ${artist(x)} ${extra(x)}`)));
   const rank = x => (ttl(title(x)) === ttl(song.title) ? 2 : 0) + (/live|remix|edit|version|acoustic|demo|karaoke/i.test(`${title(x)} ${extra(x)}`) ? 0 : 1);
@@ -95,7 +101,7 @@ const meta = (() => { try { return JSON.parse(fs.readFileSync(MOUT, 'utf8')); } 
 const writeM = () => fs.writeFileSync(MOUT, JSON.stringify(meta, null, 0).replace(/},"/g, '},\n"'));
 
 const out = { ...prev };
-const todo = SONGS.filter(s => !meta.covers[s.id]);
+const todo = SONGS.filter(s => !meta.covers[s.id] || (!meta.covers[s.id].none && !('dz' in meta.covers[s.id])));
 console.log(`${SONGS.length} chansons, ${todo.length} pochettes à vérifier`);
 let found = 0, i = 0;
 const coverMiss = new Set();
@@ -104,7 +110,7 @@ async function worker() {
     const s = todo[i++];
     const d = await deezerMatch(s);
     if (d?.error) { await sleep(300); continue; }   // pas de réponse : on retentera au prochain passage
-    if (d) { out[s.id] = `d:${d.album.md5_image}`; meta.covers[s.id] = { a: d.artist?.name, t: d.title, src: 'deezer' }; found++; }
+    if (d) { out[s.id] = `d:${d.album.md5_image}`; meta.covers[s.id] = { a: d.artist?.name, t: d.title, src: 'deezer', dz: d.id, pv: !!d.preview }; found++; }
     else coverMiss.add(s.id);
     await sleep(150);
   }
@@ -147,6 +153,12 @@ for (const s of ptodo) {
     meta.previews[s.id] = { a: t.artistName, t: t.trackName };
     pn++;
     if (coverMiss.has(s.id) && t.artworkUrl100) { out[s.id] = t.artworkUrl100.replace('100x100bb', '600x600bb'); meta.covers[s.id] = { a: t.artistName, t: t.trackName, src: 'itunes' }; coverMiss.delete(s.id); }
+  } else if (meta.covers[s.id]?.dz && meta.covers[s.id].pv) {
+    // iTunes ne l'a pas, Deezer oui : on garde l'identifiant du morceau vérifié, l'appli
+    // demande un lien d'écoute frais au moment de jouer (les liens Deezer expirent)
+    pout[s.id] = `dz:${meta.covers[s.id].dz}`;
+    meta.previews[s.id] = { a: meta.covers[s.id].a, t: meta.covers[s.id].t, src: 'deezer' };
+    pn++;
   } else {
     // Introuvable avec le bon artiste : on retire l'extrait douteux plutôt que de jouer une autre chanson
     if (pout[s.id]) removed++;
