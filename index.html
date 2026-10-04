@@ -775,6 +775,21 @@
     </div>
   </div>
 
+  <div class="overlay overlay-sheet" id="invite-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="inv-title">
+      <div class="sheet-title" id="inv-title">Inviter un ami</div>
+      <p>Envoie-lui le lien, ou donne-lui ce code à taper dans « Multijoueur » :</p>
+      <div class="inv-code" id="inv-code">-----</div>
+      <div class="inv-grid">
+        <a class="inv-btn inv-wa" id="inv-wa" href="#" target="_blank" rel="noopener"><span>💬</span>WhatsApp</a>
+        <a class="inv-btn inv-sms" id="inv-sms" href="#"><span>✉️</span>SMS</a>
+        <button class="inv-btn inv-copy" id="inv-copy" type="button"><span>🔗</span>Copier le lien</button>
+        <button class="inv-btn inv-more" id="inv-more" type="button"><span>⋯</span>Autres applis</button>
+      </div>
+      <button class="btn btn-outline btn-block" id="inv-close" type="button">Fermer</button>
+    </div>
+  </div>
+
   <div class="overlay overlay-sheet" id="welcome-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
       <div class="sheet-title" id="wl-title">Comment tu t’appelles ?</div>

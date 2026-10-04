@@ -2659,3 +2659,15 @@ body.is-tv-mode { background: #1A1238; overflow: hidden; }
 .tv-sound[hidden] { display: none; }
 .tv .mp-float { position: absolute; bottom: 10vh; font-size: 10vh; }
 .tv .mp-float small { font-size: 2.2vh; }
+
+/* ===== Fenêtre d'invitation ===== */
+button.mpp-empty { cursor: pointer; font: inherit; }
+button.mpp-empty .mpp-q { color: var(--violet); }
+.inv-code { margin: 4px 0 16px; text-align: center; font: 800 46px/1 var(--display); letter-spacing: 8px; color: var(--violet); }
+.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.inv-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 58px; border-radius: 16px; border: 2px solid var(--edge); box-shadow: 0 3px 0 var(--edge); background: #fff; font: 800 16px var(--text); color: var(--ink); text-decoration: none; }
+.inv-btn span { font-size: 22px; }
+.inv-wa { background: #25D366; border-color: #1DA851; box-shadow: 0 3px 0 #1DA851; color: #fff; }
+.inv-sms { background: #34C759; border-color: #28A548; box-shadow: 0 3px 0 #28A548; color: #fff; }
+.inv-btn:active { transform: translateY(3px); box-shadow: none; }
+.inv-btn[hidden] { display: none; }

@@ -3670,7 +3670,7 @@ function renderMulti() {
   renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
   $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
-    (list.length < 2 ? '<div class="mpp mpp-empty"><span class="mpp-q">?</span><b>Invite un ami</b></div>' : '');
+    (list.length < 2 ? '<button class="mpp mpp-empty" type="button"><span class="mpp-q">+</span><b>Invite un ami</b></button>' : '');
   $('#mp-settings').hidden = !host;
   if (host) {
     if (!$('#mp-cats').children.length) $('#mp-cats').innerHTML = CATS.map(c => `<button class="rf" type="button" role="radio" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
@@ -3998,11 +3998,24 @@ $('#steal-list').addEventListener('click', e => { const b = e.target.closest('.s
 $('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = true; });
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
-$('#mp-share').addEventListener('click', () => {
-  const url = `${location.href.split(/[?#]/)[0]}?room=${MP.code}`, text = `Rejoins ma salle Pompelup ! Code : ${MP.code}`;
-  if (navigator.share) navigator.share({ title: 'Pompelup', text, url }).catch(() => {});
-  else navigator.clipboard?.writeText(`${text}\n${url}`).then(() => toast('Lien copié !'), () => toast(`Code : ${MP.code}`));
-});
+// Invitation : notre propre fenêtre (code + WhatsApp, SMS, copier), le panneau du système en option
+const inviteMsg = () => { const url = `${location.href.split(/[?#]/)[0]}?room=${MP.code}`; return { url, text: `Viens jouer au blind test avec moi sur Pompelup ! Ouvre ce lien : ${url} (ou tape le code ${MP.code} dans Multijoueur)` }; };
+function openInvite() {
+  if (!MP.code) return;
+  const { text } = inviteMsg();
+  $('#inv-code').textContent = MP.code;
+  $('#inv-wa').href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  $('#inv-sms').href = `sms:${/iPhone|iPad|Mac/.test(navigator.userAgent) ? '&' : '?'}body=${encodeURIComponent(text)}`;
+  $('#inv-more').hidden = !navigator.share;
+  $('#invite-sheet').hidden = false;
+  sfx.tap();
+}
+$('#mp-share').addEventListener('click', openInvite);
+$('#mp-players').addEventListener('click', e => { if (e.target.closest('.mpp-empty')) openInvite(); });
+$('#inv-copy').addEventListener('click', () => { const { text } = inviteMsg(); navigator.clipboard?.writeText(text).then(() => toast('Lien copié : colle-le dans un message'), () => toast(`Code : ${MP.code}`)); });
+$('#inv-more').addEventListener('click', () => { const { url, text } = inviteMsg(); navigator.share?.({ title: 'Pompelup', text, url }).catch(() => {}); });
+$('#inv-close').addEventListener('click', () => { $('#invite-sheet').hidden = true; });
+$('#invite-sheet').addEventListener('click', e => { if (e.target.id === 'invite-sheet') $('#invite-sheet').hidden = true; });
 window.addEventListener('pagehide', () => { if (MP.code) mpLeave(true); });
 // Histoire
 
