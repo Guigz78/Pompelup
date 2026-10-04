@@ -2483,3 +2483,20 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .vs-sleeve .crest { top: -26px; width: 80%; }
 .vs-visual.r-common .vs-sleeve .crest { width: 46%; top: -16px; }
 .vs-sleeve .cover { border-radius: 12px; overflow: hidden; }
+
+/* ===== Lisibilité (passe « simplicité ») ===== */
+.nav-tiles .tab { height: 56px; }
+.nav-tiles .tab span { font-size: 12px; }
+.nav-tiles .tab .ico { width: 26px; height: 26px; }
+.choice-title { font-size: 18px; }
+.choice-artist { font-size: 15px; }
+.game-title { font-size: 25px; }
+.host-say { font-size: 16px; }
+.hh-q-txt small, .daily-bar-txt em, .mc-txt em, .upsell-txt em { font-size: 13.5px; }
+.joker { height: 48px; }
+.joker .jk-lbl { font-size: 13px; }
+.answer-foot { flex-wrap: wrap; }
+.answer-foot .btn-hint { flex-basis: 100%; }
+.jokers { flex: 1; }
+.jokers .joker { flex: 1; justify-content: center; }
+.sheet p, .rm-help, .pv-help { font-size: 14.5px; }

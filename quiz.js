@@ -3302,11 +3302,12 @@ function buyPass() {
 /* ================= ONBOARDING : la toute première ouverture ================= */
 const ONB = [
   { id: 'hello', title: 'Bienvenue sur Pompelup', text: 'Le blind test où chaque bonne réponse te fait gagner des vinyles à collectionner.' },
-  { id: 'play', video: 'assets/onboarding/play.webp', kicker: 'Jouer', title: 'Écoute et devine', text: 'Un extrait se lance : trouve la bonne chanson. Réponds vite et enchaîne les bonnes réponses pour faire des combos.' },
-  { id: 'modes', video: 'assets/onboarding/type.webp', kicker: 'Modes de jeu', title: '3 façons de jouer', chips: [['g-headphones', '4 choix', 'le classique'], ['g-keyboard', 'Saisie', 'écris le titre ou l’artiste'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier']] },
-  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Boosters', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster. Ouvre-le : 3 vinyles à chaque fois, du commun au légendaire.' },
+  { id: 'launch', video: 'assets/onboarding/launch.webp', kicker: 'Pour commencer', title: 'Choisis, puis JOUER', text: 'Touche la carte « Ton jeu » pour choisir la musique et le jeu. Ensuite, appuie sur le gros bouton jaune JOUER.' },
+  { id: 'play', video: 'assets/onboarding/play.webp', kicker: 'Jouer', title: 'Écoute et devine', text: 'Une musique se lance : touche la bonne chanson. Plus tu réponds vite, plus tu gagnes de points.' },
+  { id: 'modes', video: 'assets/onboarding/lyrics.webp', kicker: 'Les jeux', title: '4 façons de jouer', chips: [['g-headphones', '4 choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Boosters', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster. Ouvre-le : 3 vinyles, du commun au légendaire (la couronne dorée).' },
   { id: 'room', video: 'assets/onboarding/room.webp', kicker: 'Ton salon', title: 'Décore ton mur', text: 'Accroche tes plus beaux vinyles et change le papier peint, le canapé et les cadres.' },
-  { id: 'daily', kicker: 'Chaque jour', title: 'Toujours une raison de revenir', grid: [['quest', 'Quêtes du jour', 'des jetons à gagner'], ['mystery', 'Défi du jour', 'une chanson mystère, 3 essais'], ['crown', 'Pass de saison', 'une récompense par palier'], ['headphones', 'Multijoueur', 'défie tes potes en direct']] },
+  { id: 'daily', kicker: 'Chaque jour', title: 'Toujours une raison de revenir', grid: [['quest', 'Missions du jour', 'des jetons à gagner'], ['mystery', 'Défi du jour', 'une chanson mystère, 3 essais'], ['crown', 'Pass de saison', 'une récompense par palier'], ['headphones', 'Multijoueur', 'joue avec ta famille']] },
   { id: 'go', title: 'À toi de jouer !', text: 'Choisis ton perso et ton pseudo : un booster de bienvenue t’attend.' },
 ];
 let onbDone = null, onbI = 0;
