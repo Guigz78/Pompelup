@@ -3571,6 +3571,7 @@ async function mpOpen(code) {
   renderMulti();
   try { await tx.ready; } catch (e) { mpLeave(true); mpErr('Impossible de rejoindre la salle. Vérifie ta connexion.'); renderMulti(); return; }
   tx.send({ t: 'hello', p: mpSelf() });
+  if (!MP.isTv) window.PompeNative?.post('room', { code, url: tvUrl(code) });
   clearInterval(MP.hb);
   MP.hb = setInterval(() => {
     if (!MP.tx) return;
@@ -3583,6 +3584,7 @@ async function mpOpen(code) {
   sfx.pop();
 }
 function mpLeave(silent) {
+  window.PompeNative?.post('room', null);
   if (MP.tx) { try { MP.tx.send({ t: 'bye', id: MP.me.id }); } catch (e) {} MP.tx.close(); }
   clearInterval(MP.hb);
   MP.tx = null; MP.code = null; MP.players.clear(); MP.inGame = false; MP.chat = [];
@@ -3700,24 +3702,87 @@ function toggleReady() {
 /* ================= MODE TÉLÉ ================= */
 // La télé rejoint la salle comme écran (pas comme joueur) : elle joue la musique et affiche la partie.
 const TVM = { game: null, round: -1, shown: -1, phase: 'lobby', audio: new Audio(), unlocked: false, base: {}, t: null };
-const tvUrl = code => `${location.origin}${location.pathname}?tv${code ? `=${code}` : ''}`;
-async function castToTv() {
-  if (!MP.code) return;
-  const url = tvUrl(MP.code);
-  if ('PresentationRequest' in window) {
-    try { await new PresentationRequest([url]).start(); toast('Envoi vers la télé…'); return; }
-    catch (e) { if (e && e.name === 'AbortError') return; }
-  }
+// Adresse publique du jeu (dans l'appli native, la page n'a pas de vraie adresse web)
+const SITE_URL = /^https?:$/.test(location.protocol) && !/(^|\.)pompelup\.app$/.test(location.hostname) ? `${location.origin}${location.pathname}` : 'https://pompelup.vercel.app/';
+const tvUrl = code => `${SITE_URL}?tv${code ? `=${code}` : ''}`;
+// Caster comme Netflix :
+//  · appli iPhone/Android → bouton Cast natif (Chromecast, Google TV) + AirPlay (Apple TV)
+//  · site dans Chrome → bouton Cast de Chrome vers Chromecast
+//  · sinon → adresse + code à ouvrir sur la télé
+// La télé ouvre la page « ?tv&cast » (récepteur Google Cast enregistré sous CAST_APP_ID),
+// puis reçoit le code de la salle par le canal CAST_NS.
+const CAST_APP_ID = '';   // identifiant de l'appli récepteur (Google Cast SDK Developer Console)
+const CAST_NS = 'urn:x-cast:app.pompelup.tv';
+let castSdk = null;
+function loadCastSender() {
+  if (castSdk) return castSdk;
+  castSdk = new Promise(resolve => {
+    if (!CAST_APP_ID || !window.chrome || /iPhone|iPad/.test(navigator.userAgent)) return resolve(false);
+    window.__onGCastApiAvailable = ok => {
+      if (ok) cast.framework.CastContext.getInstance().setOptions({ receiverApplicationId: CAST_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED });
+      resolve(!!ok);
+    };
+    const sc = document.createElement('script');
+    sc.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+    sc.onerror = () => resolve(false);
+    document.head.appendChild(sc);
+    setTimeout(() => resolve(false), 6000);
+  });
+  return castSdk;
+}
+function showCastHelp() {
   $('#cast-url').textContent = tvUrl('').replace(/^https?:\/\//, '');
   $('#cast-code').textContent = MP.code;
   $('#cast-sheet').hidden = false;
+}
+async function castToTv() {
+  if (!MP.code) return;
+  sfx.tap();
+  // Appli native : sélecteur Cast / AirPlay du système, la télé reçoit le code de la salle
+  if (window.PompeNative) { window.PompeNative.post('cast', { code: MP.code, url: tvUrl(MP.code) }); return; }
+  if (await loadCastSender()) {
+    try {
+      const ctx = cast.framework.CastContext.getInstance();
+      await ctx.requestSession();
+      await ctx.getCurrentSession()?.sendMessage(CAST_NS, { code: MP.code });
+      toast('La salle s’affiche sur la télé 📺');
+      return;
+    } catch (e) { if (e === 'cancel' || e?.code === 'cancel') return; }
+  }
+  if ('PresentationRequest' in window && !/iPhone|iPad/.test(navigator.userAgent)) {
+    try { await new PresentationRequest([tvUrl(MP.code)]).start(); toast('Envoi vers la télé…'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  showCastHelp();
+}
+// Côté télé (Chromecast) : récepteur Google Cast, attend le code envoyé par le téléphone
+function startCastReceiver() {
+  const sc = document.createElement('script');
+  sc.src = 'https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js';
+  sc.onload = () => {
+    try {
+      const rc = cast.framework.CastReceiverContext.getInstance();
+      rc.addCustomMessageListener(CAST_NS, ev => {
+        const code = String(ev.data?.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (code.length === 5 && code !== MP.code) { TVM.game = null; TVM.phase = 'lobby'; tvJoin(code); }
+      });
+      rc.start({ customNamespaces: { [CAST_NS]: cast.framework.system.MessageType.JSON }, disableIdleTimeout: true, skipPlayersLoad: true });
+    } catch (e) {}
+  };
+  document.head.appendChild(sc);
 }
 function tvBoot(code) {
   MP.isTv = true;
   document.body.classList.add('is-tv-mode');
   $('#app').hidden = true;
   $('#tv-screen').hidden = false;
-  if (code) tvJoin(code); else { $('#tv-join').hidden = false; setTimeout(() => $('#tv-code').focus(), 200); }
+  // Chromecast / écran AirPlay : le son démarre tout seul, pas besoin de toucher
+  if (/[?&](cast|screen)\b/.test(location.search) || /CrKey/.test(navigator.userAgent)) TVM.unlocked = true;
+  if (/[?&]cast\b/.test(location.search) || /CrKey/.test(navigator.userAgent)) startCastReceiver();
+  $('#tv-sound').hidden = TVM.unlocked;
+  if (code) tvJoin(code);
+  else if (/[?&]cast\b/.test(location.search)) { $('#tv-main').hidden = false; $('#tv-body').innerHTML = '<div class="tv-lobby"><div class="tv-logo">Pompelup</div><p>Connexion au téléphone…</p></div>'; }
+  else { $('#tv-join').hidden = false; setTimeout(() => $('#tv-code').focus(), 200); }
 }
 async function tvJoin(code) {
   $('#tv-join').hidden = true; $('#tv-main').hidden = false;
@@ -3999,7 +4064,7 @@ $('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = 
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 // Invitation : notre propre fenêtre (code + WhatsApp, SMS, copier), le panneau du système en option
-const inviteMsg = () => { const url = `${location.href.split(/[?#]/)[0]}?room=${MP.code}`; return { url, text: `Viens jouer au blind test avec moi sur Pompelup ! Ouvre ce lien : ${url} (ou tape le code ${MP.code} dans Multijoueur)` }; };
+const inviteMsg = () => { const url = `${SITE_URL}?room=${MP.code}`; return { url, text: `Viens jouer au blind test avec moi sur Pompelup ! Ouvre ce lien : ${url} (ou tape le code ${MP.code} dans Multijoueur)` }; };
 function openInvite() {
   if (!MP.code) return;
   const { text } = inviteMsg();

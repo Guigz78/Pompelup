@@ -36,3 +36,23 @@ Identifiant de l'app : `app.pompelup.game` (à changer dans `app.json` si besoin
 - **Règle 4.2 d'Apple** : une app qui n'est qu'un site web peut être refusée.
   Pompelup embarque le jeu hors ligne avec retours haptiques natifs, ce qui aide ;
   ajouter les notifications de défi quotidien et Game Center renforcerait le dossier.
+
+## Caster sur la télé (Google Cast + AirPlay)
+
+Le bouton « Sur la télé » du multijoueur fonctionne comme Netflix :
+
+- **Chromecast / Google TV** : liste des télés du réseau, la télé ouvre la vue géante de la salle.
+- **Apple TV (AirPlay)** : « Recopie de l'écran » depuis le Centre de contrôle ; l'appli détecte
+  l'écran AirPlay et y affiche la vue télé (le téléphone reste la manette).
+
+### Activer Google Cast (une seule fois)
+
+1. Créer un compte sur la [Google Cast SDK Developer Console](https://cast.google.com/publish) (5 $ une fois).
+2. « Add new application » → **Custom Receiver**, URL : `https://pompelup.vercel.app/?tv&cast`.
+3. Copier l'**Application ID** obtenu, puis :
+   - dans `quiz.js`, mettre `const CAST_APP_ID = 'XXXXXXXX';` (bouton Cast du site dans Chrome) ;
+   - dans `eas.json`, ajouter `"env": { "EXPO_PUBLIC_CAST_APP_ID": "XXXXXXXX" }` au profil de build.
+4. Tant que l'appli n'est pas publiée dans la console, seuls les Chromecast enregistrés comme
+   appareils de test la voient ; « Publish » la rend disponible pour tout le monde.
+5. Refaire une version de l'appli (`npm run build:ios`) : Google Cast et l'écran externe
+   sont des modules natifs, ils ne marchent pas dans Expo Go.
