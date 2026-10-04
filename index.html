@@ -498,7 +498,7 @@
     <div class="pf-band">
       <button class="icon-btn pf-back" id="pf-back" type="button" aria-label="Retour"><svg class="ico"><use href="#i-g-back"/></svg></button>
       <button class="icon-btn pf-gear" id="pf-gear" type="button" aria-label="Réglages"><svg class="ico"><use href="#i-g-gear"/></svg></button>
-      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer de skin"><span id="pf-avatar-emoji"></span><span class="pf-edit" aria-hidden="true"><svg class="ico"><use href="#i-g-pencil"/></svg></span></button>
+      <button class="pf-avatar" id="pf-avatar" type="button" aria-label="Changer ma photo ou mon personnage"><span id="pf-avatar-emoji"></span><span class="pf-edit" aria-hidden="true"><svg class="ico"><use href="#i-g-pencil"/></svg></span></button>
     </div>
     <div class="scroll pf-scroll">
       <div class="pf-id">
@@ -736,6 +736,19 @@
       <p>S’il trouve la bonne réponse, c’est toi qui gagnes ses points.</p>
       <div class="steal-list" id="steal-list"></div>
       <button class="btn btn-outline btn-block" id="steal-cancel" type="button">Annuler</button>
+    </div>
+  </div>
+
+  <div class="overlay overlay-sheet" id="photo-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ph-title">
+      <div class="sheet-title" id="ph-title">Ta photo de profil</div>
+      <p>Elle s’affiche à la place de ton personnage, aussi pour tes amis en multijoueur.</p>
+      <input type="file" id="photo-input" accept="image/*" hidden>
+      <div class="sheet-stack">
+        <button class="btn btn-green btn-block" id="ph-pick" type="button">Prendre ou choisir une photo</button>
+        <button class="btn btn-outline btn-block" id="ph-char" type="button">Garder mon personnage</button>
+        <button class="btn btn-ghost btn-block" id="ph-skin" type="button">Changer de personnage</button>
+      </div>
     </div>
   </div>
 

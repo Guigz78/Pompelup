@@ -213,8 +213,10 @@ function applySkins() {
   disc.classList.add(`skin-${store.equip.disc}`);
   [...game.classList].filter(c => c.startsWith('theme-')).forEach(c => game.classList.remove(c));
   game.classList.add(`theme-${store.equip.theme}`);
-  $('#tab-avatar').innerHTML = meHTML({ head: true });
-  $('#pf-avatar-emoji').innerHTML = meHTML({ mood: 'happy' });
+  // Photo de profil si le joueur en a mis une, sinon son personnage
+  $('#tab-avatar').innerHTML = store.photo ? `<img class="avatar-photo" src="${store.photo}" alt="">` : meHTML({ head: true });
+  $('#pf-avatar-emoji').innerHTML = store.photo ? `<img class="avatar-photo" src="${store.photo}" alt="">` : meHTML({ mood: 'happy' });
+  $('#pf-avatar').classList.toggle('has-photo', !!store.photo);
 }
 function equipItem(kind, id) {
   if (!isOwned(kind, id)) return;
@@ -806,6 +808,22 @@ function renderBadges() {
   setBadge($('#tb-pass'), passClaimable());
   setBadge($('#tb-prof'), claimableAchs());
   $('#pt-badge').hidden = !claimableAchs();
+}
+
+// Photo de profil : recadrée au centre en carré, réduite, compressée (reste légère dans la sauvegarde)
+function squarePhoto(file, size, q) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const m = Math.min(img.naturalWidth, img.naturalHeight);
+      c.getContext('2d').drawImage(img, (img.naturalWidth - m) / 2, (img.naturalHeight - m) / 2, m, m, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+    img.src = url;
+  });
 }
 
 /* ---------------- Toast & FX ---------------- */
@@ -3502,7 +3520,7 @@ function mpTransport(code, onMsg) {
   });
   return { ready, send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => { try { window.PompeAuth.client.removeChannel(ch); } catch (e) {} } };
 }
-function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready }; }
+function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready, photo: store.photoSmall || null }; }
 function mpErr(msg) { $('#mp-err').textContent = msg || ''; }
 async function mpOpen(code) {
   mpLeave(true);
@@ -3585,7 +3603,8 @@ function mpReport(done) {
   renderLive();
 }
 const mpRanked = () => [...MP.players.values()].sort((a, b) => (b.score || 0) - (a.score || 0));
-const headHTML = p => charHTML(window.PompeChar.byId(p.skin), { head: true });
+const safePhoto = u => typeof u === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 40000 ? u : null;
+const headHTML = p => safePhoto(p.photo) ? `<img class="avatar-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { head: true });
 function renderLive() {
   const box = $('#mp-live'), rb = $('#mp-react');
   box.hidden = rb.hidden = !(G.cfg?.multi && MP.code);
@@ -3610,7 +3629,7 @@ function renderMulti() {
   $('#mp-room-code').textContent = MP.code;
   renderChat();
   $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
-  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
+  $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${k === 0 ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
     (list.length < 2 ? '<div class="mpp mpp-empty"><span class="mpp-q">?</span><b>Invite un ami</b></div>' : '');
   $('#mp-settings').hidden = !host;
   if (host) {
@@ -3653,7 +3672,7 @@ function mpAddChat(m) {
 function renderChat() {
   const box = $('#mp-msgs'); if (!box) return;
   if (!$('#mp-emojis').children.length) $('#mp-emojis').innerHTML = MP_EMOJIS.map(e => `<button class="mp-emo" type="button" data-emo="${e}" aria-label="Réagir ${e}">${e}</button>`).join('');
-  box.innerHTML = MP.chat.length ? MP.chat.map(c => `<div class="mp-msg${c.me ? ' is-me' : ''}">${c.me ? '' : `<span class="mpl-av">${headHTML(c)}</span>`}<p>${c.me ? '' : `<b>${esc(c.name)}</b>`}${esc(c.text)}</p></div>`).join('') : '<p class="mp-msg-empty">Dis bonjour à la salle !</p>';
+  box.innerHTML = MP.chat.length ? MP.chat.map(c => `<div class="mp-msg${c.me ? ' is-me' : ''}">${c.me ? '' : `<span class="mpl-av">${headHTML(MP.players.get(c.id) || c)}</span>`}<p>${c.me ? '' : `<b>${esc(c.name)}</b>`}${esc(c.text)}</p></div>`).join('') : '<p class="mp-msg-empty">Dis bonjour à la salle !</p>';
   box.scrollTop = box.scrollHeight;
 }
 function mpSendChat(text) {
@@ -3896,10 +3915,27 @@ $('#pf-name').addEventListener('change', e => {
   toast(store.name ? `C’est noté, ${store.name} !` : 'Pseudo effacé');
 });
 $('#pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
-$('#pf-avatar').addEventListener('click', () => {
+$('#pf-avatar').addEventListener('click', () => { $('#ph-char').hidden = !store.photo; $('#photo-sheet').hidden = false; });
+$('#photo-sheet').addEventListener('click', e => { if (e.target.id === 'photo-sheet') $('#photo-sheet').hidden = true; });
+$('#ph-pick').addEventListener('click', () => $('#photo-input').click());
+$('#ph-char').addEventListener('click', () => { store.photo = null; store.photoSmall = null; save(); applySkins(); $('#photo-sheet').hidden = true; toast('Ton personnage est de retour'); });
+$('#ph-skin').addEventListener('click', () => {
+  $('#photo-sheet').hidden = true;
   PF_TAB = 'skins';
   renderProfile();
   $('#pf-sec-skin')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+});
+$('#photo-input').addEventListener('change', async e => {
+  const f = e.target.files?.[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    const [big, small] = await Promise.all([squarePhoto(f, 256, .82), squarePhoto(f, 96, .7)]);
+    store.photo = big; store.photoSmall = small;
+    save(); applySkins();
+    $('#photo-sheet').hidden = true;
+    sfx.pop(); toast('Belle photo !');
+    if (MP.code) MP.tx?.send({ t: 'here', p: mpSelf() });
+  } catch (err) { toast('Impossible de lire cette photo'); }
 });
 $('#pf-ach').addEventListener('click', e => { const b = e.target.closest('.ach-claim'); if (b) claimAch(b.dataset.ach); });
 $('#pf-gear').addEventListener('click', () => { PF_TAB = 'settings'; renderProfile(); $('#pf-tabs').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); });
