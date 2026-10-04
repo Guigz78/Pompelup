@@ -383,8 +383,13 @@
         <div class="mp-settings" id="mp-settings">
           <h2 class="sec-title">Réglages</h2>
           <div class="chips-row" id="mp-cats"></div>
-          <div class="seg" id="mp-rounds"><button type="button" data-r="5" aria-checked="false">5 manches</button><button type="button" data-r="10" aria-checked="true">10 manches</button></div>
+          <div class="seg" id="mp-rounds"><button type="button" data-r="5" aria-checked="false">5 manches</button><button type="button" data-r="10" aria-checked="true">10 manches</button><button type="button" data-r="15" aria-checked="false">15 manches</button></div>
+          <div class="mp-opt"><b>Le jeu</b><div class="seg" id="mp-mode"><button type="button" data-v="choice">4 choix</button><button type="button" data-v="type">Saisie</button><button type="button" data-v="stems">Piste par piste</button></div></div>
+          <div class="mp-opt"><b>Temps pour répondre</b><div class="seg" id="mp-dur"><button type="button" data-v="10">10 s</button><button type="button" data-v="20">20 s</button><button type="button" data-v="30">30 s</button></div></div>
+          <label class="mp-opt mp-switch"><span><b>Classement après chaque manche</b><small>Avec les petites piques : qui est le boss, qui est le gros looseur…</small></span><input type="checkbox" id="mp-board" class="switch" checked></label>
+          <label class="mp-opt mp-switch"><span><b>Jokers autorisés</b><small>Points doublés et Voleur</small></span><input type="checkbox" id="mp-jokers" class="switch" checked></label>
         </div>
+        <div class="mp-rules" id="mp-rules"></div>
         <section class="panel mp-chat">
           <h2 class="sec-title">Chat</h2>
           <div class="mp-msgs" id="mp-msgs"><p class="mp-msg-empty">Dis bonjour à la salle !</p></div>
@@ -787,6 +792,14 @@
         <button class="inv-btn inv-more" id="inv-more" type="button"><span>⋯</span>Autres applis</button>
       </div>
       <button class="btn btn-outline btn-block" id="inv-close" type="button">Fermer</button>
+    </div>
+  </div>
+
+  <div class="mp-board" id="mp-board-ov" hidden>
+    <div class="mpb-card">
+      <div class="mpb-title" id="mpb-title">Classement</div>
+      <div class="mpb-list" id="mpb-list"></div>
+      <div class="mpb-banter" id="mpb-banter"></div>
     </div>
   </div>
 

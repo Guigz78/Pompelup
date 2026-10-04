@@ -1067,7 +1067,7 @@ function startGame(cfg) {
     cfg, token: G.token + 1, phase: 'loading',
     songs: pool.slice(0, rounds), spares: cfg.fixed ? [] : pool.slice(rounds, rounds + (cfg.mode === 'lyrics' ? 40 : 12)),
     i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false, jkUsed: {}, x2: false,
-    dur: cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20,
+    dur: cfg.dur || (cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20),
   });
   if (cfg.daily) { store.daily = { date: dayKey(), won: false, tries: 0, done: false }; save(); }
   $('#game-score').textContent = '0';
@@ -1433,6 +1433,7 @@ function animateScore() {
 
 function nextRound() {
   if (G.phase !== 'reveal') return;
+  $('#mp-board-ov').hidden = true;
   if (G.cfg.multi && $('#btn-next').disabled) return;
   clearTimeout(G.autoNext);
   if (G.i >= G.songs.length - 1) return endGame();
@@ -1749,7 +1750,7 @@ function useHint() {
 /* ----- Jokers ----- */
 function renderJokers() {
   const box = $('#jokers');
-  box.hidden = !G.cfg || !!G.cfg.daily;
+  box.hidden = !G.cfg || !!G.cfg.daily || G.cfg.noJokers;
   if (box.hidden) return;
   // Le voleur ne sert qu'en multijoueur : il faut quelqu'un à qui voler
   $('#jk-steal').hidden = !G.cfg.multi;
@@ -1836,11 +1837,48 @@ function mpMaybeNext() {
   next.disabled = !all;
   next.querySelector('span').textContent = all ? (G.i >= G.songs.length - 1 ? 'Voir les résultats' : 'Musique suivante…') : `En attente des autres (${done}/${list.length})`;
   if (!all || G.mpNextT) return;
-  const token = G.token, wait = Math.max(1200, 2600 - (Date.now() - (G.mpRevealAt || 0)));
+  const showBoard = G.cfg.board && !(G.i >= G.songs.length - 1);
+  if (showBoard) setTimeout(() => { if (G.phase === 'reveal') mpShowBoard(); }, Math.max(0, 1600 - (Date.now() - (G.mpRevealAt || 0))));
+  const token = G.token, wait = showBoard ? Math.max(5200, 6200 - (Date.now() - (G.mpRevealAt || 0))) : Math.max(1200, 2600 - (Date.now() - (G.mpRevealAt || 0)));
   const bar = $('#next-progress');
   bar.style.transition = 'none'; bar.style.width = '0'; void bar.offsetWidth;
   bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
   G.mpNextT = setTimeout(() => { G.mpNextT = null; if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
+}
+
+// Classement entre les manches, avec des piques (même texte chez tout le monde : tirage basé sur la manche)
+function mpBanter(round, list, prev) {
+  if (list.length < 2) return [];
+  const pick = (arr, k) => arr[(round * 7 + k * 13) % arr.length];
+  const ranked = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const gain = p => (p.score || 0) - (prev[p.id] ?? 0);
+  const top = ranked[0], last = ranked[ranked.length - 1], out = [];
+  const tops = ['{n} c’est le boss 👑', '{n} est intouchable 😎', '{n} a mangé un dictionnaire de la musique 📚', 'Tout le monde s’incline devant {n} 🙇', '{n} règne sans partage 🏆'];
+  const lasts = ['{n} le gros looseur 🥔', '{n} dort au fond de la classe 😴', '{n}, tu as oublié tes oreilles ? 🙉', '{n} creuse encore 🕳️', 'On envoie des secours à {n} 🚑'];
+  const zeros = ['{n} n’a rien trouvé cette fois 🤐', '{n} a appuyé au hasard ? 🎲', 'Manche blanche pour {n} 😬'];
+  const climbs = ['{n} remonte comme une fusée 🚀', '{n} est en feu 🔥', 'Attention, {n} se réveille ⚡'];
+  if ((top.score || 0) > 0) out.push(pick(tops, 0).replace('{n}', top.name));
+  const climber = list.filter(p => p.id !== top.id).sort((a, b) => gain(b) - gain(a))[0];
+  if (climber && gain(climber) > 0 && gain(climber) >= gain(top)) out.push(pick(climbs, 1).replace('{n}', climber.name));
+  if (last.id !== top.id) out.push((gain(last) <= 0 && round > 0 ? pick(lasts, 2) : gain(last) <= 0 ? pick(zeros, 2) : pick(lasts, 3)).replace('{n}', last.name));
+  return out.slice(0, 2);
+}
+function mpShowBoard() {
+  const list = mpPeople().map(p => p.id === MP.me.id ? Object.assign({}, p, mpSelf()) : p);
+  const prev = MP.prevScores || {};
+  const ranked = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const prevRank = Object.fromEntries(list.slice().sort((a, b) => (prev[b.id] ?? 0) - (prev[a.id] ?? 0)).map((p, k) => [p.id, k]));
+  $('#mpb-title').textContent = `Classement après la manche ${G.i + 1}`;
+  $('#mpb-list').innerHTML = ranked.map((p, k) => {
+    const g = (p.score || 0) - (prev[p.id] ?? 0), mv = G.i > 0 ? prevRank[p.id] - k : 0;
+    return `<div class="mpb-row${p.id === MP.me.id ? ' is-me' : ''}" style="animation-delay:${k * .08}s"><i class="mpb-pos p${k + 1}">${k + 1}</i><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b>${mv > 0 ? '<em class="mpb-up">▲</em>' : mv < 0 ? '<em class="mpb-down">▼</em>' : ''}<span class="mpb-pts">${fmt(p.score || 0)}<small>${g > 0 ? `+${fmt(g)}` : '+0'}</small></span></div>`;
+  }).join('');
+  $('#mpb-banter').innerHTML = mpBanter(G.i, list, prev).map(t => `<p>${esc(t)}</p>`).join('');
+  MP.prevScores = Object.fromEntries(list.map(p => [p.id, p.score || 0]));
+  $('#mp-board-ov').hidden = false;
+  sfx.pop();
+  clearTimeout(MP.boardT);
+  MP.boardT = setTimeout(() => { $('#mp-board-ov').hidden = true; }, 3800);
 }
 
 /* ----- Fin de partie ----- */
@@ -3534,7 +3572,7 @@ function playDaily() {
 // présence par battements, l'hôte (le plus ancien arrivé) choisit les extraits et les réponses.
 const MP_LOCAL = /[?&]localmp\b/.test(location.search);   // tests : BroadcastChannel entre onglets
 const MP_MAX = 8;
-const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10 }, inGame: false, game: null };
+const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10, mode: 'choice', dur: 20, board: true, jokers: true }, inGame: false, game: null };
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 // Joueurs (la télé n'est pas un joueur)
@@ -3623,7 +3661,7 @@ function mpStart() {
   const pool = [...all.filter(s => hasCatalogPreview(s.id)), ...all.filter(s => !hasCatalogPreview(s.id))];
   const songs = pool.slice(0, Math.min(MP.cfg.rounds, pool.length));
   const src = poolFor(MP.cfg.cat);
-  const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
+  const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, mode: MP.cfg.mode, dur: MP.cfg.dur, board: MP.cfg.board, jokers: MP.cfg.jokers, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
   MP.tx.send({ t: 'start', game });
   mpPlay(game);
 }
@@ -3632,7 +3670,8 @@ function mpPlay(game) {
   clearTimeout(MP.countdown); MP.countdown = null;
   Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false, ready: false });
   MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false, ready: false }));
-  startGame({ cat: game.cat, mode: 'choice', rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
+  MP.prevScores = {};
+  startGame({ cat: game.cat, mode: game.mode || 'choice', dur: game.dur, noJokers: game.jokers === false, board: game.board !== false, rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
   renderLive();
 }
 function mpReport(done) {
@@ -3678,7 +3717,14 @@ function renderMulti() {
     if (!$('#mp-cats').children.length) $('#mp-cats').innerHTML = CATS.map(c => `<button class="rf" type="button" role="radio" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
     $$('#mp-cats .rf').forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === MP.cfg.cat)));
     $$('#mp-rounds button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.r === MP.cfg.rounds)));
+    $$('#mp-mode button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === (MP.cfg.mode || 'choice'))));
+    $$('#mp-dur button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.v === (MP.cfg.dur || 20))));
+    $('#mp-board').checked = MP.cfg.board !== false;
+    $('#mp-jokers').checked = MP.cfg.jokers !== false;
   }
+  // Résumé des règles, visible par tous
+  const c = MP.cfg, mn = { choice: '4 choix', type: 'Saisie', stems: 'Piste par piste' }[c.mode || 'choice'];
+  $('#mp-rules').innerHTML = `<span>${ico('g-note')}${esc(catById(c.cat).name)}</span><span>${c.rounds} manches</span><span>${mn}</span><span>${c.dur || 20} s</span>${c.board !== false ? '<span>Classement + piques</span>' : ''}${c.jokers === false ? '<span>Sans jokers</span>' : ''}`;
   const ready = list.filter(p => p.ready).length, allReady = list.length >= 2 && ready === list.length;
   $('#mp-wait').textContent = list.length < 2 ? 'Invite au moins un ami avec le bouton « Inviter ».'
     : allReady ? 'Tout le monde est prêt : la partie commence !'
@@ -3798,6 +3844,7 @@ async function tvPlayRound() {
   const g = TVM.game, s = SONG.get(g.songs[TVM.round]);
   TVM.phase = 'play';
   TVM.base = Object.fromEntries(mpPeople().map(p => [p.id, p.found || 0]));
+  TVM.prevScore = Object.fromEntries(mpPeople().map(p => [p.id, p.score || 0]));
   tvRender();
   try { TVM.audio.pause(); } catch (e) {}
   const pv = s && await fetchPreview(s);
@@ -3811,10 +3858,11 @@ function tvCheck() {
   TVM.phase = 'reveal'; TVM.shown = TVM.round;
   tvRender();
   clearTimeout(TVM.t);
+  const boardOn = TVM.game.board !== false && TVM.round < TVM.game.songs.length - 1;
   TVM.t = setTimeout(() => {
     if (TVM.round >= TVM.game.songs.length - 1) { TVM.phase = 'end'; MP.inGame = false; try { TVM.audio.pause(); } catch (e) {} tvRender(); return; }
     TVM.round++; tvPlayRound();
-  }, 2600);
+  }, boardOn ? 6000 : 2600);
 }
 function tvRender() {
   if (!MP.isTv) return;
@@ -3844,7 +3892,8 @@ function tvRender() {
   if (TVM.phase === 'reveal' && s) {
     const found = ps.filter(p => (p.found || 0) > (TVM.base[p.id] || 0));
     body.innerHTML = `<div class="tv-reveal"><div class="tv-cover">${coverHTML(s)}</div><div class="tv-rv-txt"><small>C’était…</small><h1>${esc(s.title)}</h1><h2>${esc(s.artist)} · ${s.year}</h2>
-      <div class="tv-found">${found.length ? found.map(p => `<span>${av(p)}${esc(p.name)}</span>`).join('') : '<span class="tv-none">Personne n’a trouvé !</span>'}</div></div></div>`;
+      <div class="tv-found">${found.length ? found.map(p => `<span>${av(p)}${esc(p.name)}</span>`).join('') : '<span class="tv-none">Personne n’a trouvé !</span>'}</div>
+      ${g.board !== false ? `<div class="tv-banter">${mpBanter(TVM.round, ps, TVM.prevScore || {}).map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}</div></div>`;
     return;
   }
   body.innerHTML = `<div class="tv-play"><div class="tv-disc"><div class="tv-disc-in">?</div></div><h1>Quelle est cette chanson ?</h1>
@@ -4062,6 +4111,11 @@ $('#tv-sound').addEventListener('click', () => { TVM.unlocked = true; unlockAudi
 $('#steal-list').addEventListener('click', e => { const b = e.target.closest('.steal-p'); if (b && !b.disabled) chooseSteal(b.dataset.id); });
 $('#steal-cancel').addEventListener('click', () => { $('#steal-sheet').hidden = true; });
 $('#mp-cats').addEventListener('click', e => { const b = e.target.closest('.rf'); if (!b || !iAmHost()) return; MP.cfg.cat = b.dataset.cat; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
+const mpSetCfg = (k, v) => { if (!iAmHost()) return; MP.cfg[k] = v; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); sfx.tap(); renderMulti(); };
+$('#mp-mode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('mode', b.dataset.v); });
+$('#mp-dur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('dur', +b.dataset.v); });
+$('#mp-board').addEventListener('change', e => mpSetCfg('board', e.target.checked));
+$('#mp-jokers').addEventListener('change', e => mpSetCfg('jokers', e.target.checked));
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 // Invitation : notre propre fenêtre (code + WhatsApp, SMS, copier), le panneau du système en option
 const inviteMsg = () => { const url = `${SITE_URL}?room=${MP.code}`; return { url, text: `Viens jouer au blind test avec moi sur Pompelup ! Ouvre ce lien : ${url} (ou tape le code ${MP.code} dans Multijoueur)` }; };
