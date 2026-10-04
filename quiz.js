@@ -770,6 +770,7 @@ function show(id) {
   if (id === 'collection') renderCollection();
   ambience.stop();
   if (id === 'shop') renderShop();
+  if (id === 'modes') renderModes();
   if (id === 'pass') { renderPass(); requestAnimationFrame(() => { const r = $(`#pass-track .pv-row[data-tier="${Math.max(1, passTier())}"]`); if (r && passTier() > 2) window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 220); }); }
   if (id === 'boosters') renderBoosters();
   if (id === 'multi') renderMulti();
@@ -853,6 +854,42 @@ function confetti(n = 60, colors = ['#58CC02', '#1CB0F6', '#FFC800', '#FF4B4B', 
   }
 }
 
+/* ---------------- Choix du jeu (façon Brawl Stars) ---------------- */
+const MODES = {
+  choice: { name: '4 choix', desc: 'Écoute et choisis la bonne chanson parmi 4.', icon: 'g-headphones', color: '#1CB0F6', lip: '#1689C9' },
+  type: { name: 'Saisie', desc: 'Écris le titre ou le nom du chanteur.', icon: 'g-keyboard', color: '#7B5CFF', lip: '#5A3DE0' },
+  stems: { name: 'Piste par piste', desc: 'La musique arrive instrument par instrument, la voix en dernier.', icon: 'g-bolt', color: '#FF4FA3', lip: '#D6307F' },
+  lyrics: { name: 'N’oubliez pas les paroles', desc: 'Trouve le mot qui manque dans la chanson.', icon: 'g-mic', color: '#FF9600', lip: '#CD7900' },
+};
+const modeOf = () => MODES[store.prefs.mode] ? store.prefs.mode : 'choice';
+function renderModeBanner() {
+  const m = MODES[modeOf()];
+  const b = $('#mode-banner');
+  b.style.setProperty('--mc', m.color); b.style.setProperty('--ml', m.lip);
+  $('#mb-ico').innerHTML = ico(m.icon);
+  $('#mb-name').textContent = m.name;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} chansons`;
+}
+function renderModes() {
+  const list = $('#cat-list');
+  if (!list.children.length) {
+    list.innerHTML = CATS.map(c => `
+      <button class="cat" type="button" role="radio" data-cat="${c.id}">
+        <span class="cat-illu" aria-hidden="true" style="background:${c.bg}"><img src="${c.illu}" alt="" loading="lazy" style="object-position:${c.pos}"></span>
+        <span class="cat-name">${esc(c.name)}</span>
+        <span class="cat-count">${poolFor(c.id).length} titres</span>
+      </button>`).join('');
+  }
+  $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
+  $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
+  const card = (k, m, sel, extra = '') => `<button class="mode-card${sel ? ' is-on' : ''}" type="button" role="radio" aria-checked="${sel}" data-mode="${k}" style="--mc:${m.color};--ml:${m.lip}">
+      <span class="mcd-ico">${ico(m.icon)}</span><span class="mcd-txt"><b>${m.name}</b><small>${m.desc}</small></span>${sel ? `<span class="mcd-check">${ico('g-check')}</span>` : extra}</button>`;
+  $('#mode-seg').innerHTML = Object.entries(MODES).map(([k, m]) => card(k, m, k === modeOf())).join('');
+  const d = dailyToday();
+  $('#mode-extra').innerHTML = card('daily', { name: 'Défi du jour', desc: d ? `Déjà joué aujourd’hui : reviens demain !` : 'Une chanson mystère, 3 essais, un booster à gagner.', icon: 'mystery', color: '#22B8F0', lip: '#1689C9' }, false, '<span class="mcd-go">Jouer</span>')
+    + card('multi', { name: 'Multijoueur', desc: 'Joue en direct avec ta famille ou tes amis.', icon: 'g-user', color: '#9B7BFF', lip: '#5A3DE0' }, false, '<span class="mcd-go">Ouvrir</span>');
+}
+
 /* ---------------- Accueil ---------------- */
 let dailyTicker = null;
 function renderHome() {
@@ -867,19 +904,7 @@ function renderHome() {
   hb.querySelector('use').setAttribute('href', store.goldBoosters ? '#i-booster-gold' : '#i-booster');
   renderCoins();
 
-  const list = $('#cat-list');
-  if (!list.children.length) {
-    list.innerHTML = CATS.map(c => `
-      <button class="cat" type="button" role="radio" data-cat="${c.id}">
-        <span class="cat-illu" aria-hidden="true" style="background:${c.bg}"><img src="${c.illu}" alt="" loading="lazy" style="object-position:${c.pos}"></span>
-        <span class="cat-name">${esc(c.name)}</span>
-        <span class="cat-count">${poolFor(c.id).length} titres</span>
-      </button>`).join('');
-  }
-  $$('.cat', list).forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === store.prefs.cat)));
-  $$('#mode-seg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === store.prefs.mode)));
-  $$('#rounds-seg button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.rounds === store.prefs.rounds)));
-  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} manches${store.prefs.mode === 'type' ? ' · saisie' : store.prefs.mode === 'stems' ? ' · piste par piste' : ''}`;
+  renderModeBanner();
   renderBoosterCard();
   renderMissionsCard();
   renderHomeHeader();
@@ -994,7 +1019,7 @@ function startGame(cfg) {
   const rounds = Math.min(cfg.rounds, pool.length);
   Object.assign(G, {
     cfg, token: G.token + 1, phase: 'loading',
-    songs: pool.slice(0, rounds), spares: cfg.fixed ? [] : pool.slice(rounds, rounds + 12),
+    songs: pool.slice(0, rounds), spares: cfg.fixed ? [] : pool.slice(rounds, rounds + (cfg.mode === 'lyrics' ? 40 : 12)),
     i: 0, score: 0, combo: 0, bestCombo: 0, results: [], boostersWon: 0, hintUsed: false, jkUsed: {}, x2: false,
     dur: cfg.daily ? 30 : cfg.mode === 'type' ? 25 : 20,
   });
@@ -1010,6 +1035,7 @@ function startGame(cfg) {
   applySkins();
   $('#screen-game').classList.toggle('is-rapid', cfg.mode === 'stems');
   $('#screen-game').classList.toggle('is-type', cfg.mode === 'type');
+  $('#screen-game').classList.toggle('is-lyrics', cfg.mode === 'lyrics');
   show('game');
   G.songs.slice(0, 2).forEach(fetchPreview);
   startRound();
@@ -1017,14 +1043,57 @@ function startGame(cfg) {
 function updateGameGauge() { $('#game-gauge-n').textContent = `${store.gauge}/${GAUGE_MAX}`; }
 
 async function resolveRound(i) {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const lyr = G.cfg.mode === 'lyrics';
+  for (let attempt = 0; attempt < (lyr ? 8 : 3); attempt++) {
     const song = G.songs[i];
-    const pv = await fetchPreview(song);
-    if (pv) return { song, pv };
+    // Paroles : il faut l'extrait ET des paroles exploitables
+    const [pv, ly] = await Promise.all([fetchPreview(song), lyr ? fetchLyrics(song) : null]);
+    if (pv && (!lyr || ly)) return { song, pv, ly };
     if (!G.spares.length) break;
     G.songs[i] = G.spares.shift();
   }
-  return { song: G.songs[i], pv: null };
+  return { song: G.songs[i], pv: null, ly: lyr ? await fetchLyrics(G.songs[i]) : null };
+}
+
+/* ----- N'oubliez pas les paroles : paroles récupérées à la volée (LRCLIB), un mot à retrouver ----- */
+const lyricsCache = new Map();
+const STOP = new Set('avec dans pour mais plus tout tous toute comme quand nous vous elle elles ils leur leurs mon mes ton tes son ses notre votre cette cela ceux celle encore jamais toujours rien bien trop tres sans sous vers chez the and you your that this with what when where have just like dont cant will from they them there been were into baby yeah ohoh oooh nana lala'.split(' '));
+const FALLBACK_WORDS = ['amour', 'toujours', 'coeur', 'nuit', 'soleil', 'danse', 'monde', 'rêve', 'temps', 'ciel', 'love', 'night', 'heart', 'dance', 'world', 'dream'];
+const wordsOf = line => line.match(/[\p{L}][\p{L}'’-]*/gu) || [];
+function buildLyricQuestion(text, song) {
+  const lines = text.split(/\n/).map(l => l.trim()).filter(l => l && !/^\[|^\(/.test(l));
+  const titleN = cleanTitle(song.title);
+  const ok = w => { const n = normalize(w); return n.length >= 4 && !STOP.has(n) && !titleN.includes(n); };
+  const pool = [...new Set(lines.flatMap(wordsOf).filter(ok).map(w => w.toLowerCase()))];
+  const cands = lines.filter(l => { const w = wordsOf(l); return w.length >= 5 && w.length <= 14 && w.some(ok) && !(titleN.length > 3 && normalize(l).includes(titleN)); });
+  if (!cands.length || pool.length < 4) return null;
+  const line = pickOne(cands), targets = wordsOf(line).filter(ok), word = pickOne(targets);
+  const near = shuffle(pool.filter(w => normalize(w) !== normalize(word) && Math.abs(w.length - word.length) <= 3 && !normalize(line).split(' ').includes(normalize(w))));
+  const others = [...near, ...shuffle(FALLBACK_WORDS.filter(w => normalize(w) !== normalize(word)))].slice(0, 3);
+  const at = line.indexOf(word);
+  return { before: line.slice(0, at), word, after: line.slice(at + word.length), options: shuffle([word, ...others]) };
+}
+function fetchLyrics(song) {
+  if (lyricsCache.has(song.id)) return lyricsCache.get(song.id);
+  const enc = encodeURIComponent, main = artistParts(song.artist)[0] || song.artist;
+  const get = async url => { const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 7000); try { const r = await fetch(url, { signal: ctrl.signal }); return r.ok ? await r.json() : null; } catch (e) { return null; } finally { clearTimeout(t); } };
+  const p = (async () => {
+    let d = await get(`https://lrclib.net/api/get?artist_name=${enc(song.artist)}&track_name=${enc(song.title)}`);
+    if (!d?.plainLyrics) {
+      const list = await get(`https://lrclib.net/api/search?track_name=${enc(song.title)}&artist_name=${enc(main)}`);
+      // Même exigence que pour les extraits : bon titre ET bon artiste
+      d = (list || []).find(x => x.plainLyrics && !x.instrumental && sameArtist(x.artistName || '', song) && similarity(cleanTitle(x.trackName || ''), cleanTitle(song.title)) >= .85);
+    }
+    return d?.plainLyrics ? buildLyricQuestion(d.plainLyrics, song) : null;
+  })();
+  lyricsCache.set(song.id, p);
+  return p;
+}
+function renderLyric(q, reveal) {
+  const box = $('#lyric');
+  box.hidden = false;
+  box.innerHTML = `<span class="ly-song">${ico('g-note')}${esc(G.song.title)} · ${esc(G.song.artist)}</span>
+    <p class="ly-line">« ${esc(q.before)}<b class="ly-gap${reveal ? ' is-shown' : ''}">${reveal ? esc(q.word) : '&nbsp;'}</b>${esc(q.after)} »</p>`;
 }
 
 function distractors(song, n = 3, srcIn) {
@@ -1062,7 +1131,7 @@ async function startRound() {
   $('#rapid').hidden = true;
   $('#btn-next').hidden = true;
   $('#game-prog').style.width = `${G.i / G.songs.length * 100}%`;
-  $('#game-title').textContent = G.cfg.daily ? 'Chanson mystère du jour' : G.cfg.mode === 'type' ? 'Trouve le titre et l’artiste' : G.cfg.mode === 'stems' ? 'Maintiens le disque pour écouter' : 'Quelle est cette chanson ?';
+  $('#game-title').textContent = G.cfg.daily ? 'Chanson mystère du jour' : G.cfg.mode === 'type' ? 'Trouve le titre et l’artiste' : G.cfg.mode === 'stems' ? 'Maintiens le disque pour écouter' : G.cfg.mode === 'lyrics' ? 'Trouve le mot qui manque' : 'Quelle est cette chanson ?';
   G.holding = false;
   if (!G.cfg.daily) say(G.i === G.songs.length - 1 && G.i > 0 ? HOST_LINES.last() : HOST_LINES.start(G.i + 1));
   else say('Le défi du jour : 3 essais, pas un de plus !');
@@ -1077,7 +1146,8 @@ async function startRound() {
   renderJokers();
   $('#hint-label').textContent = G.cfg.mode === 'type' ? 'Indice −30 %' : '50/50 −30 %';
 
-  const { song, pv } = await resolveRound(G.i);
+  $('#lyric').hidden = true;
+  const { song, pv, ly } = await resolveRound(G.i);
   if (token !== G.token) return;
   G.song = song;
   G.pv = pv;
@@ -1099,6 +1169,14 @@ async function startRound() {
     $('#suggest').innerHTML = '';
     $('#attempts').hidden = !G.cfg.daily;
     renderAttempts();
+  } else if (G.cfg.mode === 'lyrics' && ly) {
+    G.ly = ly;
+    renderLyric(ly, false);
+    $('#choices').innerHTML = ly.options.map((w, k) => `
+      <button class="choice choice-word" type="button" data-id="${normalize(w) === normalize(ly.word) ? song.id : `w${k}`}" disabled>
+        <span class="choice-key" aria-hidden="true">${k + 1}</span>
+        <span class="choice-txt"><span class="choice-title">${esc(w)}</span></span>
+      </button>`).join('');
   } else {
     const opts = G.cfg.fixedOptions?.[G.i] ? G.cfg.fixedOptions[G.i].map(id => SONG.get(id)).filter(Boolean) : shuffle([song, ...distractors(song)]);
     $('#choices').innerHTML = opts.map((s, k) => `
@@ -1233,6 +1311,7 @@ function finishRound(ok, reason, sourceEl) {
     buzz([50, 40, 50]);
   }
   if (G.x2) { G.x2 = false; $('#game-x2').hidden = true; }
+  if (G.cfg.mode === 'lyrics' && G.ly) renderLyric(G.ly, true);
   G.results.push({ song, ok, pts, time: elapsed, art: G.pv?.art || knownArt(song.id) });
   if (G.cfg.multi && MP.stolenBy && MP.stolenBy.round === G.i) {
     // Un voleur nous visait : s'il y a des points, ils partent chez lui
@@ -1754,7 +1833,7 @@ function endGame() {
   const ratio = n ? found / n : 0;
   $('#res-char').innerHTML = meHTML({ mood: record ? 'grin' : ratio >= .6 ? 'happy' : ratio >= .3 ? 'smirk' : 'sad' });
   $('#res-title').textContent = G.cfg.daily ? (found ? 'Défi réussi !' : 'Défi raté…') : found === n && n > 0 ? 'Partie parfaite !' : ratio >= .5 ? 'Partie terminée !' : 'On remet ça ?';
-  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'piste par piste' : '4 choix'}`;
+  $('#res-kicker').textContent = G.cfg.daily ? 'Défi du jour' : `${catById(G.cfg.cat).name} · ${G.cfg.mode === 'type' ? 'saisie' : G.cfg.mode === 'stems' ? 'piste par piste' : G.cfg.mode === 'lyrics' ? 'paroles' : '4 choix'}`;
   $('#res-record').hidden = !record;
   $('#res-acc').textContent = `${Math.round(ratio * 100)} %`;
   $('#res-acc-label').textContent = ratio === 1 ? 'Parfait' : ratio >= .8 ? 'Génial' : ratio >= .5 ? 'Bien' : 'Précision';
@@ -3598,7 +3677,7 @@ if (window.visualViewport) {
 }
 
 /* ---------------- Événements ---------------- */
-const quickPlay = () => { const p = store.prefs; startGame({ cat: p.cat, mode: p.mode, rounds: p.rounds }); };
+const quickPlay = () => { const p = store.prefs; unlockAudio(); startGame({ cat: p.cat, mode: modeOf(), rounds: p.rounds }); };
 $('#btn-play').addEventListener('click', quickPlay);
 $('#home-boosters').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 $('#tabbar').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t && t.dataset.tab !== currentScreen()) { unlockAudio(); show(t.dataset.tab); } });
@@ -3612,9 +3691,13 @@ $('#home-streak').addEventListener('click', () => {
   const s = currentStreak();
   toast(playedToday() ? `${plural(s, 'jour', 'jours')} d’affilée, bravo !` : s ? `Joue aujourd’hui pour garder ta série de ${s} jours` : 'Joue une partie pour lancer ta série');
 });
-$('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat'); if (!b) return; store.prefs.cat = b.dataset.cat; save(); renderHome(); });
-$('#mode-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); renderHome(); });
-$('#rounds-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.rounds = +b.dataset.rounds; save(); renderHome(); });
+$('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat'); if (!b) return; store.prefs.cat = b.dataset.cat; save(); sfx.tap(); renderModes(); });
+$('#rounds-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.rounds = +b.dataset.rounds; save(); sfx.tap(); renderModes(); });
+// Comme dans Brawl Stars : on touche un jeu, il est choisi et on revient au gros bouton JOUER
+$('#mode-seg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); sfx.pop(); buzz(15); renderModes(); setTimeout(() => show('home'), 220); });
+$('#mode-extra').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; unlockAudio(); if (b.dataset.mode === 'daily') { show('home'); playDaily(); } else show('multi'); });
+$('#mode-banner').addEventListener('click', () => { sfx.tap(); show('modes'); });
+$('#modes-back').addEventListener('click', () => show('home'));
 $('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); totalBoosters() ? openBooster() : show('shop'); });
 $('#booster-card').addEventListener('click', () => { totalBoosters() ? openBooster() : show('shop'); });
 

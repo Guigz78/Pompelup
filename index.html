@@ -63,6 +63,15 @@
         <span class="hero-badge" id="bcard-badge" aria-hidden="true">1</span>
       </section>
 
+      <section class="play-zone" aria-label="Lancer une partie">
+        <button class="mode-banner" id="mode-banner" type="button" aria-label="Changer de jeu">
+          <span class="mb-ico" id="mb-ico"><svg class="ico"><use href="#i-g-headphones"/></svg></span>
+          <span class="mb-txt"><small>Ton jeu</small><b id="mb-name">4 choix</b><em id="play-sub">Tout mélangé · 10 chansons</em></span>
+          <span class="mb-change">Changer</span>
+        </button>
+        <button class="big-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg>Jouer</button>
+      </section>
+
       <div class="top-duo">
       <button class="daily-bar" id="daily-card" type="button">
           <svg class="ico daily-bar-ico" aria-hidden="true"><use href="#i-mystery"/></svg>
@@ -85,41 +94,30 @@
         </button>
       </div>
 
-      <section class="play-sec panel" aria-label="Ta partie">
-        <h2 class="sec-title">Ta partie</h2>
-        <h3 class="ps-sub">Playlist</h3>
-        <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Catégorie"></div>
 
-        <h3 class="ps-sub">Mode</h3>
-        <div class="modes" id="mode-seg" role="radiogroup" aria-label="Mode de réponse">
-          <button class="mode" type="button" role="radio" data-mode="choice" aria-checked="true">
-            <span class="mode-ico m-listen"><svg class="ico"><use href="#i-g-headphones"/></svg></span>
-            <span class="mode-txt"><b>4 choix</b><small>Écoute et choisis le bon titre</small></span>
-            <span class="mode-radio" aria-hidden="true"></span>
-          </button>
-          <button class="mode" type="button" role="radio" data-mode="type" aria-checked="false">
-            <span class="mode-ico m-type"><svg class="ico"><use href="#i-g-keyboard"/></svg></span>
-            <span class="mode-txt"><b>Saisie</b><small>Titre et/ou artiste, plus de points</small></span>
-            <span class="mode-radio" aria-hidden="true"></span>
-          </button>
-          <button class="mode" type="button" role="radio" data-mode="stems" aria-checked="false">
-            <span class="mode-ico m-rapid"><svg class="ico"><use href="#i-g-bolt"/></svg></span>
-            <span class="mode-txt"><b>Piste par piste</b><small>Batterie, basse, guitare… la voix en dernier</small></span>
-            <span class="mode-radio" aria-hidden="true"></span>
-          </button>
+    </div>
+  </section>
+
+  <!-- ================= CHOIX DU JEU (façon Brawl Stars) ================= -->
+  <section class="screen screen-modes" id="screen-modes" aria-label="Choisis ton jeu">
+    <header class="topbar">
+      <div class="page-head-l"><button class="icon-btn" id="modes-back" type="button" aria-label="Retour"><svg class="ico"><use href="#i-g-back"/></svg></button><div class="page-title">Choisis ton jeu</div></div>
+    </header>
+    <div class="scroll modes-scroll">
+      <h2 class="step-h"><i>1</i>La musique</h2>
+      <div class="cat-scroll" id="cat-list" role="radiogroup" aria-label="Musique"></div>
+      <div class="rounds-row">
+        <h2 class="step-h step-h-sm">Nombre de chansons</h2>
+        <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de chansons">
+          <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
+          <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
+          <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
         </div>
-
-        <div class="rounds-row">
-          <h3 class="ps-sub">Manches</h3>
-          <div class="seg" id="rounds-seg" role="radiogroup" aria-label="Nombre de manches">
-            <button type="button" role="radio" data-rounds="5" aria-checked="false">5</button>
-            <button type="button" role="radio" data-rounds="10" aria-checked="true">10</button>
-            <button type="button" role="radio" data-rounds="15" aria-checked="false">15</button>
-          </div>
-        </div>
-        <button class="home-play" id="btn-play" type="button"><svg class="ico"><use href="#i-g-play"/></svg><span class="home-play-lbl">Jouer</span><small id="play-sub">Tout mélangé · 10 manches</small></button>
-      </section>
-
+      </div>
+      <h2 class="step-h"><i>2</i>Le jeu <small>touche pour choisir</small></h2>
+      <div class="mode-cards" id="mode-seg" role="radiogroup" aria-label="Jeu"></div>
+      <h2 class="step-h step-h-sm">Et aussi</h2>
+      <div class="mode-cards" id="mode-extra"></div>
     </div>
   </section>
 
@@ -170,6 +168,7 @@
     </div>
 
     <div class="answer" id="answer">
+      <div class="lyric" id="lyric" hidden></div>
       <div class="choices" id="choices"></div>
 
       <form class="type-box" id="type-box" autocomplete="off" hidden>
