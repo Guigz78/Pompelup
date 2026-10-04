@@ -1853,10 +1853,10 @@ function mpBanter(round, list, prev) {
   const ranked = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
   const gain = p => (p.score || 0) - (prev[p.id] ?? 0);
   const top = ranked[0], last = ranked[ranked.length - 1], out = [];
-  const tops = ['{n} c’est le boss 👑', '{n} est intouchable 😎', '{n} a mangé un dictionnaire de la musique 📚', 'Tout le monde s’incline devant {n} 🙇', '{n} règne sans partage 🏆'];
-  const lasts = ['{n} le gros looseur 🥔', '{n} dort au fond de la classe 😴', '{n}, tu as oublié tes oreilles ? 🙉', '{n} creuse encore 🕳️', 'On envoie des secours à {n} 🚑'];
-  const zeros = ['{n} n’a rien trouvé cette fois 🤐', '{n} a appuyé au hasard ? 🎲', 'Manche blanche pour {n} 😬'];
-  const climbs = ['{n} remonte comme une fusée 🚀', '{n} est en feu 🔥', 'Attention, {n} se réveille ⚡'];
+  const tops = ['{n} c’est le boss, inclinez-vous bande de nazes 👑', '{n} vous met tous à l’amende 😎', '{n} joue en mode triche ou quoi ?! 🤨', '{n} a avalé une radio 📻 respect', 'Patron incontesté : {n}. Les autres, rentrez chez vous 🏠', '{n} écrase tout le monde, c’est gênant 💅'];
+  const lasts = ['AHAHAHA {n} le gros bolosse 🤡', '{n} t’es là pour la déco ou quoi ? 🪴', '{n}, même ta grand-mère ferait mieux 👵', '{n} le touriste du blind test 🧳', 'Quelqu’un peut réveiller {n} ? 😴💤', '{n} c’est un boulet de compétition 🥔', '{n} a les oreilles en option 🙉', 'Allô {n} ? Y’a quelqu’un ? 📞'];
+  const zeros = ['Zéro pointé pour {n} AHAHAHA 🤣', '{n} a cliqué avec les coudes 🦵', '{n} confond musique et bruit de fond 🔇', '{n} rame sévère 🚣'];
+  const climbs = ['{n} sort du trou, attention ça chauffe 🚀', '{n} se réveille enfin, il était temps ⏰', '{n} part en mode bulldozer 🚜', 'Méfiez-vous, {n} a mangé ses épinards 💪'];
   if ((top.score || 0) > 0) out.push(pick(tops, 0).replace('{n}', top.name));
   const climber = list.filter(p => p.id !== top.id).sort((a, b) => gain(b) - gain(a))[0];
   if (climber && gain(climber) > 0 && gain(climber) >= gain(top)) out.push(pick(climbs, 1).replace('{n}', climber.name));
