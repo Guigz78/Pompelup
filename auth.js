@@ -130,11 +130,17 @@ async function claimPurchases() {
   if (error) throw error;
   return data || 0;
 }
+async function claimPass() {
+  if (!user) return 0;
+  const { data, error } = await sb.rpc('claim_pass_purchases');
+  if (error) throw error;
+  return data || 0;
+}
 // Pseudo affiché pour un compte
 const displayName = () => user?.user_metadata?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || '';
 
 window.PompeAuth = {
-  ready: !!sb, init, oauth, fromRedirect, signUp, signIn, resetPassword, signOut, ensureProfile, loadSave, pushSave, frError, buyCoins, confirmPurchase, claimPurchases,
+  ready: !!sb, init, oauth, fromRedirect, signUp, signIn, resetPassword, signOut, ensureProfile, loadSave, pushSave, frError, buyCoins, confirmPurchase, claimPurchases, claimPass,
   get user() { return user; }, displayName, client: sb,
   onChange: f => listeners.add(f), onError: f => errListeners.add(f),
 };

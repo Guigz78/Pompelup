@@ -7,6 +7,8 @@ export const PACKS: Record<string, { coins: number; cents: number; name: string 
   p1200: { coins: 1200, cents: 199, name: '1 200 jetons Pompelup' },
   p3000: { coins: 3000, cents: 499, name: '3 000 jetons Pompelup' },
   p6500: { coins: 6500, cents: 999, name: '6 500 jetons Pompelup' },
+  // Pass de saison Or (coins = 1 : ligne d'achat, pas des jetons ; encaissé par claim_pass_purchases)
+  pass: { coins: 1, cents: 99, name: 'Pass de saison Or — Pompelup' },
 };
 
 export const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });

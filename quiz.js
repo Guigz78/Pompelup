@@ -1002,7 +1002,7 @@ function upsellOffer() {
   if (!P.gold) {
     const waiting = Array.from({ length: t }, (_, k) => k + 1).filter(k => passReward(k, true)).length;
     return { id: 'pass', kicker: 'Pass Premium', title: waiting ? `${plural(waiting, 'cadeau bloqué', 'cadeaux bloqués')}` : 'Double tes récompenses',
-      sub: 'Skins exclusifs et Boosters Or', cta: `${fmt(PASS_PRICE)}<i class="coin"></i>`, art: charHTML(itemOf('skin', 'crooner'), { head: true, mood: 'happy' }), cls: 'is-pass' };
+      sub: 'Skins exclusifs et Boosters Or', cta: passInEuro() ? PASS_EURO : `${fmt(PASS_PRICE)}<i class="coin"></i>`, art: charHTML(itemOf('skin', 'crooner'), { head: true, mood: 'happy' }), cls: 'is-pass' };
   }
   if (coinShopOn() && store.coins < 700) {
     return { id: 'coins', kicker: 'Offre populaire', title: '3 000 jetons', sub: 'Boosters et vinyles sans attendre', cta: '4,99 €', art: '<i class="coin"></i><i class="coin"></i><i class="coin"></i>', cls: 'is-coins' };
@@ -2852,6 +2852,14 @@ async function claimCoinPurchases() {
         await new Promise(r => setTimeout(r, 1500));
       }
     }
+    // Pass Or acheté en vrai argent : activé pour la saison en cours
+    const passes = await A.claimPass().catch(() => 0);
+    if (passes > 0) {
+      const P = passState(); P.gold = true; save(); A.pushSave(store, true);
+      sfx.fanfare(); confetti(70, ['#FFC800', '#FF9600', '#FFFFFF', '#1CB0F6']);
+      showReward({ kicker: 'Achat confirmé', title: 'Pass Or débloqué !', reward: {}, visual: `<span class="tt-badge is-big">${ico('crown')}</span>`, extra: 'Toutes les récompenses Or de la saison sont à toi.' });
+      refreshScreen();
+    }
     const coins = await A.claimPurchases();
     if (coins > 0) {
       grantReward({ coins });
@@ -2859,7 +2867,7 @@ async function claimCoinPurchases() {
       sfx.fanfare(); buzz([30, 60, 30]); confetti(60);
       showReward({ kicker: 'Achat confirmé', title: 'Merci pour ton soutien !', reward: { coins } });
       refreshScreen();
-    } else if (PAY_RETURN?.st === 'ok') toast('Paiement reçu : tes jetons arrivent dans quelques instants');
+    } else if (PAY_RETURN?.st === 'ok' && !passes) toast('Paiement reçu : ton achat arrive dans quelques instants');
   } catch (e) {
     if (PAY_RETURN?.st === 'ok') toast('Paiement reçu : tes jetons seront ajoutés à ta prochaine connexion');
   } finally { claimingCoins = false; }
@@ -3318,8 +3326,11 @@ function renderBoosters() {
 }
 
 /* ================= PASS DE SAISON (façon Pass Royale) ================= */
-// Saison = mois calendaire. 30 paliers de 100 notes. Piste gratuite + piste Or (1 500 jetons).
+// Saison = mois calendaire. 30 paliers de 100 notes. Piste gratuite + piste Or (0,99 € sur le site, 1 500 jetons dans l’appli).
 const PASS_TIERS = 30, PASS_STEP = 100, PASS_PRICE = 1500;
+// Pass Or : 0,99 € sur le site (Stripe) ; dans l'appli native (achats imposés par les stores) il reste en jetons
+const PASS_EURO = '0,99 €';
+const passInEuro = () => coinShopOn();
 const PASS_NAMES = ['Disco Fever', 'Rock Arena', 'Hip-Hop Block Party', 'Pop Explosion', 'Électro Nights', 'Chanson Café', 'Latino Fiesta', 'K-Pop Stage', 'Summer Hits', 'Back to the 80s', 'Unplugged', 'Legends Live'];
 const seasonKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}`; };
 const seasonNum = () => { const d = new Date(); return (d.getFullYear() - 2026) * 12 + d.getMonth() - 7; };
@@ -3393,7 +3404,7 @@ function renderPass() {
   const gb = $('#pass-buy');
   gb.classList.toggle('is-owned', P.gold);
   $('#pass-gold-sub').textContent = P.gold ? 'Activé : toutes les récompenses Or sont à toi' : 'Débloque la colonne Or : skins exclusifs, Boosters Or, jokers';
-  $('#pass-buy-tag').innerHTML = P.gold ? ico('g-check') : `<i class="coin"></i>${fmt(PASS_PRICE)}`;
+  $('#pass-buy-tag').innerHTML = P.gold ? ico('g-check') : passInEuro() ? PASS_EURO : `<i class="coin"></i>${fmt(PASS_PRICE)}`;
   const n = passClaimable();
   $('#pass-claim-all').hidden = !n;
   $('#pass-claim-txt').textContent = `Tout récupérer (${n})`;
@@ -3455,9 +3466,25 @@ function claimAllPass() {
   showReward({ kicker: 'Pass de saison', title: `${plural(got.length, 'récompense récupérée', 'récompenses récupérées')} !`, reward: shown, extra: extra.length ? `+ ${extra.join(', ')}` : '' });
   renderPass();
 }
-function buyPass() {
+async function buyPass() {
   const P = passState();
   if (P.gold) return;
+  if (passInEuro()) {
+    const A = window.PompeAuth;
+    if (!A.user) { toast('Connecte-toi pour acheter le Pass : il sera lié à ton compte'); showAuth(); return; }
+    const b = $('#pass-buy'); if (b.classList.contains('is-busy')) return;
+    b.classList.add('is-busy'); $('#pass-buy-tag').textContent = 'Patiente…';
+    try {
+      save(); A.pushSave(store, true);
+      const { url } = await A.buyCoins('pass', location.href.split(/[?#]/)[0]);
+      if (!url) throw new Error('stripe');
+      location.href = url;
+    } catch (e) {
+      toast(PAY_ERR[e.message] || 'Le paiement n’a pas pu démarrer. Réessaie dans un instant.');
+      renderPass();
+    } finally { setTimeout(() => b.classList.remove('is-busy'), 4000); }
+    return;
+  }
   if (!spendCoins(PASS_PRICE)) { toast(`Il te manque ${fmt(PASS_PRICE - store.coins)} jetons`); return; }
   P.gold = true;
   save();

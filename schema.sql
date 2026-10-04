@@ -86,3 +86,21 @@ end;
 $$;
 revoke all on function public.claim_coin_purchases() from public, anon;
 grant execute on function public.claim_coin_purchases() to authenticated;
+
+-- Pass de saison Or (0,99 €) : ligne pack_id = 'pass', encaissée à part
+-- (claim_coin_purchases ignore désormais les lignes 'pass').
+create or replace function public.claim_pass_purchases()
+returns int language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  with claimed as (
+    update public.coin_purchases set credited = true
+    where user_id = (select auth.uid()) and status = 'paid' and not credited and pack_id = 'pass'
+    returning 1
+  )
+  select count(*)::int into n from claimed;
+  return n;
+end;
+$$;
+revoke all on function public.claim_pass_purchases() from public, anon;
+grant execute on function public.claim_pass_purchases() to authenticated;
