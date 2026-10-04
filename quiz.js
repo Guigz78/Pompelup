@@ -3102,26 +3102,28 @@ function renderStatsPanel() {
 }
 
 /* ================= BIENVENUE ================= */
-let wlAvatar = null;
+// Après le tutoriel : un invité choisit juste un pseudo ; un compte connecté garde son nom
 function maybeWelcome() {
   if (store.onboarded) return;
-  wlAvatar = store.equip.skin;
-  $('#wl-avatars').innerHTML = COSMETICS.skin.filter(a => !a.price && !a.unlock).map(a => `<button class="wl-av" type="button" role="radio" data-av="${a.id}" aria-checked="${a.id === wlAvatar}" aria-label="${esc(a.name)}">${charHTML(a)}<b>${esc(a.name)}</b></button>`).join('');
-  $('#wl-name').value = store.name || window.PompeAuth?.displayName() || '';
+  if (window.PompeAuth?.user) {
+    if (!store.name) store.name = (window.PompeAuth.displayName() || '').slice(0, 16);
+    return finishWelcome();
+  }
+  $('#wl-name').value = store.name || '';
   $('#welcome-sheet').hidden = false;
+  setTimeout(() => $('#wl-name').focus(), 300);
 }
-function finishWelcome(keep) {
-  if (keep) {
+function finishWelcome() {
+  if (!$('#welcome-sheet').hidden) {
     const name = $('#wl-name').value.trim().slice(0, 16);
     if (name) store.name = name;
-    if (wlAvatar) store.equip.skin = wlAvatar;
   }
   store.onboarded = true;
   save();
   $('#welcome-sheet').hidden = true;
   applySkins();
   renderHome();
-  if (totalBoosters()) toast(keep && store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue` : 'Ouvre ton booster de bienvenue');
+  if (totalBoosters()) toast(store.name ? `Salut ${store.name} ! Ouvre ton booster de bienvenue` : 'Ouvre ton booster de bienvenue');
 }
 
 /* ================= ÉCRAN BOOSTERS ================= */
@@ -3303,8 +3305,7 @@ function buyPass() {
 const ONB = [
   { id: 'launch', video: 'assets/onboarding/launch.webp', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche « Changer » pour choisir la musique et le jeu, puis appuie sur le gros bouton jaune JOUER.' },
   { id: 'modes', kicker: 'Les jeux', title: '4 façons de jouer', chips: [['g-headphones', '4 choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
-  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster de 3 vinyles. Accroche les plus beaux sur ton mur !' },
-  { id: 'go', title: 'À toi de jouer !', text: 'Choisis ton perso et ton pseudo : un booster de bienvenue t’attend.' },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster de 3 vinyles. Un booster de bienvenue t’attend !' },
 ];
 let onbDone = null, onbI = 0;
 function onbSlideHTML(sl, k) {
@@ -3335,7 +3336,7 @@ function onbSync(k) {
     if (img && Math.abs(j - k) <= 1 && !img.src) img.src = img.dataset.src;
     if (img && j === k && img.src) { const u = img.dataset.src; img.src = ''; img.src = u; }   // repart du début
   });
-  $('#onb-next').textContent = k === ONB.length - 1 ? 'Créer mon perso' : 'Suivant';
+  $('#onb-next').textContent = k === ONB.length - 1 ? 'C’est parti !' : 'Suivant';
   $('#onb-skip').hidden = k === ONB.length - 1;
 }
 function onbGo(k) { const t = $('#onb-track'); t.scrollTo({ left: k * t.clientWidth, behavior: REDUCED ? 'auto' : 'smooth' }); }
@@ -3914,14 +3915,8 @@ $('#rs-confirm').addEventListener('click', () => {
 });
 
 // Bienvenue
-$('#wl-avatars').addEventListener('click', e => {
-  const b = e.target.closest('.wl-av'); if (!b) return;
-  wlAvatar = b.dataset.av;
-  $$('.wl-av').forEach(x => x.setAttribute('aria-checked', String(x === b)));
-});
-$('#wl-go').addEventListener('click', () => finishWelcome(true));
-$('#wl-skip').addEventListener('click', () => finishWelcome(false));
-$('#wl-name').addEventListener('keydown', e => { if (e.key === 'Enter') finishWelcome(true); });
+$('#wl-go').addEventListener('click', finishWelcome);
+$('#wl-name').addEventListener('keydown', e => { if (e.key === 'Enter') finishWelcome(); });
 $('#vs-play').addEventListener('click', toggleListen);
 $('#vinyl-sheet').addEventListener('click', e => { if (e.target.id === 'vinyl-sheet') closeVinyl(); });
 
