@@ -1847,16 +1847,27 @@ function mpMaybeNext() {
 }
 
 // Classement entre les manches, avec des piques (même texte chez tout le monde : tirage basé sur la manche)
-function mpBanter(round, list, prev) {
+function mpBanter(round, list, prev, tone = 'trash') {
   if (list.length < 2) return [];
   const pick = (arr, k) => arr[(round * 7 + k * 13) % arr.length];
   const ranked = list.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
   const gain = p => (p.score || 0) - (prev[p.id] ?? 0);
   const top = ranked[0], last = ranked[ranked.length - 1], out = [];
-  const tops = ['{n} c’est le boss, inclinez-vous bande de nazes 👑', '{n} vous met tous à l’amende 😎', '{n} joue en mode triche ou quoi ?! 🤨', '{n} a avalé une radio 📻 respect', 'Patron incontesté : {n}. Les autres, rentrez chez vous 🏠', '{n} écrase tout le monde, c’est gênant 💅'];
-  const lasts = ['AHAHAHA {n} le gros bolosse 🤡', '{n} t’es là pour la déco ou quoi ? 🪴', '{n}, même ta grand-mère ferait mieux 👵', '{n} le touriste du blind test 🧳', 'Quelqu’un peut réveiller {n} ? 😴💤', '{n} c’est un boulet de compétition 🥔', '{n} a les oreilles en option 🙉', 'Allô {n} ? Y’a quelqu’un ? 📞'];
-  const zeros = ['Zéro pointé pour {n} AHAHAHA 🤣', '{n} a cliqué avec les coudes 🦵', '{n} confond musique et bruit de fond 🔇', '{n} rame sévère 🚣'];
-  const climbs = ['{n} sort du trou, attention ça chauffe 🚀', '{n} se réveille enfin, il était temps ⏰', '{n} part en mode bulldozer 🚜', 'Méfiez-vous, {n} a mangé ses épinards 💪'];
+  // Ton choisi par l'hôte : gentil ou trash
+  const T = tone === 'trash' ? (() => {
+    const tops = ['{n} c’est le boss, inclinez-vous bande de nazes 👑', '{n} vous met tous à l’amende 😎', '{n} joue en mode triche ou quoi ?! 🤨', '{n} a avalé une radio 📻 respect', 'Patron incontesté : {n}. Les autres, rentrez chez vous 🏠', '{n} écrase tout le monde, c’est gênant 💅'];
+    const lasts = ['AHAHAHA {n} le gros bolosse 🤡', '{n} t’es là pour la déco ou quoi ? 🪴', '{n}, même ta grand-mère ferait mieux 👵', '{n} le touriste du blind test 🧳', 'Quelqu’un peut réveiller {n} ? 😴💤', '{n} c’est un boulet de compétition 🥔', '{n} a les oreilles en option 🙉', 'Allô {n} ? Y’a quelqu’un ? 📞'];
+    const zeros = ['Zéro pointé pour {n} AHAHAHA 🤣', '{n} a cliqué avec les coudes 🦵', '{n} confond musique et bruit de fond 🔇', '{n} rame sévère 🚣'];
+    const climbs = ['{n} sort du trou, attention ça chauffe 🚀', '{n} se réveille enfin, il était temps ⏰', '{n} part en mode bulldozer 🚜', 'Méfiez-vous, {n} a mangé ses épinards 💪'];
+    return { tops, lasts, zeros, climbs };
+  })() : (() => {
+    const tops = ['{n} c’est le boss 👑', '{n} est intouchable 😎', '{n} a mangé un dictionnaire de la musique 📚', 'Tout le monde s’incline devant {n} 🙇', '{n} règne sans partage 🏆'];
+    const lasts = ['{n} est à la traîne 🐢', '{n} dort au fond de la classe 😴', '{n}, tu as oublié tes oreilles ? 🙉', 'On envoie des secours à {n} 🚑', '{n} va se refaire, courage 💪'];
+    const zeros = ['{n} n’a rien trouvé cette fois 🤐', '{n} a appuyé au hasard ? 🎲', 'Manche blanche pour {n} 😬'];
+    const climbs = ['{n} remonte comme une fusée 🚀', '{n} est en feu 🔥', 'Attention, {n} se réveille ⚡'];
+    return { tops, lasts, zeros, climbs };
+  })();
+  const { tops, lasts, zeros, climbs } = T;
   if ((top.score || 0) > 0) out.push(pick(tops, 0).replace('{n}', top.name));
   const climber = list.filter(p => p.id !== top.id).sort((a, b) => gain(b) - gain(a))[0];
   if (climber && gain(climber) > 0 && gain(climber) >= gain(top)) out.push(pick(climbs, 1).replace('{n}', climber.name));
@@ -1873,7 +1884,7 @@ function mpShowBoard() {
     const g = (p.score || 0) - (prev[p.id] ?? 0), mv = G.i > 0 ? prevRank[p.id] - k : 0;
     return `<div class="mpb-row${p.id === MP.me.id ? ' is-me' : ''}" style="animation-delay:${k * .08}s"><i class="mpb-pos p${k + 1}">${k + 1}</i><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b>${mv > 0 ? '<em class="mpb-up">▲</em>' : mv < 0 ? '<em class="mpb-down">▼</em>' : ''}<span class="mpb-pts">${fmt(p.score || 0)}<small>${g > 0 ? `+${fmt(g)}` : '+0'}</small></span></div>`;
   }).join('');
-  $('#mpb-banter').innerHTML = mpBanter(G.i, list, prev).map(t => `<p>${esc(t)}</p>`).join('');
+  $('#mpb-banter').innerHTML = mpBanter(G.i, list, prev, G.cfg.tone).map(t => `<p>${esc(t)}</p>`).join('');
   MP.prevScores = Object.fromEntries(list.map(p => [p.id, p.score || 0]));
   $('#mp-board-ov').hidden = false;
   sfx.pop();
@@ -3572,7 +3583,7 @@ function playDaily() {
 // présence par battements, l'hôte (le plus ancien arrivé) choisit les extraits et les réponses.
 const MP_LOCAL = /[?&]localmp\b/.test(location.search);   // tests : BroadcastChannel entre onglets
 const MP_MAX = 8;
-const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10, mode: 'choice', dur: 20, board: true, jokers: true }, inGame: false, game: null };
+const MP = { code: null, me: null, players: new Map(), tx: null, hb: null, cfg: { cat: 'all', rounds: 10, mode: 'choice', dur: 20, board: true, tone: 'trash', jokers: true }, inGame: false, game: null };
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 // Joueurs (la télé n'est pas un joueur)
@@ -3661,7 +3672,7 @@ function mpStart() {
   const pool = [...all.filter(s => hasCatalogPreview(s.id)), ...all.filter(s => !hasCatalogPreview(s.id))];
   const songs = pool.slice(0, Math.min(MP.cfg.rounds, pool.length));
   const src = poolFor(MP.cfg.cat);
-  const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, mode: MP.cfg.mode, dur: MP.cfg.dur, board: MP.cfg.board, jokers: MP.cfg.jokers, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
+  const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, mode: MP.cfg.mode, dur: MP.cfg.dur, board: MP.cfg.board, tone: MP.cfg.tone, jokers: MP.cfg.jokers, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
   MP.tx.send({ t: 'start', game });
   mpPlay(game);
 }
@@ -3671,7 +3682,7 @@ function mpPlay(game) {
   Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false, ready: false });
   MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false, ready: false }));
   MP.prevScores = {};
-  startGame({ cat: game.cat, mode: game.mode || 'choice', dur: game.dur, noJokers: game.jokers === false, board: game.board !== false, rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
+  startGame({ cat: game.cat, mode: game.mode || 'choice', dur: game.dur, noJokers: game.jokers === false, board: game.board !== false, tone: game.tone || 'trash', rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
   renderLive();
 }
 function mpReport(done) {
@@ -3720,11 +3731,13 @@ function renderMulti() {
     $$('#mp-mode button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === (MP.cfg.mode || 'choice'))));
     $$('#mp-dur button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.v === (MP.cfg.dur || 20))));
     $('#mp-board').checked = MP.cfg.board !== false;
+    $$('#mp-tone button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === (MP.cfg.tone || 'trash'))));
+    $('#mp-tone-row').hidden = MP.cfg.board === false;
     $('#mp-jokers').checked = MP.cfg.jokers !== false;
   }
   // Résumé des règles, visible par tous
   const c = MP.cfg, mn = { choice: '4 choix', type: 'Saisie', stems: 'Piste par piste' }[c.mode || 'choice'];
-  $('#mp-rules').innerHTML = `<span>${ico('g-note')}${esc(catById(c.cat).name)}</span><span>${c.rounds} manches</span><span>${mn}</span><span>${c.dur || 20} s</span>${c.board !== false ? '<span>Classement + piques</span>' : ''}${c.jokers === false ? '<span>Sans jokers</span>' : ''}`;
+  $('#mp-rules').innerHTML = `<span>${ico('g-note')}${esc(catById(c.cat).name)}</span><span>${c.rounds} manches</span><span>${mn}</span><span>${c.dur || 20} s</span>${c.board !== false ? `<span>Piques ${c.tone === 'soft' ? 'gentilles 😇' : 'trash 🤡'}</span>` : ''}${c.jokers === false ? '<span>Sans jokers</span>' : ''}`;
   const ready = list.filter(p => p.ready).length, allReady = list.length >= 2 && ready === list.length;
   $('#mp-wait').textContent = list.length < 2 ? 'Invite au moins un ami avec le bouton « Inviter ».'
     : allReady ? 'Tout le monde est prêt : la partie commence !'
@@ -3893,7 +3906,7 @@ function tvRender() {
     const found = ps.filter(p => (p.found || 0) > (TVM.base[p.id] || 0));
     body.innerHTML = `<div class="tv-reveal"><div class="tv-cover">${coverHTML(s)}</div><div class="tv-rv-txt"><small>C’était…</small><h1>${esc(s.title)}</h1><h2>${esc(s.artist)} · ${s.year}</h2>
       <div class="tv-found">${found.length ? found.map(p => `<span>${av(p)}${esc(p.name)}</span>`).join('') : '<span class="tv-none">Personne n’a trouvé !</span>'}</div>
-      ${g.board !== false ? `<div class="tv-banter">${mpBanter(TVM.round, ps, TVM.prevScore || {}).map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}</div></div>`;
+      ${g.board !== false ? `<div class="tv-banter">${mpBanter(TVM.round, ps, TVM.prevScore || {}, g.tone).map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}</div></div>`;
     return;
   }
   body.innerHTML = `<div class="tv-play"><div class="tv-disc"><div class="tv-disc-in">?</div></div><h1>Quelle est cette chanson ?</h1>
@@ -4115,6 +4128,7 @@ const mpSetCfg = (k, v) => { if (!iAmHost()) return; MP.cfg[k] = v; MP.tx?.send(
 $('#mp-mode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('mode', b.dataset.v); });
 $('#mp-dur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('dur', +b.dataset.v); });
 $('#mp-board').addEventListener('change', e => mpSetCfg('board', e.target.checked));
+$('#mp-tone').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mpSetCfg('tone', b.dataset.v); });
 $('#mp-jokers').addEventListener('change', e => mpSetCfg('jokers', e.target.checked));
 $('#mp-rounds').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !iAmHost()) return; MP.cfg.rounds = +b.dataset.r; MP.tx?.send({ t: 'cfg', cfg: MP.cfg }); renderMulti(); });
 // Invitation : notre propre fenêtre (code + WhatsApp, SMS, copier), le panneau du système en option
