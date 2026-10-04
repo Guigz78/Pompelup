@@ -2534,3 +2534,4 @@ body.no-play .nav-split, body.no-play .play-menu { display: none; }
 .mpp-photo { width: 76px; height: 76px; margin: 6px auto; }
 .mpl-av .avatar-photo { border-radius: 50%; }
 .mpp-photo { width: 62px; height: 62px; margin: 10px auto 6px; }
+.game-head { padding-left: 14px; padding-right: 8px; }
