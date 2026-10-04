@@ -1,0 +1,86 @@
+/* ================= VERSION 2 : épurée, sans cartes colorées =================
+   Fond clair uni, listes à séparateurs, une seule couleur d'accent (JOUER). */
+body.v2 { --v2-bg: #FAF8F5; --v2-ink: #1E1A2B; --v2-sub: #6F6A7D; --v2-line: #ECE8F1; --v2-accent: #6C4CF5; background: var(--v2-bg); }
+body.v2 #screen-home, body.v2 .screen { background: var(--v2-bg) !important; }
+body.v2 #screen-home::before, body.v2 .app::before { display: none !important; }
+body.v2 .scroll { gap: 22px; }
+
+/* En-tête : simple ligne avatar + nom + jetons, XP en fine barre, quête en ligne */
+body.v2 .hh { gap: 14px; padding-top: calc(18px + var(--safe-t)); }
+body.v2 .hh-card, body.v2 .hh-xp, body.v2 .hh-quest { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0; }
+body.v2 .hh-card { padding: 0; }
+body.v2 .hh-av .tab-avatar { width: 52px; height: 52px; border: 0; box-shadow: none; }
+body.v2 .hh-id b { font: 800 22px var(--display); color: var(--v2-ink); }
+body.v2 .hh-status { color: var(--v2-sub); font-size: 14px; }
+body.v2 .hh-coins { background: #fff !important; border: 1px solid var(--v2-line) !important; box-shadow: none !important; border-radius: 99px; padding: 8px 14px; color: var(--v2-ink); }
+body.v2 .hh-row { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--v2-line); border-bottom: 1px solid var(--v2-line); }
+body.v2 .hh-xp { min-height: 0; flex-direction: row; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--v2-line) !important; }
+body.v2 .hh-xp-tag { display: none; }
+body.v2 .hh-lvl { position: static; transform: none; width: auto; height: auto; background: none; border: 0; box-shadow: none; }
+body.v2 .hh-lvl b { width: 36px; height: 36px; background: var(--v2-ink); color: #fff; font-size: 16px; }
+body.v2 .hh-bar { flex: 1; height: 8px; border: 0; background: var(--v2-line); }
+body.v2 .hh-bar span { background: var(--v2-accent); }
+body.v2 .hh-bar small { position: static; display: block; margin-top: 12px; text-align: right; color: var(--v2-sub); }
+body.v2 .hh-xp { padding-bottom: 22px; }
+body.v2 .hh-quest { padding: 14px 0; gap: 12px; }
+body.v2 .hh-q-ico { width: 32px; height: 32px; transform: none; filter: none; }
+body.v2 .hh-q-txt b { color: var(--v2-ink); font-size: 16px; }
+body.v2 .hh-q-txt small { color: var(--v2-sub); }
+body.v2 .hh-q-btn { background: transparent !important; box-shadow: none !important; color: var(--v2-accent) !important; height: auto; min-width: 0; font-size: 15px; }
+body.v2 .hh-q-btn::after { content: ' ›'; }
+
+/* Défi du jour + Multijoueur : liste à séparateurs, icônes neutres */
+body.v2 .top-duo { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--v2-line); }
+body.v2 .top-duo .daily-bar, body.v2 .multi-card { flex-direction: row; align-items: center; min-height: 0; padding: 16px 0; gap: 14px; background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--v2-line) !important; box-shadow: none !important; border-radius: 0; color: var(--v2-ink); }
+body.v2 .daily-bar-ico, body.v2 .mc-ico { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 12px; background: #F1EEF6; color: var(--v2-ink); filter: none; padding: 6px; }
+body.v2 .mc-ico .ico { width: 24px; height: 24px; color: var(--v2-ink); }
+body.v2 .daily-bar-txt small, body.v2 .mc-txt small { color: var(--v2-sub); opacity: 1; }
+body.v2 .daily-bar-txt b, body.v2 .mc-txt b { color: var(--v2-ink); font-size: 17px; }
+body.v2 .daily-bar-txt em, body.v2 .mc-txt em { color: var(--v2-sub); opacity: 1; white-space: nowrap; }
+body.v2 .top-duo .daily-bar-cta, body.v2 .multi-card .mc-cta { margin: 0 0 0 auto; align-self: center; height: auto; min-width: 0; padding: 0; background: none !important; box-shadow: none !important; color: var(--v2-accent) !important; font-size: 15px; }
+body.v2 .top-duo .daily-bar-cta::after, body.v2 .multi-card .mc-cta::after { content: ' ›'; }
+body.v2 .daily-bar.is-done .daily-bar-cta { color: var(--v2-sub) !important; }
+
+/* Offre : discrète */
+body.v2 .upsell-main { background: #fff !important; border: 1px solid var(--v2-line) !important; box-shadow: none !important; color: var(--v2-ink); min-height: 0; }
+body.v2 .upsell-main::before { display: none; }
+body.v2 .upsell-art { background: #F1EEF6; box-shadow: none; }
+body.v2 .upsell-txt small { color: var(--v2-accent); opacity: 1; }
+body.v2 .upsell-txt b { text-shadow: none; }
+body.v2 .upsell-txt em { color: var(--v2-sub); opacity: 1; }
+body.v2 .upsell-cta { background: var(--v2-ink); color: #fff; box-shadow: none; }
+
+/* Ton jeu + JOUER : la seule couleur forte */
+body.v2 .mode-banner { background: #fff !important; border: 1px solid var(--v2-line) !important; box-shadow: none !important; color: var(--v2-ink); }
+body.v2 .mode-banner::after { display: none; }
+body.v2 .mb-top { color: var(--v2-ink); }
+body.v2 .mb-ico { background: #F1EEF6; box-shadow: none; color: var(--v2-ink); }
+body.v2 .mb-txt small, body.v2 .mb-txt em { color: var(--v2-sub); opacity: 1; }
+body.v2 .mb-txt b { text-shadow: none; }
+body.v2 .mb-change { background: none; box-shadow: none; color: var(--v2-accent); padding: 0; }
+body.v2 .big-play { background: var(--v2-accent) !important; color: #fff; border: 0; box-shadow: 0 6px 18px rgba(108,76,245,.35) !important; border-radius: 18px; animation: none; letter-spacing: 2px; }
+body.v2 .big-play:active { transform: scale(.98); }
+
+/* Écran de choix : lignes au lieu de cartes colorées */
+body.v2 .mode-cards { gap: 0; border-top: 1px solid var(--v2-line); }
+body.v2 .mode-card { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--v2-line) !important; box-shadow: none !important; border-radius: 0; color: var(--v2-ink); min-height: 0; padding: 16px 4px; }
+body.v2 .mcd-ico { background: #F1EEF6; color: var(--mc); }
+body.v2 .mcd-txt small { color: var(--v2-sub); }
+body.v2 .mode-card.is-on .mcd-txt b { color: var(--v2-accent); }
+body.v2 .mcd-check { background: var(--v2-accent); color: #fff; }
+body.v2 .mcd-go { background: none; color: var(--v2-accent); padding: 0; }
+body.v2 .step-h i { background: var(--v2-ink); }
+
+/* Barre du bas : icônes simples, sans tuiles */
+body.v2 .tabbar { background: rgba(250,248,245,.96) !important; border-top: 1px solid var(--v2-line) !important; box-shadow: none !important; }
+body.v2 .nav-tiles .tab { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+body.v2 .nav-tiles .tab span { color: var(--v2-sub); }
+body.v2 .nav-tiles .tab.is-active span { color: var(--v2-accent); }
+body.v2 .nav-tiles .tab.is-active::after { content: ''; position: absolute; top: 2px; left: 50%; width: 22px; height: 3px; margin-left: -11px; border-radius: 99px; background: var(--v2-accent); }
+body.v2 .nav-tiles .tab { position: relative; }
+
+/* Sections partout : titres sans surligneur */
+body.v2 .sec-title::after, body.v2 .shop-h::after { display: none; }
+body.v2 .hh-q-btn, body.v2 .top-duo .daily-bar-cta, body.v2 .multi-card .mc-cta { display: inline-flex !important; align-items: center; white-space: nowrap; }
+body.v2 .hh-q-btn::after, body.v2 .top-duo .daily-bar-cta::after, body.v2 .multi-card .mc-cta::after { content: '›'; margin-left: 6px; font-size: 20px; line-height: 1; }
+body.v2 .topbar { background: rgba(250,248,245,.96) !important; }
