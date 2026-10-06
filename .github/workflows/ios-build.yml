@@ -27,7 +27,7 @@ jobs:
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO > xcodebuild.log 2>&1 || {
               # Erreurs remontées en annotations (lisibles sans télécharger les logs)
-              grep -E "error:|fatal error|Undefined symbol|❌|The following build commands failed" xcodebuild.log | sort -u | head -40 | while IFS= read -r l; do echo "::error::${l:0:900}"; done
+              grep -E -A12 "error:|fatal error|Undefined symbol|❌|The following build commands failed" xcodebuild.log | head -80 | while IFS= read -r l; do [ -n "$l" ] && echo "::error::${l:0:900}"; done
               tail -n 60 xcodebuild.log
               exit 1
             }
