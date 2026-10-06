@@ -56,3 +56,23 @@ Le bouton « Sur la télé » du multijoueur fonctionne comme Netflix :
    appareils de test la voient ; « Publish » la rend disponible pour tout le monde.
 5. Refaire une version de l'appli (`npm run build:ios`) : Google Cast et l'écran externe
    sont des modules natifs, ils ne marchent pas dans Expo Go.
+
+## Tester sur iPhone avec Xcode
+
+Prérequis : un Mac avec **Xcode 26 ou plus récent** (React Native 0.86 demande Swift 6.2),
+Node.js 22 et CocoaPods (`brew install cocoapods`).
+
+```bash
+git clone https://github.com/Guigz78/Pompelup.git
+cd Pompelup/mobile
+npm install
+npm run xcode        # prépare le jeu, génère le projet iOS et ouvre Xcode
+```
+
+Dans Xcode : cible **Pompelup** → onglet *Signing & Capabilities* → coche *Automatically manage signing*
+et choisis ton équipe (un compte Apple gratuit suffit pour ton propre iPhone). Branche l'iPhone,
+choisis-le en haut, puis ▶︎. La 1re fois, sur l'iPhone : Réglages → Général → VPN et gestion
+de l'appareil → faire confiance au développeur.
+
+La compilation est aussi vérifiée automatiquement sur un Mac de GitHub (workflow `ios-build`),
+qui fournit l'appli pour le Simulateur iOS en téléchargement.
