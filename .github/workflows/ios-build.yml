@@ -8,7 +8,7 @@ on:
     paths: [mobile/package.json, mobile/package-lock.json, mobile/app.json, mobile/app.config.js, mobile/App.tsx, .github/workflows/ios-build.yml]
 jobs:
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     defaults:
       run:
@@ -18,6 +18,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Xcode 26 (Swift 6.2 requis)
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1); sudo xcode-select -s "$X"; xcodebuild -version
       - run: npm ci --no-audit --no-fund
       - run: node scripts/build-web.mjs
       - run: npx expo prebuild -p ios --clean
