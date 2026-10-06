@@ -23,10 +23,15 @@ jobs:
       - run: npx expo prebuild -p ios --clean
       - name: Compiler pour le Simulateur iOS
         run: |
-          set -o pipefail
           xcodebuild -workspace ios/Pompelup.xcworkspace -scheme Pompelup -configuration Release \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO | tail -n 80
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO > xcodebuild.log 2>&1 || {
+              # Erreurs remontées en annotations (lisibles sans télécharger les logs)
+              grep -E "error:|fatal error|Undefined symbol|❌|The following build commands failed" xcodebuild.log | sort -u | head -40 | while IFS= read -r l; do echo "::error::${l:0:900}"; done
+              tail -n 60 xcodebuild.log
+              exit 1
+            }
+          tail -n 20 xcodebuild.log
       - name: Emballer l'appli
         run: cd build/Build/Products/Release-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/Pompelup-simulateur.zip" Pompelup.app
       - uses: actions/upload-artifact@v4
