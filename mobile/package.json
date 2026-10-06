@@ -33,7 +33,8 @@
     "lint": "expo lint",
     "build:ios": "node scripts/build-web.mjs && npx eas-cli@latest build -p ios --profile production",
     "submit:ios": "npx eas-cli@latest submit -p ios --latest",
-    "eas-build-post-install": "node scripts/build-web.mjs"
+    "eas-build-post-install": "node scripts/build-web.mjs",
+    "xcode": "node scripts/build-web.mjs && expo prebuild -p ios --clean && open ios/Pompelup.xcworkspace"
   },
   "private": true
 }

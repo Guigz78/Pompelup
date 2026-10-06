@@ -1,0 +1,35 @@
+name: ios-build
+# Vérifie que l'appli iOS (Expo + modules natifs Google Cast / écran externe) se compile vraiment
+# sur un Mac avec Xcode, et fournit l'appli pour le Simulateur iOS en téléchargement.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [mobile/package.json, mobile/package-lock.json, mobile/app.json, mobile/app.config.js, mobile/App.tsx, .github/workflows/ios-build.yml]
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: node scripts/build-web.mjs
+      - run: npx expo prebuild -p ios --clean
+      - name: Compiler pour le Simulateur iOS
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/Pompelup.xcworkspace -scheme Pompelup -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO | tail -n 80
+      - name: Emballer l'appli
+        run: cd build/Build/Products/Release-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/Pompelup-simulateur.zip" Pompelup.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pompelup-simulateur
+          path: Pompelup-simulateur.zip
