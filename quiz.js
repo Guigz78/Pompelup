@@ -3508,9 +3508,9 @@ async function buyPass() {
 
 /* ================= ONBOARDING : la toute première ouverture ================= */
 const ONB = [
-  { id: 'launch', video: 'assets/onboarding/launch.webp', scr: '#FFF7EC', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche «\u00A0Changer\u00A0» pour choisir la musique et le jeu, puis appuie sur le gros bouton jaune\u00A0JOUER.' },
+  { id: 'launch', video: 'assets/onboarding/launch.webp', scr: '#FFF7EC', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche «\u00A0Changer\u00A0» pour choisir la\u00A0musique et le\u00A0jeu, puis appuie sur le\u00A0gros bouton jaune\u00A0JOUER.' },
   { id: 'modes', kicker: 'Les jeux', title: '4\u00A0façons de jouer', chips: [['g-headphones', '4\u00A0choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
-  { id: 'booster', video: 'assets/onboarding/booster.webp', scr: '#2A1060', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10\u00A0bonnes réponses\u00A0= 1\u00A0booster de 3\u00A0vinyles. Un booster de bienvenue t’attend\u00A0!' },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', scr: '#43327F', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10\u00A0bonnes réponses\u00A0= 1\u00A0booster de\u00A03\u00A0vinyles. Un\u00A0booster de\u00A0bienvenue t’attend\u00A0!' },
 ];
 let onbDone = null, onbI = 0;
 function onbSlideHTML(sl, k) {
