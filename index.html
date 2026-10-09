@@ -72,7 +72,7 @@
         </button>
         <button class="tile t-multi" id="mode-multi" type="button">
           <svg class="ico tile-ico" aria-hidden="true"><use href="#i-headphones"/></svg>
-          <b>Multijoueur</b><small>Défie tes potes en direct</small>
+          <b>Multijoueur</b><small>Salons publics ou entre amis</small>
           <span class="tile-cta">Créer / rejoindre</span>
         </button>
       </div>
@@ -219,6 +219,7 @@
       <div class="res-record" id="res-record" hidden><svg class="ico"><use href="#i-trophy"/></svg>Nouveau record !</div>
     </div>
     <section class="panel mp-rank" id="mp-rank" hidden></section>
+    <div class="res-pub" id="res-pub" hidden><span class="res-pub-n" id="res-pub-n">15</span><span class="res-pub-t"><b id="res-pub-t">Prochaine partie dans 15 s</b><small>Reste ici : elle démarre toute seule.</small></span><button class="btn btn-sm btn-outline" id="res-pub-leave" type="button">Quitter</button></div>
     <div class="rcards">
       <div class="rcard rc-gold"><div class="rc-head">Score</div><div class="rc-body"><svg class="ico"><use href="#i-xp"/></svg><b id="res-score">0</b></div></div>
       <div class="rcard rc-green"><div class="rc-head" id="res-acc-label">Précision</div><div class="rc-body"><svg class="ico"><use href="#i-target"/></svg><b id="res-acc">0 %</b></div></div>
@@ -360,6 +361,14 @@
     </header>
     <div class="scroll">
       <div class="mp-start" id="mp-start">
+        <section class="pub-sec" aria-label="Salons publics">
+          <div class="pub-head"><h2 class="sec-title">Salons publics</h2><span class="pub-live" id="pub-live"><i></i>En direct</span></div>
+          <p class="pub-sub">Entre dans un salon : les parties s’enchaînent toutes seules, avec tous les joueurs connectés.</p>
+          <div class="seg pub-modes" id="pub-modes" role="radiogroup" aria-label="Jeu"><button type="button" data-m="choice">4 choix</button><button type="button" data-m="type">Saisie</button><button type="button" data-m="stems">Piste par piste</button></div>
+          <button class="btn btn-fun btn-block pub-quick" id="pub-quick" type="button">⚡ Partie rapide</button>
+          <div class="pub-list" id="pub-list"></div>
+        </section>
+        <h2 class="sec-title mp-friends-t">Entre amis</h2>
         <section class="mp-hero">
           <div class="mp-hero-chars" id="mp-hero-chars" aria-hidden="true"></div>
           <b>Blind test entre potes</b>
@@ -373,7 +382,8 @@
         </div>
       </div>
       <div class="mp-room" id="mp-room" hidden>
-        <section class="mp-code-card">
+        <section class="pub-banner" id="mp-pub" hidden></section>
+        <section class="mp-code-card" id="mp-code-card">
           <small>Code de la salle</small>
           <b id="mp-room-code">-----</b>
           <div class="mp-code-btns"><button class="btn btn-sm btn-white" id="mp-share" type="button"><svg class="ico"><use href="#i-g-share"/></svg>Inviter</button><button class="btn btn-sm btn-white" id="mp-cast" type="button"><svg class="ico" viewBox="0 0 32 32"><path d="M4 9a3 3 0 0 1 3-3h18a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M4 16a10 10 0 0 1 10 10M4 21a5 5 0 0 1 5 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="5" cy="26" r="2" fill="currentColor"/></svg>Sur la télé</button></div>
@@ -396,6 +406,7 @@
           <h2 class="sec-title">Chat</h2>
           <div class="mp-msgs" id="mp-msgs"><p class="mp-msg-empty">Dis bonjour à la salle !</p></div>
           <div class="mp-emojis" id="mp-emojis"></div>
+          <div class="mp-quick" id="mp-quick" hidden></div>
           <form class="mp-send" id="mp-send" autocomplete="off"><input id="mp-text" type="text" maxlength="120" placeholder="Écris un message…" aria-label="Message"><button class="btn btn-blue" type="submit" aria-label="Envoyer"><svg class="ico"><use href="#i-g-arrow-right"/></svg></button></form>
         </section>
         <p class="mp-wait" id="mp-wait">Appuie sur « Je suis prêt » : la partie démarre quand tout le monde l’est.</p>

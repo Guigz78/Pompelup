@@ -794,6 +794,9 @@ function show(id) {
   $('meta[name="theme-color"]')?.setAttribute('content', id === 'profile' ? '#DDF4FF' : '#FFFFFF');
   window.PompeNative?.post('theme', 'light');
   $('#tabbar').hidden = !TAB_SCREENS.includes(id);
+  // Salon public : on n'y reste que tant qu'on est dans le salon, en partie ou sur les résultats
+  if (MP.pub && !['multi', 'game', 'results'].includes(id)) mpLeave(true);
+  if (id !== 'multi' && !MP.pub) dirClose();
   $$('#tabbar .tab').forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('is-active', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
   if (id === 'home') renderHome();
@@ -1420,7 +1423,15 @@ function finishRound(ok, reason, sourceEl) {
   void bar.offsetWidth;
   bar.style.transition = `width ${wait}ms linear`; bar.style.width = '100%';
   const token = G.token;
-  if (G.cfg.multi) { next.disabled = true; bar.style.transition = 'none'; bar.style.width = '0'; G.mpRevealAt = Date.now(); G.mpNextT = null; mpMaybeNext(); return; }
+  if (G.cfg.multi) {
+    next.disabled = true; bar.style.transition = 'none'; bar.style.width = '0'; G.mpRevealAt = Date.now(); G.mpNextT = null; G.mpForce = false;
+    // Filet de sécurité : 8 s après la fin du temps de la manche, on avance même si quelqu'un n'a pas répondu
+    clearTimeout(G.mpForceT);
+    const tk = G.token, left = Math.max(3000, (G.dur + 8) * 1000 - (performance.now() - (G.t0 || performance.now())));
+    G.mpForceT = setTimeout(() => { if (tk === G.token && G.phase === 'reveal') { G.mpForce = true; mpMaybeNext(); } }, left);
+    mpMaybeNext();
+    return;
+  }
   if (!NO_AUTO) G.autoNext = setTimeout(() => { if (token === G.token && G.phase === 'reveal') nextRound(); }, wait);
 }
 
@@ -1785,7 +1796,7 @@ function useJoker(k) {
   renderJokers();
 }
 function openStealPicker() {
-  const others = mpPeople().filter(p => p.id !== MP.me?.id);
+  const others = mpPlayers().filter(p => p.id !== MP.me?.id);
   $('#steal-list').innerHTML = others.map(p => {
     const answered = (p.i || 0) > G.i;
     return `<button class="steal-p" type="button" data-id="${p.id}"${answered ? ' disabled' : ''}><span class="mpl-av">${headHTML(p)}</span><b>${esc(p.name)}</b><small>${answered ? 'a déjà répondu' : `${fmt(p.score || 0)} pts`}</small></button>`;
@@ -1830,10 +1841,11 @@ function mpOnSteal(m) {
 // Manches synchronisées : on passe à la musique suivante quand tout le monde a répondu
 function mpMaybeNext() {
   if (!G.cfg?.multi || G.phase !== 'reveal' || !MP.code) return;
-  const need = G.i + 1, list = mpPeople();
+  const need = G.i + 1, list = mpPlayers();
   const done = list.filter(p => (p.id === MP.me.id ? G.results.length : (p.i || 0)) >= need).length;
   const next = $('#btn-next');
-  const all = done >= list.length;
+  // G.mpForce : un joueur ne répond plus (appli en arrière-plan…) → on n'attend pas indéfiniment
+  const all = G.mpForce || done >= list.length;
   next.disabled = !all;
   next.querySelector('span').textContent = all ? (G.i >= G.songs.length - 1 ? 'Voir les résultats' : 'Musique suivante…') : `En attente des autres (${done}/${list.length})`;
   if (!all || G.mpNextT) return;
@@ -1903,7 +1915,7 @@ function animateBoard(box, list, prev, opts = {}) {
   return t0;
 }
 function mpShowBoard() {
-  const list = mpPeople().map(p => p.id === MP.me.id ? Object.assign({}, p, mpSelf()) : p);
+  const list = mpPlayers().map(p => p.id === MP.me.id ? Object.assign({}, p, mpSelf()) : p);
   const prev = MP.prevScores || {};
   $('#mpb-title').textContent = `Classement après la manche ${G.i + 1}`;
   animateBoard($('#mpb-list'), list, prev, { me: MP.me.id, rowH: 58 });
@@ -3684,6 +3696,8 @@ const mpHasTv = () => [...MP.players.values()].some(p => p.tv);
 // L'hôte peut passer la main (MP.cfg.hostId) ; sinon c'est le premier arrivé
 const mpHost = () => (MP.cfg.hostId && mpPeople().find(p => p.id === MP.cfg.hostId)) || mpPeople().sort((a, b) => a.joined - b.joined || (a.id < b.id ? -1 : 1))[0];
 const iAmHost = () => mpHost()?.id === MP.me?.id;
+// Joueurs de la partie en cours (en salon public, ceux arrivés pendant la partie la regardent seulement)
+const mpPlayers = () => mpPeople().filter(p => !MP.game || p.id === MP.me?.id || p.gid === MP.game.id);
 function mpTransport(code, onMsg) {
   if (MP_LOCAL || !window.PompeAuth?.client) {
     if (!MP_LOCAL) return null;
@@ -3699,7 +3713,7 @@ function mpTransport(code, onMsg) {
   });
   return { ready, send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => { try { window.PompeAuth.client.removeChannel(ch); } catch (e) {} } };
 }
-function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready, photo: MP.isTv ? null : store.photoSmall || null, tv: !!MP.isTv }; }
+function mpSelf() { return { id: MP.me.id, name: displayName(), skin: store.equip.skin, joined: MP.me.joined, score: MP.me.score || 0, found: MP.me.found || 0, i: MP.me.i || 0, done: !!MP.me.done, ready: !!MP.me.ready, photo: MP.isTv ? null : store.photoSmall || null, tv: !!MP.isTv, gid: MP.me.gid || null }; }
 function mpErr(msg) { $('#mp-err').textContent = msg || ''; if (MP.isTv && msg) { $('#tv-join').hidden = false; $('#tv-main').hidden = true; $('#tv-join p').textContent = msg; } }
 async function mpOpen(code) {
   mpLeave(true);
@@ -3707,7 +3721,9 @@ async function mpOpen(code) {
   if (code.length !== 5) { mpErr('Le code fait 5 caractères.'); return; }
   const tx = mpTransport(code, mpOnMsg);
   if (!tx) { mpErr('Le multijoueur a besoin d’une connexion internet.'); return; }
-  MP.code = code; MP.tx = tx; MP.players.clear(); MP.inGame = false;
+  MP.code = code; MP.tx = tx; MP.players.clear(); MP.inGame = false; MP.game = null;
+  MP.pub = pubParse(code); MP.pubSt = null;
+  if (MP.pub) MP.cfg = pubCfg(MP.pub);
   MP.me = { id: 'p' + Math.random().toString(36).slice(2, 10), joined: Date.now() };
   MP.players.set(MP.me.id, Object.assign(mpSelf(), { seen: Date.now() }));
   renderMulti();
@@ -3723,12 +3739,17 @@ async function mpOpen(code) {
     MP.players.forEach((p, id) => { if (id !== MP.me.id && now - p.seen > 13000) { MP.players.delete(id); changed = true; } });
     if (changed) { renderMulti(); mpMaybeNext(); }
   }, 4000);
+  clearInterval(PUB.tick);
+  if (MP.pub) { dirOpen(); PUB.tick = setInterval(pubTick, 1000); }
   sfx.pop();
 }
 function mpLeave(silent) {
   window.PompeNative?.post('room', null);
   if (MP.tx) { try { MP.tx.send({ t: 'bye', id: MP.me.id }); } catch (e) {} MP.tx.close(); }
   clearInterval(MP.hb);
+  clearInterval(PUB.tick);
+  if (MP.pub) { MP.cfg = Object.assign({}, MP_DEFAULT_CFG); $('#res-pub').hidden = true; }
+  MP.pub = null; MP.pubSt = null; MP.game = null;
   MP.tx = null; MP.code = null; MP.players.clear(); MP.inGame = false; MP.chat = [];
   renderChat();
   if (!silent) renderMulti();
@@ -3736,7 +3757,7 @@ function mpLeave(silent) {
 function mpUpsert(p) {
   if (!p || p.id === MP.me?.id) return;
   const was = MP.players.get(p.id);
-  if (!was && !p.tv && mpPeople().length >= MP_MAX) return;
+  if (!was && !p.tv && mpPeople().length >= (MP.pub ? PUB_MAX : MP_MAX)) return;
   MP.players.set(p.id, Object.assign(was || {}, p, { seen: Date.now() }));
 }
 function mpOnMsg(m) {
@@ -3746,15 +3767,21 @@ function mpOnMsg(m) {
     mpUpsert(m.p);
     MP.tx.send({ t: 'here', p: mpSelf() });
     if (iAmHost()) MP.tx.send({ t: 'cfg', cfg: MP.cfg });
-    if (isNew && !MP.isTv) { toast(m.p.tv ? 'La télé est connectée 📺' : `${m.p.name} a rejoint la salle`); sfx.pop(); }
+    if (MP.pub && iAmHost() && MP.pubSt) MP.tx.send({ t: 'pubst', from: MP.me.id, st: pubWire(MP.pubSt) });
+    if (isNew && !MP.isTv && !(MP.pub && currentScreen() === 'game')) { toast(m.p.tv ? 'La télé est connectée 📺' : `${m.p.name} a rejoint la salle`); sfx.pop(); }
   } else if (m.t === 'here') mpUpsert(m.p);
-  else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame) toast(`${p.name} a quitté la salle`); }
+  else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame && !MP.pub) toast(`${p.name} a quitté la salle`); }
+  else if (m.t === 'pubst') { if (MP.pub && m.from && m.from === mpHost()?.id && !iAmHost()) { const t = m.st || {}; MP.pubSt = { phase: t.phase, at: Date.now() + (t.left || 0), gid: t.gid, tot: t.tot, startedAt: Date.now() - (t.el || 0) }; } return; }
+  else if (m.t === 'cfg' && MP.pub) return;   // salon public : règles fixes
   else if (m.t === 'cfg') { const was = iAmHost(); MP.cfg = m.cfg; if (!was && iAmHost()) toast('Tu es maintenant l’hôte : c’est toi qui règles la partie 👑'); }
-  else if (m.t === 'start') { if (MP.isTv) tvStart(m.game); else if (!MP.inGame) mpPlay(m.game); }
+  else if (m.t === 'start') {
+    if (MP.pub && m.game) MP.pubSt = { phase: 'play', gid: m.game.id, tot: m.game.songs.length, startedAt: Date.now(), at: 0 };
+    if (MP.isTv) tvStart(m.game); else if (!MP.inGame && (!MP.pub || pubCanPlay())) mpPlay(m.game);
+  }
   else if (m.t === 'steal' || m.t === 'stolen') { mpOnSteal(m); return; }
   else if (m.t === 'chat') { mpAddChat(m); return; }
   else if (m.t === 'react') { mpFloat(m.e, m.name); return; }
-  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }); renderLive(); mpMaybeNext(); if (MP.isTv) tvCheck(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
+  else if (m.t === 'score') { const p = MP.players.get(m.id); if (p) Object.assign(p, { score: m.score, found: m.found, i: m.i, done: m.done, seen: Date.now() }, m.gid ? { gid: m.gid } : {}); renderLive(); mpMaybeNext(); if (MP.isTv) tvCheck(); if (currentScreen() === 'results' && G.cfg?.multi) renderRank(); return; }
   if (MP.isTv) tvRender();
   else if (currentScreen() === 'multi') renderMulti();
 }
@@ -3767,13 +3794,21 @@ function mpStart() {
   const src = poolFor(MP.cfg.cat);
   const game = { id: Math.random().toString(36).slice(2, 8), cat: MP.cfg.cat, mode: MP.cfg.mode, dur: MP.cfg.dur, board: MP.cfg.board, tone: MP.cfg.tone, jokers: MP.cfg.jokers, songs: songs.map(s => s.id), options: songs.map(s => shuffle([s, ...distractors(s, 3, src)]).map(x => x.id)) };
   MP.tx.send({ t: 'start', game });
-  mpPlay(game);
+  if (MP.pub) MP.pubSt = { phase: 'play', gid: game.id, tot: game.songs.length, startedAt: Date.now(), at: 0 };
+  if (!MP.pub || pubCanPlay()) mpPlay(game);
 }
 function mpPlay(game) {
+  // Salon public : la partie suivante démarre toute seule, on ferme ce qui pourrait la recouvrir
+  if (MP.pub) {
+    ['#streak-overlay', '#reward-overlay', '#missions-sheet', '#item-sheet', '#invite-sheet', '#steal-sheet', '#mp-board-ov'].forEach(sel => { const el = $(sel); if (el) el.hidden = true; });
+    RW = null; rewardQueue.length = 0;
+  }
   MP.inGame = true; MP.game = game; MP.stolenBy = null;
   clearTimeout(MP.countdown); MP.countdown = null;
-  Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false, ready: false });
+  Object.assign(MP.me, { score: 0, found: 0, i: 0, done: false, ready: false, gid: game.id });
   MP.players.forEach(p => Object.assign(p, { score: 0, found: 0, i: 0, done: false, ready: false }));
+  const meP = MP.players.get(MP.me.id); if (meP) Object.assign(meP, mpSelf());
+  MP.tx?.send({ t: 'here', p: mpSelf() });   // les autres savent tout de suite qu'on joue cette partie
   MP.prevScores = {};
   startGame({ cat: game.cat, mode: game.mode || 'choice', dur: game.dur, noJokers: game.jokers === false, board: game.board !== false, tone: game.tone || 'trash', rounds: game.songs.length, fixed: game.songs, fixedOptions: game.options, multi: true });
   renderLive();
@@ -3782,10 +3817,10 @@ function mpReport(done) {
   if (!MP.tx || !MP.me) return;
   Object.assign(MP.me, { score: G.score, found: G.results.filter(r => r.ok).length, i: G.results.length, done });
   const me = MP.players.get(MP.me.id); if (me) Object.assign(me, mpSelf());
-  MP.tx.send(Object.assign({ t: 'score' }, { id: MP.me.id, score: MP.me.score, found: MP.me.found, i: MP.me.i, done }));
+  MP.tx.send(Object.assign({ t: 'score' }, { id: MP.me.id, score: MP.me.score, found: MP.me.found, i: MP.me.i, done, gid: MP.me.gid || null }));
   renderLive();
 }
-const mpRanked = () => mpPeople().sort((a, b) => (b.score || 0) - (a.score || 0));
+const mpRanked = () => mpPlayers().sort((a, b) => (b.score || 0) - (a.score || 0));
 const safePhoto = u => typeof u === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 40000 ? u : null;
 const headHTML = p => safePhoto(p.photo) ? `<img class="avatar-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { head: true });
 function renderLive() {
@@ -3807,13 +3842,38 @@ function renderMulti() {
   $('#mp-start').hidden = inRoom;
   $('#mp-room').hidden = !inRoom;
   if (!inRoom) {
-    $('#mp-hero-chars').innerHTML = ['rookie', 'disco', 'mc'].map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('');
+    if (!$('#mp-hero-chars').children.length) $('#mp-hero-chars').innerHTML = ['rookie', 'disco', 'mc'].map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('');
+    // Liste des salons publics, rafraîchie en direct depuis l'annuaire
+    dirOpen();
+    renderPubList();
+    clearInterval(PUB.listT);
+    PUB.listT = setInterval(() => { if (currentScreen() === 'multi' && !MP.code) renderPubList(); else clearInterval(PUB.listT); }, 1500);
     return;
   }
-  const host = iAmHost(), list = mpPeople().sort((a, b) => a.joined - b.joined);
+  const host = iAmHost(), list = mpPeople().sort((a, b) => a.joined - b.joined), pub = !!MP.pub;
   $('#mp-room-code').textContent = MP.code;
   renderChat();
-  $('#mp-count').textContent = `${list.length}/${MP_MAX}`;
+  // Salon public : bannière d'état à la place du code, règles fixes, messages rapides au lieu du chat libre
+  $('#mp-pub').hidden = !pub;
+  $('#mp-code-card').hidden = pub;
+  $('#mp-ready').hidden = $('#mp-wait').hidden = pub;
+  $('#mp-send').hidden = pub;
+  $('#mp-quick').hidden = !pub;
+  $('#mp-leave').textContent = pub ? 'Quitter le salon' : 'Quitter la salle';
+  $('.mp-chat .sec-title').textContent = pub ? 'Réactions' : 'Chat';
+  $('#mp-count').textContent = `${list.length}/${pub ? PUB_MAX : MP_MAX}`;
+  if (pub) {
+    const st = MP.pubSt;
+    $('#mp-players').innerHTML = list.map(p => {
+      const playing = st?.phase === 'play' && p.gid === st.gid && !p.done;
+      return `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${playing ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: 'happy' })}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b><span class="mpp-ready">${playing ? '🎵 En jeu' : 'Attend'}</span></div>`;
+    }).join('');
+    $('#mp-settings').hidden = true;
+    const mn = PUB_MODES.find(m => m.id === MP.pub.mode).name;
+    $('#mp-rules').innerHTML = `<span>${ico('g-note')}${esc(catById(MP.pub.cat).name)}</span><span>${mn}</span><span>${PUB_ROUNDS} manches</span><span>${MP.cfg.dur} s</span><span>Piques gentilles 😇</span>`;
+    renderPubBanner();
+    return;
+  }
   $('#mp-players').innerHTML = list.map((p, k) => `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.name)}</b>${p.id === mpHost()?.id ? `<span class="mpp-host">${ico('crown')}Hôte</span>` : host ? `<span class="mpp-give" data-give="${p.id}" role="button" tabindex="0">${ico('crown')}Donner l’hôte</span>` : ''}<span class="mpp-ready">${p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`).join('') +
     (list.length < 2 ? '<button class="mpp mpp-empty" type="button"><span class="mpp-q">+</span><b>Invite un ami</b></button>' : '');
   $('#mp-settings').hidden = !host;
@@ -3849,6 +3909,129 @@ function toggleReady() {
   MP.tx?.send({ t: 'here', p: mpSelf() });
   sfx.tap(); buzz(15);
   renderMulti();
+}
+
+/* ================= SALONS PUBLICS ================= */
+// Un salon par jeu et par playlist, ouvert à tous. Code « P » + lettre du jeu + n° de playlist
+// sur 3 chiffres (contient toujours un 0 : jamais confondu avec un code de salle privée).
+// L'hôte du moment (le plus ancien encore présent) fait tourner la boucle :
+// attente (compte à rebours) → partie → classement → attente… Il publie aussi l'état de son
+// salon sur le canal annuaire « DIR », lu par la liste des salons.
+const PUB_MODES = [
+  { id: 'choice', l: 'C', name: '4 choix', icon: 'g-headphones' },
+  { id: 'type', l: 'T', name: 'Saisie', icon: 'g-keyboard' },
+  { id: 'stems', l: 'S', name: 'Piste par piste', icon: 'g-bolt' },
+];
+const PUB_FAST = NO_AUTO && /[?&]fastpub\b/.test(location.search);   // tests automatisés
+const PUB_ROUNDS = PUB_FAST ? 2 : 8, PUB_WAIT = PUB_FAST ? 4000 : 15000, PUB_MAX = 12;
+const MP_QUICK = ['Salut 👋', 'Bien joué !', 'GG 🏆', 'Trop fort 🔥', 'Revanche !', 'Oups 😅', 'À plus 👋'];
+const MP_DEFAULT_CFG = Object.assign({}, MP.cfg);
+const PUB = { mode: 'choice', dir: new Map(), dirTx: null, tick: null, sent: 0, adv: 0, listT: null };
+const pubCode = (mode, cat) => `P${(PUB_MODES.find(m => m.id === mode) || PUB_MODES[0]).l}${String(Math.max(0, CATS.findIndex(c => c.id === cat))).padStart(3, '0')}`;
+function pubParse(code) {
+  const m = /^P([CTS])(\d{3})$/.exec(code || '');
+  if (!m) return null;
+  const mode = PUB_MODES.find(x => x.l === m[1]), cat = CATS[+m[2]];
+  return mode && cat ? { code, mode: mode.id, cat: cat.id } : null;
+}
+const pubCfg = pub => ({ cat: pub.cat, rounds: PUB_ROUNDS, mode: pub.mode, dur: pub.mode === 'type' ? 25 : 20, board: true, tone: 'soft', jokers: true });
+// On ne lance un joueur dans la partie que s'il est dans le salon (pas s'il est parti en boutique…)
+const pubCanPlay = () => !MP.inGame && ['multi', 'results'].includes(currentScreen());
+// Les heures ne sont pas les mêmes d'un téléphone à l'autre : on transmet des durées restantes
+const pubWire = st => ({ phase: st.phase, left: Math.max(0, (st.at || 0) - Date.now()), gid: st.gid || null, tot: st.tot || PUB_ROUNDS, el: st.startedAt ? Date.now() - st.startedAt : 0 });
+
+// Annuaire des salons (canal partagé)
+function dirOpen() {
+  if (PUB.dirTx) return;
+  PUB.dirTx = mpTransport('DIR', m => {
+    if (!m || m.t !== 'room' || !pubParse(m.code)) return;
+    PUB.dir.set(m.code, Object.assign(m, { seen: Date.now(), at: Date.now() + (m.left || 0) }));
+  });
+  PUB.dirTx?.ready.catch(() => { PUB.dirTx = null; });
+}
+function dirClose() { if (PUB.dirTx) { try { PUB.dirTx.close(); } catch (e) {} PUB.dirTx = null; } }
+const pubLive = code => { const d = PUB.dir.get(code); return d && Date.now() - d.seen < 12000 ? d : null; };
+function pubAdvertise() {
+  if (!MP.pub || !PUB.dirTx) return;
+  const st = MP.pubSt || {}, ps = mpPeople();
+  const r = st.phase === 'play' ? Math.max(0, ...ps.filter(p => p.gid === st.gid).map(p => Math.min(p.i || 0, (st.tot || 1) - 1))) : 0;
+  PUB.dirTx.send({ t: 'room', code: MP.code, n: ps.length, ph: st.phase || 'wait', r, tot: st.tot || PUB_ROUNDS, left: Math.max(0, (st.at || 0) - Date.now()) });
+}
+
+function renderPubList() {
+  const now = Date.now();
+  let total = 0;
+  PUB.dir.forEach(d => { if (now - d.seen < 12000) total += d.n || 0; });
+  $('#pub-live').innerHTML = `<i></i>${total ? `${plural(total, 'joueur', 'joueurs')} en ligne` : 'En direct'}`;
+  $$('#pub-modes button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.m === PUB.mode)));
+  const rows = CATS.map((c, i) => { const code = pubCode(PUB.mode, c.id); return { c, i, code, d: pubLive(code) }; })
+    .sort((a, b) => ((b.d?.n || 0) - (a.d?.n || 0)) || a.i - b.i);
+  $('#pub-list').innerHTML = rows.map(({ c, code, d }) => {
+    const n = d?.n || 0, full = n >= PUB_MAX;
+    const st = !n ? 'Personne pour l’instant : lance la partie !'
+      : d.ph === 'play' ? `En jeu · manche ${Math.min((d.r || 0) + 1, d.tot)}/${d.tot}`
+      : `Prochaine partie dans ${Math.max(0, Math.ceil((d.at - now) / 1000))} s`;
+    return `<button class="pub-row${n ? ' is-live' : ''}" type="button" data-pub="${code}"${full ? ' disabled' : ''}>
+      <span class="pub-illu" style="background:${c.bg}"><img src="${c.illu}" alt="" loading="lazy" style="object-position:${c.pos}"></span>
+      <span class="pub-txt"><b>${esc(c.name)}</b><small>${st}</small></span>
+      <span class="pub-n${n ? ' is-on' : ''}">${full ? 'Complet' : n ? `${ico('g-user')}${n}` : 'Entrer'}</span>
+    </button>`;
+  }).join('');
+}
+// Partie rapide : le salon le plus animé du jeu choisi (sinon « Tout mélangé »)
+function pubQuick() {
+  const best = CATS.map(c => pubCode(PUB.mode, c.id)).map(code => ({ code, n: pubLive(code)?.n || 0 }))
+    .filter(x => x.n < PUB_MAX).sort((a, b) => b.n - a.n)[0];
+  mpErr('');
+  mpOpen(best && best.n ? best.code : pubCode(PUB.mode, 'all'));
+}
+
+// Boucle du salon : l'hôte décide, tout le monde affiche
+function pubGameOver(st, now) {
+  if (now - (st.startedAt || now) < 6000) return false;   // le temps que chacun annonce qu'il joue
+  const ps = mpPeople().filter(p => p.gid === st.gid);
+  if (!ps.length || ps.every(p => p.done)) return true;
+  const per = ((pubParse(MP.code)?.mode === 'type' ? 25 : 20) + 16) * 1000;
+  return now - st.startedAt > (st.tot || PUB_ROUNDS) * per + 20000;   // filet si un joueur a disparu
+}
+function pubTick() {
+  if (!MP.pub || !MP.code || !MP.tx) return;
+  const now = Date.now();
+  // Un arrivant attend 3 s de connaître les autres avant de se croire hôte
+  if (iAmHost() && now - (MP.me?.joined || now) > 3000) {
+    let st = MP.pubSt;
+    if (!st || (st.phase === 'play' && pubGameOver(st, now))) st = MP.pubSt = { phase: 'wait', at: now + PUB_WAIT };
+    if (st.phase === 'wait' && now >= st.at && mpPeople().length) mpStart();
+    if (now - PUB.sent >= 2000) { PUB.sent = now; MP.tx.send({ t: 'pubst', from: MP.me.id, st: pubWire(MP.pubSt) }); }
+    if (now - PUB.adv >= 4000) { PUB.adv = now; pubAdvertise(); }
+  }
+  pubRender();
+}
+function pubRender() {
+  if (!MP.pub) return;
+  const st = MP.pubSt, left = st && st.phase === 'wait' ? Math.max(0, Math.ceil((st.at - Date.now()) / 1000)) : null;
+  const rp = $('#res-pub');
+  rp.hidden = !(G.cfg?.multi && currentScreen() === 'results');
+  if (!rp.hidden) {
+    $('#res-pub-n').textContent = left ?? '…';
+    $('#res-pub-t').textContent = left != null ? `Prochaine partie dans ${left} s` : 'Les autres terminent la partie…';
+  }
+  if (currentScreen() === 'multi' && MP.code) renderPubBanner();
+}
+function renderPubBanner() {
+  const pub = MP.pub, st = MP.pubSt, now = Date.now(), mode = PUB_MODES.find(m => m.id === pub.mode), cat = catById(pub.cat);
+  let body;
+  if (!st) body = '<div class="pb-state"><b>Arrivée dans le salon…</b><small>On regarde qui est là.</small></div>';
+  else if (st.phase === 'wait') {
+    const left = Math.max(0, Math.ceil((st.at - now) / 1000));
+    body = `<div class="pb-count"><span class="pb-n">${left}</span><span class="pb-ct"><b>La partie commence dans ${left} s</b><small>Reste sur cet écran : elle démarre toute seule.</small></span></div>`;
+  } else {
+    const ps = mpPeople().filter(p => p.gid === st.gid).sort((a, b) => (b.score || 0) - (a.score || 0));
+    const r = Math.min(st.tot || PUB_ROUNDS, Math.max(0, ...ps.map(p => p.i || 0)) + 1);
+    body = `<div class="pb-state"><b>Partie en cours · manche ${r}/${st.tot || PUB_ROUNDS}</b><small>Tu joueras la prochaine, dans quelques instants.</small></div>
+      <div class="pb-live">${ps.slice(0, 5).map((p, k) => `<span><i>${k + 1}</i><b>${esc(p.name)}</b><em>${fmt(p.score || 0)}</em></span>`).join('')}</div>`;
+  }
+  $('#mp-pub').innerHTML = `<div class="pb-top"><span class="pb-ico">${ico(mode.icon)}</span><span class="pb-title"><small>Salon public · ${mode.name}</small><b>${esc(cat.name)}</b></span><button class="pb-invite" type="button" data-pb="invite">${ico('g-share')}Inviter</button></div>${body}`;
 }
 
 /* ================= MODE TÉLÉ ================= */
@@ -4023,6 +4206,8 @@ let chatLast = 0, reactLast = 0;
 function mpAddChat(m) {
   const text = String(m.text || '').slice(0, 120).trim();
   if (!text) return;
+  // Salon public (inconnus) : seulement les messages rapides prédéfinis, jamais de texte libre
+  if (MP.pub && !MP_QUICK.includes(text)) return;
   MP.chat.push({ id: m.id, name: String(m.name || 'Joueur').slice(0, 16), skin: m.skin, text, me: m.id === MP.me?.id });
   if (MP.chat.length > 50) MP.chat.shift();
   renderChat();
@@ -4031,6 +4216,7 @@ function mpAddChat(m) {
 function renderChat() {
   const box = $('#mp-msgs'); if (!box) return;
   if (!$('#mp-emojis').children.length) $('#mp-emojis').innerHTML = MP_EMOJIS.map(e => `<button class="mp-emo" type="button" data-emo="${e}" aria-label="Réagir ${e}">${e}</button>`).join('');
+  if (!$('#mp-quick').children.length) $('#mp-quick').innerHTML = MP_QUICK.map(q => `<button class="mp-qk" type="button" data-qk="${esc(q)}">${esc(q)}</button>`).join('');
   box.innerHTML = MP.chat.length ? MP.chat.map(c => `<div class="mp-msg${c.me ? ' is-me' : ''}">${c.me ? '' : `<span class="mpl-av">${headHTML(MP.players.get(c.id) || c)}</span>`}<p>${c.me ? '' : `<b>${esc(c.name)}</b>`}${esc(c.text)}</p></div>`).join('') : '<p class="mp-msg-empty">Dis bonjour à la salle !</p>';
   box.scrollTop = box.scrollHeight;
 }
@@ -4147,7 +4333,7 @@ $('#btn-quit').addEventListener('click', () => {
 $('#quit-cancel').addEventListener('click', () => { $('#quit-sheet').hidden = true; });
 $('#quit-confirm').addEventListener('click', quitGame);
 $('#quit-sheet').addEventListener('click', e => { if (e.target.id === 'quit-sheet') $('#quit-sheet').hidden = true; });
-$('#btn-home').addEventListener('click', () => show('home'));
+$('#btn-home').addEventListener('click', () => { if (G.cfg?.multi && MP.pub) mpLeave(true); show('home'); });
 $('#btn-replay').addEventListener('click', () => { if (G.cfg?.daily) show('home'); else if (G.cfg?.multi) show('multi'); else startGame(G.cfg); });
 $('#btn-share').addEventListener('click', share);
 $('#rb-open').addEventListener('click', openBooster);
@@ -4212,7 +4398,14 @@ $('#pass-claim-all').addEventListener('click', claimAllPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pvc.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
 $('#mode-multi').addEventListener('click', () => { unlockAudio(); show('multi'); });
-$('#mp-back').addEventListener('click', () => { if (MP.code) mpLeave(); show('home'); });
+// Retour : depuis un salon on revient à la liste des salons, depuis la liste à l'accueil
+$('#mp-back').addEventListener('click', () => { if (MP.code) { mpLeave(); window.scrollTo(0, 0); } else show('home'); });
+$('#pub-modes').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; PUB.mode = b.dataset.m; sfx.tap(); renderPubList(); });
+$('#pub-list').addEventListener('click', e => { const b = e.target.closest('[data-pub]'); if (!b || b.disabled) return; unlockAudio(); mpErr(''); mpOpen(b.dataset.pub); });
+$('#pub-quick').addEventListener('click', () => { unlockAudio(); pubQuick(); });
+$('#mp-pub').addEventListener('click', e => { if (e.target.closest('[data-pb="invite"]')) openInvite(); });
+$('#mp-quick').addEventListener('click', e => { const b = e.target.closest('[data-qk]'); if (b) mpSendChat(b.dataset.qk); });
+$('#res-pub-leave').addEventListener('click', () => { mpLeave(true); show('multi'); });
 $('#mp-create').addEventListener('click', () => { mpErr(''); mpOpen(newCode()); });
 $('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').value); });
 $('#mp-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#mp-join').click(); });
