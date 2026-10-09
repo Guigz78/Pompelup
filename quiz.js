@@ -917,7 +917,7 @@ function renderModeBanner() {
   b.style.setProperty('--mc', m.color); b.style.setProperty('--ml', m.lip);
   $('#mb-ico').innerHTML = ico(m.icon);
   $('#mb-name').textContent = m.name;
-  $('#play-sub').textContent = `${catById(store.prefs.cat).name} · ${store.prefs.rounds} chansons`;
+  $('#play-sub').textContent = `${catById(store.prefs.cat).name}\u00A0· ${store.prefs.rounds}\u00A0chansons`;
 }
 function renderModes() {
   const list = $('#cat-list');
@@ -1004,7 +1004,7 @@ function upsellOffer() {
   const P = passState(), t = passTier();
   if (!P.gold) {
     const waiting = Array.from({ length: t }, (_, k) => k + 1).filter(k => passReward(k, true)).length;
-    return { id: 'pass', kicker: 'Pass Premium', title: waiting ? `${plural(waiting, 'cadeau bloqué', 'cadeaux bloqués')}` : 'Double tes récompenses',
+    return { id: 'pass', kicker: 'Pass Premium', title: waiting ? `${plural(waiting, 'cadeau bloqué', 'cadeaux bloqués')}` : 'Double tes gains',
       sub: 'Skins exclusifs et Boosters Or', cta: passInEuro() ? PASS_EURO : `${fmt(PASS_PRICE)}<i class="coin"></i>`, art: charHTML(itemOf('skin', 'crooner'), { head: true, mood: 'happy' }), cls: 'is-pass' };
   }
   if (coinShopOn() && store.coins < 700) {
@@ -3508,17 +3508,13 @@ async function buyPass() {
 
 /* ================= ONBOARDING : la toute première ouverture ================= */
 const ONB = [
-  { id: 'launch', video: 'assets/onboarding/launch.webp', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche « Changer » pour choisir la musique et le jeu, puis appuie sur le gros bouton jaune JOUER.' },
-  { id: 'modes', kicker: 'Les jeux', title: '4 façons de jouer', chips: [['g-headphones', '4 choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
-  { id: 'booster', video: 'assets/onboarding/booster.webp', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10 bonnes réponses = 1 booster de 3 vinyles. Un booster de bienvenue t’attend !' },
+  { id: 'launch', video: 'assets/onboarding/launch.webp', scr: '#FFF7EC', kicker: 'Bienvenue sur Pompelup', title: 'Choisis, puis JOUER', text: 'Touche «\u00A0Changer\u00A0» pour choisir la musique et le jeu, puis appuie sur le gros bouton jaune\u00A0JOUER.' },
+  { id: 'modes', kicker: 'Les jeux', title: '4\u00A0façons de jouer', chips: [['g-headphones', '4\u00A0choix', 'touche la bonne chanson'], ['g-keyboard', 'Saisie', 'écris le titre ou le chanteur'], ['g-bolt', 'Piste par piste', 'la voix arrive en dernier'], ['g-mic', 'Les paroles', 'trouve le mot qui manque']] },
+  { id: 'booster', video: 'assets/onboarding/booster.webp', scr: '#2A1060', kicker: 'Les vinyles', title: 'Gagne des vinyles', text: '10\u00A0bonnes réponses\u00A0= 1\u00A0booster de 3\u00A0vinyles. Un booster de bienvenue t’attend\u00A0!' },
 ];
 let onbDone = null, onbI = 0;
 function onbSlideHTML(sl, k) {
-  let media;
-  if (sl.video) media = `<span class="onb-phone"><img data-src="${sl.video}" alt="" draggable="false"></span>`;
-  else if (sl.id === 'hello' || sl.id === 'go') media = `<span class="onb-hero${sl.id === 'go' ? ' is-go' : ''}">${(sl.id === 'go' ? ['crate', 'rookie', 'kpop'] : ['disco', 'rookie', 'mc']).map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('')}${sl.id === 'hello' ? `<i class="onb-vinyl">${ico('vinyl')}</i>` : `<i class="onb-pack">${ico('booster')}</i>`}</span>`;
-  else if (sl.grid) media = `<span class="onb-grid">${sl.grid.map(([i, b, s]) => `<span class="onb-g">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>`;
-  else media = '';
+  const media = sl.video ? `<span class="onb-phone" style="--scr:${sl.scr}"><img data-src="${sl.video}" alt="" draggable="false"></span>` : '';
   const body = sl.chips ? `<span class="onb-chips">${sl.chips.map(([i, b, s]) => `<span class="onb-chip">${ico(i)}<b>${b}</b><small>${s}</small></span>`).join('')}</span>` : sl.text ? `<p>${sl.text}</p>` : '';
   return `<section class="onb-slide onb-${sl.id}" data-k="${k}"><div class="onb-media">${media}</div><div class="onb-txt">${sl.kicker ? `<small>${sl.kicker}</small>` : ''}<h2>${sl.title}</h2>${body}</div></section>`;
 }
@@ -3542,7 +3538,7 @@ function onbSync(k) {
     if (img && j === k && img.src) { const u = img.dataset.src; img.src = ''; img.src = u; }   // repart du début
   });
   $('#onb-next').textContent = k === ONB.length - 1 ? 'C’est parti !' : 'Suivant';
-  $('#onb-skip').hidden = k === ONB.length - 1;
+  $('#onb-skip').classList.toggle('is-off', k === ONB.length - 1);   // garde sa place : rien ne bouge au dernier écran
 }
 function onbGo(k) { const t = $('#onb-track'); t.scrollTo({ left: k * t.clientWidth, behavior: REDUCED ? 'auto' : 'smooth' }); }
 function finishOnboarding() {
