@@ -225,7 +225,7 @@ window.COVERS = {
 "s240":"d:7ea8077c8193198d6639e2e5a447b36c",
 "s241":"d:c637ee0da5c4dd4c6170314c968f1b0b",
 "s242":"d:d54a60499e494039d187a0ca7ed3f2f6",
-"s243":"https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/c6/9b/1d/c69b1ddb-f873-53b4-9fc9-87ca49af2062/21UMGIM48676.rgb.jpg/600x600bb.jpg",
+"s243":"d:2c546ced3b39061b1956bd30967aa5a9",
 "s244":"d:556c8cec95f9b26ba9e90b13a2956144",
 "s245":"d:9848dff70edee26ee23827fa16442941",
 "s246":"d:4b8ab9c1f112b63c07e3983b98e98006",
