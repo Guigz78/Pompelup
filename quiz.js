@@ -3719,6 +3719,7 @@ async function mpOpen(code) {
   if (!tx) { mpErr('Le multijoueur a besoin d’une connexion internet.'); return; }
   MP.code = code; MP.tx = tx; MP.players.clear(); MP.inGame = false; MP.game = null;
   MP.pub = pubParse(code); MP.pubSt = null;
+  PUB.view = MP.pub ? 'pub' : 'start';   // en sortant du salon, on revient au bon endroit
   if (MP.pub) MP.cfg = pubCfg(MP.pub);
   MP.me = { id: 'p' + Math.random().toString(36).slice(2, 10), joined: Date.now() };
   MP.players.set(MP.me.id, Object.assign(mpSelf(), { seen: Date.now() }));
@@ -3767,7 +3768,7 @@ function mpOnMsg(m) {
     if (isNew && !MP.isTv && !(MP.pub && currentScreen() === 'game')) { toast(m.p.tv ? 'La télé est connectée 📺' : `${m.p.name} a rejoint la salle`); sfx.pop(); }
   } else if (m.t === 'here') mpUpsert(m.p);
   else if (m.t === 'bye') { const p = MP.players.get(m.id); MP.players.delete(m.id); if (p && !MP.inGame && !MP.pub) toast(`${p.name} a quitté la salle`); }
-  else if (m.t === 'pubst') { if (MP.pub && m.from && m.from === mpHost()?.id && !iAmHost()) { const t = m.st || {}; MP.pubSt = { phase: t.phase, at: Date.now() + (t.left || 0), gid: t.gid, tot: t.tot, startedAt: Date.now() - (t.el || 0) }; } return; }
+  else if (m.t === 'pubst') { if (MP.pub && m.from && m.from === mpHost()?.id && !iAmHost()) { const t = m.st || {}; MP.pubSt = { phase: t.phase, at: t.go ? Date.now() + (t.left || 0) : 0, gid: t.gid, tot: t.tot, startedAt: Date.now() - (t.el || 0) }; } return; }
   else if (m.t === 'cfg' && MP.pub) return;   // salon public : règles fixes
   else if (m.t === 'cfg') { const was = iAmHost(); MP.cfg = m.cfg; if (!was && iAmHost()) toast('Tu es maintenant l’hôte : c’est toi qui règles la partie 👑'); }
   else if (m.t === 'start') {
@@ -3794,7 +3795,7 @@ function mpStart() {
   if (!MP.pub || pubCanPlay()) mpPlay(game);
 }
 function mpPlay(game) {
-  // Salon public : la partie suivante démarre toute seule, on ferme ce qui pourrait la recouvrir
+  // Salon public : la partie démarre quand tout le monde est prêt, on ferme ce qui pourrait la recouvrir
   if (MP.pub) {
     ['#streak-overlay', '#reward-overlay', '#missions-sheet', '#item-sheet', '#invite-sheet', '#steal-sheet', '#mp-board-ov'].forEach(sel => { const el = $(sel); if (el) el.hidden = true; });
     RW = null; rewardQueue.length = 0;
@@ -3835,15 +3836,19 @@ function renderMulti() {
   if (MP.isTv) return tvRender();
   const inRoom = !!MP.code;
   $('#mp-tv-on').hidden = !(inRoom && mpHasTv());
-  $('#mp-start').hidden = inRoom;
+  const pubView = !inRoom && PUB.view === 'pub';
+  $('#mp-start').hidden = inRoom || pubView;
+  $('#mp-pubs').hidden = !pubView;
   $('#mp-room').hidden = !inRoom;
+  $('#screen-multi .page-title').textContent = pubView || (inRoom && MP.pub) ? 'Salons publics' : 'Multijoueur';
   if (!inRoom) {
     if (!$('#mp-hero-chars').children.length) $('#mp-hero-chars').innerHTML = ['rookie', 'disco', 'mc'].map(id => `<span>${charHTML(window.PompeChar.byId(id), { mood: 'happy' })}</span>`).join('');
-    // Liste des salons publics, rafraîchie en direct depuis l'annuaire
+    // Annuaire en direct : la liste des salons publics, ou juste le nombre de joueurs en ligne sur l'entrée
     dirOpen();
-    renderPubList();
+    const live = () => PUB.view === 'pub' ? renderPubList() : renderPubEntry();
+    live();
     clearInterval(PUB.listT);
-    PUB.listT = setInterval(() => { if (currentScreen() === 'multi' && !MP.code) renderPubList(); else clearInterval(PUB.listT); }, 1500);
+    PUB.listT = setInterval(() => { if (currentScreen() === 'multi' && !MP.code) live(); else clearInterval(PUB.listT); }, 1500);
     return;
   }
   const host = iAmHost(), list = mpPeople().sort((a, b) => a.joined - b.joined), pub = !!MP.pub;
@@ -3852,18 +3857,23 @@ function renderMulti() {
   // Salon public : bannière d'état à la place du code, règles fixes, messages rapides au lieu du chat libre
   $('#mp-pub').hidden = !pub;
   $('#mp-code-card').hidden = pub;
-  $('#mp-ready').hidden = $('#mp-wait').hidden = pub;
   $('#mp-send').hidden = pub;
   $('#mp-quick').hidden = !pub;
   $('#mp-leave').textContent = pub ? 'Quitter le salon' : 'Quitter la salle';
   $('.mp-chat .sec-title').textContent = pub ? 'Réactions' : 'Chat';
   $('#mp-count').textContent = `${list.length}/${pub ? PUB_MAX : MP_MAX}`;
+  const rb = $('#mp-ready');
+  rb.textContent = MP.me.ready ? 'Je ne suis plus prêt' : 'Je suis prêt !';
+  rb.classList.toggle('is-on', !!MP.me.ready);
   if (pub) {
-    const st = MP.pubSt;
+    const st = MP.pubSt, rd = list.filter(p => p.ready).length;
     $('#mp-players').innerHTML = list.map(p => {
       const playing = st?.phase === 'play' && p.gid === st.gid && !p.done;
-      return `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${playing ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: 'happy' })}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b><span class="mpp-ready">${playing ? '🎵 En jeu' : 'Attend'}</span></div>`;
+      return `<div class="mpp${p.id === MP.me.id ? ' is-me' : ''}${playing || p.ready ? ' is-ready' : ''}"><span class="mpp-av">${safePhoto(p.photo) ? `<img class="avatar-photo mpp-photo" src="${safePhoto(p.photo)}" alt="">` : charHTML(window.PompeChar.byId(p.skin), { mood: p.ready ? 'grin' : 'happy' })}</span><b>${esc(p.id === MP.me.id ? `${p.name} (toi)` : p.name)}</b><span class="mpp-ready">${playing ? '🎵 En jeu' : p.ready ? `${ico('g-check')}Prêt` : 'Pas prêt'}</span></div>`;
     }).join('');
+    $('#mp-wait').textContent = st?.phase === 'play' ? 'Une partie est en cours : appuie sur « Je suis prêt » pour jouer la suivante.'
+      : st?.at ? 'Tout le monde est prêt : la partie commence !'
+      : `${rd}/${list.length} prêt${rd > 1 ? 's' : ''} · la partie commence quand tout le monde est prêt`;
     $('#mp-settings').hidden = true;
     const mn = PUB_MODES.find(m => m.id === MP.pub.mode).name;
     $('#mp-rules').innerHTML = `<span>${ico('g-note')}${esc(catById(MP.pub.cat).name)}</span><span>${mn}</span><span>${PUB_ROUNDS} manches</span><span>${MP.cfg.dur} s</span><span>Piques gentilles 😇</span>`;
@@ -3891,9 +3901,6 @@ function renderMulti() {
   $('#mp-wait').textContent = list.length < 2 ? 'Invite au moins un ami avec le bouton « Inviter ».'
     : allReady ? 'Tout le monde est prêt : la partie commence !'
     : `${ready}/${list.length} prêts · ${catById(MP.cfg.cat).name} · ${MP.cfg.rounds} manches`;
-  const rb = $('#mp-ready');
-  rb.textContent = MP.me.ready ? 'Je ne suis plus prêt' : 'Je suis prêt !';
-  rb.classList.toggle('is-on', !!MP.me.ready);
   // L'hôte lance tout seul 3 secondes après que tout le monde est prêt
   if (host && allReady && !MP.inGame && !MP.countdown) MP.countdown = setTimeout(() => { MP.countdown = null; const l = mpPeople(); if (l.length >= 2 && l.every(p => p.ready) && !MP.inGame) mpStart(); }, 3000);
   if ((!allReady || !host) && MP.countdown) { clearTimeout(MP.countdown); MP.countdown = null; }
@@ -3905,6 +3912,7 @@ function toggleReady() {
   MP.tx?.send({ t: 'here', p: mpSelf() });
   sfx.tap(); buzz(15);
   renderMulti();
+  if (MP.pub) pubRender();
 }
 
 /* ================= SALONS PUBLICS ================= */
@@ -3919,10 +3927,12 @@ const PUB_MODES = [
   { id: 'stems', l: 'S', name: 'Piste par piste', icon: 'g-bolt' },
 ];
 const PUB_FAST = NO_AUTO && /[?&]fastpub\b/.test(location.search);   // tests automatisés
-const PUB_ROUNDS = PUB_FAST ? 2 : 8, PUB_WAIT = PUB_FAST ? 4000 : 15000, PUB_MAX = 12;
+const PUB_ROUNDS = PUB_FAST ? 2 : 8, PUB_GO = 3000, PUB_MAX = 12;
 const MP_QUICK = ['Salut 👋', 'Bien joué !', 'GG 🏆', 'Trop fort 🔥', 'Revanche !', 'Oups 😅', 'À plus 👋'];
 const MP_DEFAULT_CFG = Object.assign({}, MP.cfg);
-const PUB = { mode: 'choice', dir: new Map(), dirTx: null, tick: null, sent: 0, adv: 0, listT: null };
+const TV_ICO = $('#mp-cast svg')?.outerHTML || '';
+// view : 'start' (ton salon entre amis) ou 'pub' (liste des salons publics, à part)
+const PUB = { mode: 'choice', view: 'start', dir: new Map(), dirTx: null, tick: null, sent: 0, adv: 0, listT: null };
 const pubCode = (mode, cat) => `P${(PUB_MODES.find(m => m.id === mode) || PUB_MODES[0]).l}${String(Math.max(0, CATS.findIndex(c => c.id === cat))).padStart(3, '0')}`;
 function pubParse(code) {
   const m = /^P([CTS])(\d{3})$/.exec(code || '');
@@ -3934,7 +3944,7 @@ const pubCfg = pub => ({ cat: pub.cat, rounds: PUB_ROUNDS, mode: pub.mode, dur: 
 // On ne lance un joueur dans la partie que s'il est dans le salon (pas s'il est parti en boutique…)
 const pubCanPlay = () => !MP.inGame && ['multi', 'results'].includes(currentScreen());
 // Les heures ne sont pas les mêmes d'un téléphone à l'autre : on transmet des durées restantes
-const pubWire = st => ({ phase: st.phase, left: Math.max(0, (st.at || 0) - Date.now()), gid: st.gid || null, tot: st.tot || PUB_ROUNDS, el: st.startedAt ? Date.now() - st.startedAt : 0 });
+const pubWire = st => ({ phase: st.phase, go: !!st.at, left: Math.max(0, (st.at || 0) - Date.now()), gid: st.gid || null, tot: st.tot || PUB_ROUNDS, el: st.startedAt ? Date.now() - st.startedAt : 0 });
 
 // Annuaire des salons (canal partagé)
 function dirOpen() {
@@ -3951,22 +3961,25 @@ function pubAdvertise() {
   if (!MP.pub || !PUB.dirTx) return;
   const st = MP.pubSt || {}, ps = mpPeople();
   const r = st.phase === 'play' ? Math.max(0, ...ps.filter(p => p.gid === st.gid).map(p => Math.min(p.i || 0, (st.tot || 1) - 1))) : 0;
-  PUB.dirTx.send({ t: 'room', code: MP.code, n: ps.length, ph: st.phase || 'wait', r, tot: st.tot || PUB_ROUNDS, left: Math.max(0, (st.at || 0) - Date.now()) });
+  PUB.dirTx.send({ t: 'room', code: MP.code, n: ps.length, rd: ps.filter(p => p.ready).length, ph: st.phase || 'wait', r, tot: st.tot || PUB_ROUNDS });
 }
 
+const pubOnline = () => { let t = 0; PUB.dir.forEach(d => { if (Date.now() - d.seen < 12000) t += d.n || 0; }); return t; };
+function renderPubEntry() {
+  const n = pubOnline();
+  $('#pub-entry-live').textContent = n ? `${plural(n, 'joueur', 'joueurs')} en ligne en ce moment` : 'Joue avec d’autres joueurs en ligne';
+}
 function renderPubList() {
-  const now = Date.now();
-  let total = 0;
-  PUB.dir.forEach(d => { if (now - d.seen < 12000) total += d.n || 0; });
+  const now = Date.now(), total = pubOnline();
   $('#pub-live').innerHTML = `<i></i>${total ? `${plural(total, 'joueur', 'joueurs')} en ligne` : 'En direct'}`;
   $$('#pub-modes button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.m === PUB.mode)));
   const rows = CATS.map((c, i) => { const code = pubCode(PUB.mode, c.id); return { c, i, code, d: pubLive(code) }; })
     .sort((a, b) => ((b.d?.n || 0) - (a.d?.n || 0)) || a.i - b.i);
   $('#pub-list').innerHTML = rows.map(({ c, code, d }) => {
     const n = d?.n || 0, full = n >= PUB_MAX;
-    const st = !n ? 'Personne pour l’instant : lance la partie !'
+    const st = !n ? 'Personne pour l’instant : entre et appuie sur « Prêt » !'
       : d.ph === 'play' ? `En jeu · manche ${Math.min((d.r || 0) + 1, d.tot)}/${d.tot}`
-      : `Prochaine partie dans ${Math.max(0, Math.ceil((d.at - now) / 1000))} s`;
+      : `En attente · ${d.rd || 0}/${n} prêt${(d.rd || 0) > 1 ? 's' : ''}`;
     return `<button class="pub-row${n ? ' is-live' : ''}" type="button" data-pub="${code}"${full ? ' disabled' : ''}>
       <span class="pub-illu" style="background:${c.bg}"><img src="${c.illu}" alt="" loading="lazy" style="object-position:${c.pos}"></span>
       <span class="pub-txt"><b>${esc(c.name)}</b><small>${st}</small></span>
@@ -3996,21 +4009,34 @@ function pubTick() {
   // Un arrivant attend 3 s de connaître les autres avant de se croire hôte
   if (iAmHost() && now - (MP.me?.joined || now) > 3000) {
     let st = MP.pubSt;
-    if (!st || (st.phase === 'play' && pubGameOver(st, now))) st = MP.pubSt = { phase: 'wait', at: now + PUB_WAIT };
-    if (st.phase === 'wait' && now >= st.at && mpPeople().length) mpStart();
-    if (now - PUB.sent >= 2000) { PUB.sent = now; MP.tx.send({ t: 'pubst', from: MP.me.id, st: pubWire(MP.pubSt) }); }
+    if (!st || (st.phase === 'play' && pubGameOver(st, now))) st = MP.pubSt = { phase: 'wait', at: 0 };
+    // Pas de départ automatique : on attend que tous les joueurs présents aient appuyé sur « Prêt »,
+    // puis 3 s pour changer d'avis (ou laisser un arrivant se joindre)
+    let changed = false;
+    if (st.phase === 'wait') {
+      const ps = mpPeople(), all = ps.length > 0 && ps.every(p => p.ready);
+      if (!all && st.at) { st.at = 0; changed = true; }
+      else if (all && !st.at) { st.at = now + PUB_GO; changed = true; }
+      else if (all && now >= st.at) mpStart();
+    }
+    if (changed || now - PUB.sent >= 2000) { PUB.sent = now; MP.tx.send({ t: 'pubst', from: MP.me.id, st: pubWire(MP.pubSt) }); }
     if (now - PUB.adv >= 4000) { PUB.adv = now; pubAdvertise(); }
   }
   pubRender();
 }
 function pubRender() {
   if (!MP.pub) return;
-  const st = MP.pubSt, left = st && st.phase === 'wait' ? Math.max(0, Math.ceil((st.at - Date.now()) / 1000)) : null;
+  const st = MP.pubSt, go = st && st.phase === 'wait' && st.at ? Math.max(0, Math.ceil((st.at - Date.now()) / 1000)) : null;
   const rp = $('#res-pub');
   rp.hidden = !(G.cfg?.multi && currentScreen() === 'results');
   if (!rp.hidden) {
-    $('#res-pub-n').textContent = left ?? '…';
-    $('#res-pub-t').textContent = left != null ? `Prochaine partie dans ${left} s` : 'Les autres terminent la partie…';
+    const ps = mpPeople(), rd = ps.filter(p => p.ready).length;
+    $('#res-pub-n').textContent = go ?? `${rd}/${ps.length}`;
+    $('#res-pub').classList.toggle('is-go', go != null);
+    $('#res-pub-t').textContent = go != null ? `Tout le monde est prêt : départ dans ${go} s` : st?.phase === 'play' ? 'Les autres terminent la partie…' : `${rd}/${ps.length} prêt${rd > 1 ? 's' : ''} pour la suivante`;
+    const rb = $('#res-pub-ready');
+    rb.textContent = MP.me.ready ? '✓ Prêt' : 'Je suis prêt';
+    rb.classList.toggle('is-on', !!MP.me.ready);
   }
   if (currentScreen() === 'multi' && MP.code) renderPubBanner();
 }
@@ -4019,15 +4045,18 @@ function renderPubBanner() {
   let body;
   if (!st) body = '<div class="pb-state"><b>Arrivée dans le salon…</b><small>On regarde qui est là.</small></div>';
   else if (st.phase === 'wait') {
-    const left = Math.max(0, Math.ceil((st.at - now) / 1000));
-    body = `<div class="pb-count"><span class="pb-n">${left}</span><span class="pb-ct"><b>La partie commence dans ${left} s</b><small>Reste sur cet écran : elle démarre toute seule.</small></span></div>`;
+    const ps = mpPeople(), rd = ps.filter(p => p.ready).length;
+    if (st.at) {
+      const go = Math.max(0, Math.ceil((st.at - now) / 1000));
+      body = `<div class="pb-count"><span class="pb-n">${go}</span><span class="pb-ct"><b>Tout le monde est prêt !</b><small>La partie commence dans ${go} s.</small></span></div>`;
+    } else body = `<div class="pb-count is-wait"><span class="pb-n">${rd}/${ps.length}</span><span class="pb-ct"><b>${rd ? `${rd} joueur${rd > 1 ? 's' : ''} sur ${ps.length} prêt${rd > 1 ? 's' : ''}` : 'Personne n’est prêt'}</b><small>La partie commence quand tout le monde a appuyé sur « Je suis prêt ».</small></span></div>`;
   } else {
     const ps = mpPeople().filter(p => p.gid === st.gid).sort((a, b) => (b.score || 0) - (a.score || 0));
     const r = Math.min(st.tot || PUB_ROUNDS, Math.max(0, ...ps.map(p => p.i || 0)) + 1);
-    body = `<div class="pb-state"><b>Partie en cours · manche ${r}/${st.tot || PUB_ROUNDS}</b><small>Tu joueras la prochaine, dans quelques instants.</small></div>
+    body = `<div class="pb-state"><b>Partie en cours · manche ${r}/${st.tot || PUB_ROUNDS}</b><small>Appuie sur « Je suis prêt » pour jouer la suivante.</small></div>
       <div class="pb-live">${ps.slice(0, 5).map((p, k) => `<span><i>${k + 1}</i><b>${esc(p.name)}</b><em>${fmt(p.score || 0)}</em></span>`).join('')}</div>`;
   }
-  $('#mp-pub').innerHTML = `<div class="pb-top"><span class="pb-ico">${ico(mode.icon)}</span><span class="pb-title"><small>Salon public · ${mode.name}</small><b>${esc(cat.name)}</b></span><button class="pb-invite" type="button" data-pb="invite">${ico('g-share')}Inviter</button></div>${body}`;
+  $('#mp-pub').innerHTML = `<div class="pb-top"><span class="pb-ico">${ico(mode.icon)}</span><span class="pb-title"><small>Salon public · ${mode.name}</small><b>${esc(cat.name)}</b></span></div><div class="pb-btns"><button class="pb-invite" type="button" data-pb="invite">${ico('g-share')}Inviter</button><button class="pb-invite" type="button" data-pb="tv">${TV_ICO}Sur la télé</button></div>${body}`;
 }
 
 /* ================= MODE TÉLÉ ================= */
@@ -4274,7 +4303,7 @@ $('#cat-list').addEventListener('click', e => { const b = e.target.closest('.cat
 $('#rounds-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.prefs.rounds = +b.dataset.rounds; save(); sfx.tap(); renderModes(); });
 // Comme dans Brawl Stars : on touche un jeu, il est choisi et on revient au gros bouton JOUER
 $('#mode-seg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; store.prefs.mode = b.dataset.mode; save(); sfx.pop(); buzz(15); renderModes(); setTimeout(() => show('home'), 220); });
-$('#mode-extra').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; unlockAudio(); if (b.dataset.mode === 'daily') { show('home'); playDaily(); } else show('multi'); });
+$('#mode-extra').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; unlockAudio(); if (b.dataset.mode === 'daily') { show('home'); playDaily(); } else { if (!MP.code) PUB.view = 'start'; show('multi'); } });
 $('#mode-banner').addEventListener('click', () => { sfx.tap(); show('modes'); });
 $('#modes-back').addEventListener('click', () => show('home'));
 $('#btn-open-booster').addEventListener('click', e => { e.stopPropagation(); totalBoosters() ? openBooster() : show('shop'); });
@@ -4393,15 +4422,21 @@ $('#pass-buy').addEventListener('click', buyPass);
 $('#pass-claim-all').addEventListener('click', claimAllPass);
 $('#pass-track').addEventListener('click', e => { const b = e.target.closest('.pvc.is-ready'); if (b) claimPass(+b.dataset.k, b.dataset.gold === '1'); });
 // Menu Jouer & multijoueur
-$('#mode-multi').addEventListener('click', () => { unlockAudio(); show('multi'); });
+$('#mode-multi').addEventListener('click', () => { unlockAudio(); if (!MP.code) PUB.view = 'start'; show('multi'); });
 // Retour : depuis un salon on revient à la liste des salons, depuis la liste à l'accueil
-$('#mp-back').addEventListener('click', () => { if (MP.code) { mpLeave(); window.scrollTo(0, 0); } else show('home'); });
+$('#mp-back').addEventListener('click', () => {
+  if (MP.code) { mpLeave(); window.scrollTo(0, 0); }
+  else if (PUB.view === 'pub') { PUB.view = 'start'; mpErr(''); renderMulti(); window.scrollTo(0, 0); }
+  else show('home');
+});
+$('#pub-open').addEventListener('click', () => { PUB.view = 'pub'; sfx.tap(); mpErr(''); renderMulti(); window.scrollTo(0, 0); });
 $('#pub-modes').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; PUB.mode = b.dataset.m; sfx.tap(); renderPubList(); });
 $('#pub-list').addEventListener('click', e => { const b = e.target.closest('[data-pub]'); if (!b || b.disabled) return; unlockAudio(); mpErr(''); mpOpen(b.dataset.pub); });
 $('#pub-quick').addEventListener('click', () => { unlockAudio(); pubQuick(); });
-$('#mp-pub').addEventListener('click', e => { if (e.target.closest('[data-pb="invite"]')) openInvite(); });
+$('#mp-pub').addEventListener('click', e => { if (e.target.closest('[data-pb="invite"]')) openInvite(); else if (e.target.closest('[data-pb="tv"]')) castToTv(); });
 $('#mp-quick').addEventListener('click', e => { const b = e.target.closest('[data-qk]'); if (b) mpSendChat(b.dataset.qk); });
 $('#res-pub-leave').addEventListener('click', () => { mpLeave(true); show('multi'); });
+$('#res-pub-ready').addEventListener('click', toggleReady);
 $('#mp-create').addEventListener('click', () => { mpErr(''); mpOpen(newCode()); });
 $('#mp-join').addEventListener('click', () => { mpErr(''); mpOpen($('#mp-code').value); });
 $('#mp-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#mp-join').click(); });

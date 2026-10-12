@@ -72,8 +72,8 @@
         </button>
         <button class="tile t-multi" id="mode-multi" type="button">
           <svg class="ico tile-ico" aria-hidden="true"><use href="#i-headphones"/></svg>
-          <b>Multijoueur</b><small>Salons publics ou entre amis</small>
-          <span class="tile-cta">Créer / rejoindre</span>
+          <b>Multijoueur</b><small>Crée ton salon et invite tes amis</small>
+          <span class="tile-cta">Créer mon salon</span>
         </button>
       </div>
 
@@ -219,7 +219,7 @@
       <div class="res-record" id="res-record" hidden><svg class="ico"><use href="#i-trophy"/></svg>Nouveau record !</div>
     </div>
     <section class="panel mp-rank" id="mp-rank" hidden></section>
-    <div class="res-pub" id="res-pub" hidden><span class="res-pub-n" id="res-pub-n">15</span><span class="res-pub-t"><b id="res-pub-t">Prochaine partie dans 15 s</b><small>Reste ici : elle démarre toute seule.</small></span><button class="btn btn-sm btn-outline" id="res-pub-leave" type="button">Quitter</button></div>
+    <div class="res-pub" id="res-pub" hidden><span class="res-pub-n" id="res-pub-n">0/1</span><span class="res-pub-t"><b id="res-pub-t">0/1 prêt pour la suivante</b><small>La partie suivante commence quand tout le monde est prêt.</small></span><span class="res-pub-btns"><button class="btn btn-sm btn-outline" id="res-pub-leave" type="button">Quitter</button><button class="btn btn-sm btn-green" id="res-pub-ready" type="button">Je suis prêt</button></span></div>
     <div class="rcards">
       <div class="rcard rc-gold"><div class="rc-head">Score</div><div class="rc-body"><svg class="ico"><use href="#i-xp"/></svg><b id="res-score">0</b></div></div>
       <div class="rcard rc-green"><div class="rc-head" id="res-acc-label">Précision</div><div class="rc-body"><svg class="ico"><use href="#i-target"/></svg><b id="res-acc">0 %</b></div></div>
@@ -360,26 +360,34 @@
       <div class="page-head-l"><button class="icon-btn" id="mp-back" type="button" aria-label="Retour"><svg class="ico"><use href="#i-g-back"/></svg></button><div class="page-title">Multijoueur</div></div>
     </header>
     <div class="scroll">
+      <p class="mp-err" id="mp-err" role="alert"></p>
       <div class="mp-start" id="mp-start">
+        <!-- Multijoueur = d'abord ton salon à toi, avec tes amis -->
+        <section class="mp-hero">
+          <div class="mp-hero-chars" id="mp-hero-chars" aria-hidden="true"></div>
+          <b>Crée ton salon</b>
+          <small>Invite tes amis, choisis la musique et lancez la partie ensemble. Même sur la télé&nbsp;!</small>
+          <button class="btn btn-white btn-block mp-create" id="mp-create" type="button">Créer mon salon</button>
+        </section>
+        <div class="panel mp-join">
+          <b>Un ami t’a donné un code&nbsp;?</b>
+          <div class="mp-join-row"><input id="mp-code" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CODE" aria-label="Code de la salle"><button class="btn btn-blue" id="mp-join" type="button">Rejoindre</button></div>
+        </div>
+        <button class="pub-entry" id="pub-open" type="button">
+          <span class="pub-entry-ico" aria-hidden="true">🌍</span>
+          <span class="pub-entry-txt"><b>Salons publics</b><small id="pub-entry-live">Joue avec d’autres joueurs en ligne</small></span>
+          <svg class="ico pub-entry-go" aria-hidden="true"><use href="#i-g-back"/></svg>
+        </button>
+      </div>
+      <!-- Salons publics : à part, un salon par jeu et par playlist -->
+      <div class="mp-pubs" id="mp-pubs" hidden>
         <section class="pub-sec" aria-label="Salons publics">
           <div class="pub-head"><h2 class="sec-title">Salons publics</h2><span class="pub-live" id="pub-live"><i></i>En direct</span></div>
-          <p class="pub-sub">Entre dans un salon : les parties s’enchaînent toutes seules, avec tous les joueurs connectés.</p>
+          <p class="pub-sub">Choisis un salon et appuie sur «&nbsp;Je suis prêt&nbsp;» : la partie commence quand tous les joueurs sont prêts.</p>
           <div class="seg pub-modes" id="pub-modes" role="radiogroup" aria-label="Jeu"><button type="button" data-m="choice">4 choix</button><button type="button" data-m="type">Saisie</button><button type="button" data-m="stems">Piste par piste</button></div>
           <button class="btn btn-fun btn-block pub-quick" id="pub-quick" type="button">⚡ Partie rapide</button>
           <div class="pub-list" id="pub-list"></div>
         </section>
-        <h2 class="sec-title mp-friends-t">Entre amis</h2>
-        <section class="mp-hero">
-          <div class="mp-hero-chars" id="mp-hero-chars" aria-hidden="true"></div>
-          <b>Blind test entre potes</b>
-          <small>Mêmes extraits, mêmes réponses : le plus rapide gagne.</small>
-        </section>
-        <button class="btn btn-green btn-block" id="mp-create" type="button">Créer une salle</button>
-        <div class="panel mp-join">
-          <b>Rejoindre une salle</b>
-          <div class="mp-join-row"><input id="mp-code" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CODE" aria-label="Code de la salle"><button class="btn btn-blue" id="mp-join" type="button">Rejoindre</button></div>
-          <p class="mp-err" id="mp-err" role="alert"></p>
-        </div>
       </div>
       <div class="mp-room" id="mp-room" hidden>
         <section class="pub-banner" id="mp-pub" hidden></section>
@@ -409,9 +417,11 @@
           <div class="mp-quick" id="mp-quick" hidden></div>
           <form class="mp-send" id="mp-send" autocomplete="off"><input id="mp-text" type="text" maxlength="120" placeholder="Écris un message…" aria-label="Message"><button class="btn btn-blue" type="submit" aria-label="Envoyer"><svg class="ico"><use href="#i-g-arrow-right"/></svg></button></form>
         </section>
-        <p class="mp-wait" id="mp-wait">Appuie sur « Je suis prêt » : la partie démarre quand tout le monde l’est.</p>
-        <button class="btn btn-green btn-block mp-ready" id="mp-ready" type="button">Je suis prêt !</button>
         <button class="btn btn-ghost-red btn-block" id="mp-leave" type="button">Quitter la salle</button>
+        <div class="mp-go">
+          <p class="mp-wait" id="mp-wait">Appuie sur « Je suis prêt » : la partie démarre quand tout le monde l’est.</p>
+          <button class="btn btn-green btn-block mp-ready" id="mp-ready" type="button">Je suis prêt !</button>
+        </div>
       </div>
     </div>
   </section>

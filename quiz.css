@@ -2763,6 +2763,10 @@ button.mpp-empty .mpp-q { color: var(--violet); }
 .pb-title b { font: 800 22px/1.1 var(--display); }
 .pb-invite { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 12px; background: #fff; color: var(--violet); font: 800 13px var(--text); }
 .pb-invite .ico { width: 16px; height: 16px; }
+.pb-btns { display: flex; gap: 8px; }
+.pb-btns .pb-invite { flex: 1; justify-content: center; min-height: 40px; }
+.pb-btns .pb-invite .ico { width: 18px; height: 18px; }
+.pb-count.is-wait .pb-n { font-size: 24px; animation: none; }
 .pb-count { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 18px; background: rgba(255,255,255,.12); }
 .pb-n { flex: 0 0 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; background: var(--yellow); color: #3A2400; font: 800 34px var(--display); box-shadow: 0 4px 0 #C98A00; animation: pb-beat 1s ease-in-out infinite; }
 @keyframes pb-beat { 50% { transform: scale(1.06); } }
@@ -2787,5 +2791,33 @@ button.mpp-empty .mpp-q { color: var(--violet); }
 .res-pub-t { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .res-pub-t b { font: 800 16px var(--display); }
 .res-pub-t small { font: 700 12.5px var(--text); opacity: .85; }
-.res-pub .btn { flex: 0 0 auto; background: #fff; }
+.res-pub { flex-wrap: wrap; }
+.res-pub-btns { flex: 1 0 100%; display: flex; gap: 8px; }
+.res-pub-btns .btn { flex: 1; }
+.res-pub .btn-outline { background: #fff; }
+.res-pub-n { font-size: 20px; }
+.res-pub.is-go .res-pub-n { font-size: 24px; }
+#res-pub-ready.is-on { --bg: #fff; --fg: var(--green-lip); --lp: rgba(0,0,0,.18); }
 .res-pub-t b { line-height: 1.15; }
+
+/* ===== Multijoueur : ton salon d'abord, les salons publics à part ===== */
+.mp-err:empty { display: none; }
+.mp-hero { gap: 6px; padding: 18px 16px 16px; }
+.mp-hero b { font-size: 28px; }
+.mp-hero small { max-width: 300px; font-size: 15px; line-height: 1.35; text-wrap: balance; }
+.mp-hero .mp-create { margin-top: 10px; min-height: 58px; font-size: 18px; --fg: var(--violet); }
+.mp-join b { font-size: 16px; }
+.pub-entry { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 12px 12px 10px; border-radius: 20px; border: 2px solid var(--edge); box-shadow: 0 4px 0 var(--edge); background: #fff; text-align: left; transition: transform .1s, box-shadow .1s; }
+.pub-entry:active { transform: translateY(4px); box-shadow: none; }
+.pub-entry-ico { flex: 0 0 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(150deg, #E9FBE0, #D4F5FF); font-size: 28px; }
+.pub-entry-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pub-entry-txt b { font: 800 18px var(--display); color: var(--ink); }
+.pub-entry-txt small { font: 700 13px/1.3 var(--text); color: var(--green-lip); }
+.pub-entry-go { flex: 0 0 22px; width: 22px; height: 22px; color: var(--ink-3); transform: rotate(180deg); }
+.mp-pubs { display: flex; flex-direction: column; gap: 14px; }
+.mp-pubs[hidden] { display: none; }
+/* « Je suis prêt » toujours à portée de pouce, en bas de l'écran */
+/* collé juste au-dessus de la barre de navigation (70 px, posée à 26 px du bas sur tablette) */
+.mp-go { position: sticky; bottom: calc(70px + var(--safe-b)); z-index: 6; display: flex; flex-direction: column; gap: 8px; margin: -6px -16px 0; padding: 22px 16px 8px; background: linear-gradient(rgba(255,247,236,0), var(--cream) 20px); }
+@media (min-width: 560px) { .mp-go { bottom: calc(96px + var(--safe-b)); } }
+.mp-go .mp-ready { margin-bottom: 4px; }
